@@ -26,6 +26,8 @@ int main(int argc, char const *argv[])
             printf("    identifier: %s\n", tok.dat.ident_dat);
         } else if (tok.kind == token::VInt) {
             printf("    integer: %i\n", tok.dat.vint_dat);
+        } else if (tok.kind == token::VString) {
+            printf("    string: %s\n", tok.dat.string_dat);
         }
     }
     
