@@ -1,13 +1,17 @@
 
 SOURCE_FILES = src/cpp/ast.cpp src/cpp/lexer.cpp src/cpp/main.cpp src/cpp/parser.cpp src/cpp/utils.cpp
 
+TEMP_FILES = _build/lexer.c
+
 clean:
 	rm -fr _build
 
+_build/%.c: src/new/%.new
+	./main $< -o $@
 
-build: $(SOURCE_FILES)
+build: $(SOURCE_FILES) $(TEMP_FILES)
 	mkdir -p _build
-	g++ src/cpp/main.cpp -o _build/main
+	g++ -I_build -Isrc/cpp src/cpp/main.cpp -o _build/main
 
 	cp _build/main main
 

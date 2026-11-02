@@ -1,0 +1,60 @@
+
+#include "stdio.h"
+#include "string.h"
+#include "stdlib.h"
+
+#include "./utils.cpp"
+
+type token {
+    TVoid;
+    TInt;
+    TChar;
+
+    If;
+    Else;
+    Return;
+    While;
+    Const;
+
+    Type;
+    Func;
+
+    Include;
+
+    LPAREN;
+    RPAREN;
+    LSQUAR;
+    RSQUAR;
+    LBRACK;
+    RBRACK;
+    
+    BAnd;
+    BOr;
+    LAnd;
+    LOr;
+    LNot;
+    Star;
+    Plus;
+    Minus;
+    Div;
+
+    Eq;
+    Leq;
+    Geq;
+    Lt;
+    Gt;
+
+    Comma;
+    Semicol;
+    Set;
+    Colon;
+    TwoColon;
+    Hashtag;
+    Dot;
+
+    VInt {int dat;};
+    VString {const char* str;};
+
+    Ident {const char* str;};
+};
+
