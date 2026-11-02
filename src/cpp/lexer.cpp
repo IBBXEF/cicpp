@@ -285,3 +285,20 @@ clist lex_file(const char* path) {
     ret.reverse();
     return ret;
 }
+
+
+void print_tokens(clist toks) {
+    for (int i = 0; i < toks.len(); i++) {
+        token tok = *(token*)toks.ith(i);
+
+        printf("token kind: %d\n", (int)tok.kind);
+
+        if (tok.kind == token::Ident) {
+            printf("    identifier: %s\n", tok.dat.ident_dat);
+        } else if (tok.kind == token::VInt) {
+            printf("    integer: %d\n", tok.dat.vint_dat);
+        } else if (tok.kind == token::VString) {
+            printf("    string: %s\n", tok.dat.string_dat);
+        }
+    }
+}

@@ -5,9 +5,8 @@
 
 int main(int argc, char const *argv[])
 {
-    if (argc < 2)
-    {
-        printf("usage: main FILE\n");
+    if (argc < 2) {
+        printf("usage: main FILE [-o out_file]\n");
         return -1;
     }
     
@@ -17,22 +16,14 @@ int main(int argc, char const *argv[])
     
     clist toks = lex_file(argv[1]);
 
-    for (int i = 0; i < toks.len(); i++)
-    {
-        token tok = *(token*)toks.ith(i);
-
-        printf("token kind: %d\n", (int)tok.kind);
-
-        if (tok.kind == token::Ident) {
-            printf("    identifier: %s\n", tok.dat.ident_dat);
-        } else if (tok.kind == token::VInt) {
-            printf("    integer: %d\n", tok.dat.vint_dat);
-        } else if (tok.kind == token::VString) {
-            printf("    string: %s\n", tok.dat.string_dat);
-        }
-    }
+    print_tokens(toks);
     
     ast a = parse(toks);
+
+    if (argc >= 4 && !strcmp(argv[argc-2], "-o")) {
+        FILE* fptr = fopen(argv[argc-1], "w");
+        a.print_to_file(fptr);
+    }
 
     return 0;
 }

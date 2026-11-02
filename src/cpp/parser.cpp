@@ -197,5 +197,6 @@ ast parse(clist toks) {
         ret.decls.push(d);
         free(d);
     }
+    ret.decls.reverse();
     return ret;
 }
