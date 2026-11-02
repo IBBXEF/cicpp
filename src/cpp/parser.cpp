@@ -193,9 +193,31 @@ ast parse(clist toks) {
     ast ret = {.decls = clist::new_clist(sizeof(decl))};
     while (toks.len()) {
         printf("r:%d\n", toks.len());
-        decl* d = parse_decl(&toks);
-        ret.decls.push(d);
-        free(d);
+
+        token* tok = (token*)toks.ith(0);
+        if (tok->kind == token::Hashtag) {
+            toks = toks.tail();
+            tok = (token*)toks.ith(0);
+            if (tok->kind != token::Include) {
+                printf("expected include after '#'\n");
+                exit(-1);
+            }
+            toks = toks.tail();
+            tok = (token*)toks.ith(0);
+            decl* d = (decl*)malloc(sizeof(decl));
+            d->kind = decl::Include;
+            if (tok->kind != token::VString) {
+                printf("expected string after '#include'\n");
+                exit(-1);
+            }
+            d->dat.include_dat.file = tok->dat.string_dat;
+            toks = toks.tail();
+            ret.decls.push(d);
+        } else {
+            decl* d = parse_decl(&toks);
+            ret.decls.push(d);
+            free(d);
+        }
     }
     ret.decls.reverse();
     return ret;

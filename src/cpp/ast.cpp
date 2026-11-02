@@ -1,13 +1,12 @@
 
-#pragma once
 #include <stdio.h>
 
+int ident_lvl = 2;
 void print_n_spaces(int n, FILE* fptr) {
     for (int i = 0; i < n; i++) {
         fprintf(fptr, " ");
     }
 }
-int ident_lvl = 2;
 
 struct rval;
 
@@ -87,17 +86,25 @@ struct typ
 
 struct decl
 {
-    enum {Var, Func, Struct, Enum, Union} kind;
+    enum {Var, Func, Struct, Enum, Union, Include} kind;
 
     union {
         struct { const char* name; typ* t; rval* v; } var_dat;
         struct { const char* name; clist decls; }  struct_dat;
-        struct { const char* name; clist decls; }  union_dat;
-        struct { const char* name; clist vlues; }  enum_dat;
+        struct { const char* name; clist decls; }   union_dat;
+        struct { const char* name; clist vlues; }    enum_dat;
+        struct { const char* file; }              include_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident) {
-        if (kind == Var) {
+        if (kind == Include) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            if (dat.include_dat.file[0] == '~' && dat.include_dat.file[1] == '/') {
+                fprintf(fptr, "#include \"%s\"\n", dat.include_dat.file+2);
+            } else {
+                fprintf(fptr, "#include <%s>\n", dat.include_dat.file);
+            }
+        } else if (kind == Var) {
             dat.var_dat.t->print_to_file(fptr, ident);
             fprintf(fptr, " %s", dat.var_dat.name);
             if (dat.var_dat.v) {

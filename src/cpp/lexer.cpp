@@ -22,6 +22,8 @@ struct token
         Enum,
         Union,
 
+        Include,
+
         LPAREN,
         RPAREN,
         LSQUAR,
@@ -29,6 +31,8 @@ struct token
         LBRACK,
         RBRACK,
         
+        BAnd,
+        LAnd,
         LNot,
         Star,
         Plus,
@@ -64,10 +68,6 @@ struct token
 
 
 
-
-// details of the state machine used to do the lexing
-
-
 void pop_token_stack(int* cou, clist* l, const char* str) {
     if (!*cou) { return; }
     
@@ -92,6 +92,8 @@ void pop_token_stack(int* cou, clist* l, const char* str) {
         tok.kind = token::Enum;
     } else if (!strncmp("union", str, *cou) && *cou == 5) {
         tok.kind = token::Union;
+    } else if (!strncmp("include", str, *cou) && *cou == 7) {
+        tok.kind = token::Include;
     } else if (*str >= '0' && *str <= '9') {
         tok.kind = token::VInt;
         char* end;
@@ -113,12 +115,14 @@ void pop_token_stack(int* cou, clist* l, const char* str) {
 }
 
 
-
+// details of the state machine used to do the lexing
 struct lexing_state { enum T {
     LEXING_IDENT_OR_INT,
     LEXING_STRING,
     LEXING_STRING_SPECIAL,
-    LINE_COMMENT
+    LINE_COMMENT,
+    LEXING_CHAR,
+    LEXING_CHAR_SPECIAL,
 }; };
 
 
@@ -128,8 +132,7 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
         *cou = *cou + 1;
         if (c == '\\') {
             *state = lexing_state::LEXING_STRING_SPECIAL;
-        } else if (c == '"')
-        {
+        } else if (c == '"') {
             char* tmp = (char*)malloc(*cou);
             strncpy(tmp, last_buffer, *cou-1);
             tmp[*cou-1] = '\0';
@@ -150,6 +153,58 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
     } else if (*state == lexing_state::LINE_COMMENT) {
         if (c == '\n') {
             *state = lexing_state::LEXING_IDENT_OR_INT;
+        }
+        return;
+    } else if (*state == lexing_state::LEXING_CHAR) {
+        if (c == '\\') {
+            *cou = 0;
+            *state = lexing_state::LEXING_CHAR_SPECIAL;
+        } else if (*cou == 1) {
+            if (c != '\'')
+            {
+                printf("immediate character value must be exactly one character long\n");
+                exit(-1);
+            }
+            
+            token tok {.kind=token::VInt}; // we lex chars as ints
+            tok.dat.vint_dat = last_buffer[0];
+
+            ret->push(&tok);
+
+            *cou = 0;
+            *state = lexing_state::LEXING_IDENT_OR_INT;
+        } else {
+            last_buffer[*cou] = c;
+            *cou = *cou + 1;
+        }
+        return;
+    } else if (*state == lexing_state::LEXING_CHAR_SPECIAL) {
+        if (*cou = 1) {
+            if (c != '\'')
+            {
+                printf("immediate character value must be exactly one character long\n");
+                exit(-1);
+            }
+            
+            token tok {.kind=token::VInt}; // we lex chars as ints
+
+            if (last_buffer[0] == 'n') {
+                tok.dat.vint_dat = '\n';
+            } else if (last_buffer[0] == 't') {
+                tok.dat.vint_dat = '\t';
+            } else if (last_buffer[0] == '0') {
+                tok.dat.vint_dat = '\0';
+            } else {
+                tok.dat.vint_dat = last_buffer[0];
+            }
+
+            ret->push(&tok);
+
+            *cou = 0;
+            *state = lexing_state::LEXING_IDENT_OR_INT;
+        } else {
+            last_buffer[*cou] = c;
+            *cou = *cou + 1;
         }
         return;
     }
@@ -225,6 +280,14 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
             token tok = {.kind = token::Colon};
             ret->push(&tok);
         }
+    } else if (c == '&') {
+        pop_token_stack(cou, ret, last_buffer);
+        if (ret->len() && ((token*)ret->ith(0))->kind == token::BAnd) { // last token was an '&'
+            ((token*)ret->ith(0))->kind = token::LAnd;
+        } else {
+            token tok = {.kind = token::BAnd};
+            ret->push(&tok);
+        }
     } else if (c == '!') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::LNot};
@@ -253,6 +316,9 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
     } else if (c == '"') {
         pop_token_stack(cou, ret, last_buffer);
         *state = lexing_state::LEXING_STRING;
+    } else if (c == '\'') {
+        pop_token_stack(cou, ret, last_buffer);
+        *state = lexing_state::LEXING_CHAR;
     } else {
         printf("unexpected character: %c (code: %d).\n", c, (int)c);
         exit(-1);
