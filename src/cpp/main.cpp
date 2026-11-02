@@ -22,6 +22,9 @@ int main(int argc, char const *argv[])
 
     if (argc >= 4 && !strcmp(argv[argc-2], "-o")) {
         FILE* fptr = fopen(argv[argc-1], "w");
+        if (!fptr) {
+            printf("cannot open destination file\n");
+        }
         a.print_to_file(fptr);
     }
 
