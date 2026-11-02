@@ -14,7 +14,7 @@ rval* parse_rval(clist* toks) {
     if (curr->kind == token::VInt) {
         *toks = toks->tail();
         ret->kind = rval::Int;
-        ret->dat.int_dat = curr->dat.vint_dat;
+        ret->dat.int_dat = curr->dat.VInt_dat.dat;
     } else { // we fallback to parsing an lvalue
         ret->kind = rval::Lval;
         ret->dat.lval_dat = parse_lval(toks);
@@ -29,7 +29,7 @@ lval* parse_lval(clist* toks) {
     if (curr->kind == token::Ident) {
         *toks = toks->tail();
         ret->kind = lval::Var;
-        ret->dat.var_dat = curr->dat.ident_dat;
+        ret->dat.var_dat = curr->dat.Ident_dat.str;
         return ret;
     }
     printf("invalid lvalue\n");
@@ -81,7 +81,7 @@ decl* parse_var_decl(clist* toks, bool check_semicolon) {
         exit(-1);
     }
     *toks = toks->tail();
-    ret->dat.var_dat.name = n->dat.ident_dat;
+    ret->dat.var_dat.name = n->dat.Ident_dat.str;
 
     n = (token*)toks->ith(0);
     if (n->kind == token::Set) {
@@ -149,7 +149,7 @@ decl* parse_fun_decl(clist* toks) {
         exit(-1);
     }
     *toks = toks->tail();
-    ret->dat.func_dat.name = n->dat.ident_dat;
+    ret->dat.func_dat.name = n->dat.Ident_dat.str;
 
     n = (token*)toks->ith(0);
     if (n->kind != token::LPAREN) {
@@ -212,7 +212,7 @@ decl::type_constr parse_type_constructor(clist* toks) {
         printf("expected identifier for type constructor declaration\n");
         exit(-1);
     }
-    ret.name = n->dat.ident_dat;
+    ret.name = n->dat.Ident_dat.str;
     *toks = toks->tail();
     
     n = (token*)toks->ith(0);
@@ -254,7 +254,7 @@ decl* parse_type_decl(clist* toks) {
     ret->dat.type_dat.other_decls = clist::new_clist(sizeof(decl));
     token* n = (token*)toks->ith(0);
     if (n->kind == token::Ident) {
-        ret->dat.type_dat.name = n->dat.ident_dat;
+        ret->dat.type_dat.name = n->dat.Ident_dat.str;
         *toks = toks->tail();
     } else {
         ret->dat.type_dat.name = nullptr;
@@ -335,7 +335,7 @@ ast parse(clist toks) {
                 printf("expected string after '#include'\n");
                 exit(-1);
             }
-            d->dat.include_dat.file = tok->dat.string_dat;
+            d->dat.include_dat.file = tok->dat.VString_dat.str;
             toks = toks.tail();
             ret.decls.push(d);
         } else {

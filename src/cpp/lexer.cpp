@@ -5,69 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "utils.cpp"
-
-struct token
-{
-    enum {
-        TVoid,
-        TInt,
-        TChar,
-
-        If,
-        Else,
-        Return,
-        While,
-
-        Const,
-        Type,
-        Func,
-
-        Include,
-
-        LPAREN,
-        RPAREN,
-        LSQUAR,
-        RSQUAR,
-        LBRACK,
-        RBRACK,
-        
-        BAnd,
-        BOr,
-        LAnd,
-        LOr,
-        LNot,
-        Star,
-        Plus,
-        Minus,
-        Div,
-
-        Eq,
-        Leq,
-        Geq,
-        Lt,
-        Gt,
-
-        Comma,
-        Semicol,
-        Set,
-        Colon,
-        TwoColon,
-        Hashtag,
-        Dot,
-
-        VInt,
-        VString,
-
-        Ident
-    } kind;
-
-    union {
-        const char* ident_dat;
-        const char* string_dat;
-        int vint_dat;
-    } dat;
-};
-
+#include "lexer.c"
 
 
 void pop_token_stack(int* cou, clist* l, const char* str) {
@@ -99,7 +37,7 @@ void pop_token_stack(int* cou, clist* l, const char* str) {
     } else if (*str >= '0' && *str <= '9') {
         tok.kind = token::VInt;
         char* end;
-        tok.dat.vint_dat = strtol(str, &end, 10);
+        tok.dat.VInt_dat.dat = strtol(str, &end, 10);
         if (end != str + *cou) {
             printf("invalid integer: %s\n", str);
             exit(-1);
@@ -109,7 +47,7 @@ void pop_token_stack(int* cou, clist* l, const char* str) {
         char* tmp = (char*)malloc(*cou+1);
         strncpy(tmp, str, *cou);
         tmp[*cou] = '\0';
-        tok.dat.ident_dat = tmp;
+        tok.dat.Ident_dat.str = tmp;
     }
 
     l->push(&tok);
@@ -139,7 +77,7 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
             strncpy(tmp, last_buffer, *cou-1);
             tmp[*cou-1] = '\0';
             token tok {.kind=token::VString};
-            tok.dat.string_dat = tmp;
+            tok.dat.VString_dat.str = tmp;
 
             ret->push(&tok);
 
@@ -169,7 +107,7 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
             }
             
             token tok {.kind=token::VInt}; // we lex chars as ints
-            tok.dat.vint_dat = last_buffer[0];
+            tok.dat.VInt_dat.dat = last_buffer[0];
 
             ret->push(&tok);
 
@@ -191,13 +129,13 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
             token tok {.kind=token::VInt}; // we lex chars as ints
 
             if (last_buffer[0] == 'n') {
-                tok.dat.vint_dat = '\n';
+                tok.dat.VInt_dat.dat = '\n';
             } else if (last_buffer[0] == 't') {
-                tok.dat.vint_dat = '\t';
+                tok.dat.VInt_dat.dat = '\t';
             } else if (last_buffer[0] == '0') {
-                tok.dat.vint_dat = '\0';
+                tok.dat.VInt_dat.dat = '\0';
             } else {
-                tok.dat.vint_dat = last_buffer[0];
+                tok.dat.VInt_dat.dat = last_buffer[0];
             }
 
             ret->push(&tok);
@@ -370,11 +308,11 @@ void print_tokens(clist toks) {
         printf("token kind: %d\n", (int)tok.kind);
 
         if (tok.kind == token::Ident) {
-            printf("    identifier: %s\n", tok.dat.ident_dat);
+            printf("    identifier: %s\n", tok.dat.Ident_dat.str);
         } else if (tok.kind == token::VInt) {
-            printf("    integer: %d\n", tok.dat.vint_dat);
+            printf("    integer: %d\n", tok.dat.VInt_dat.dat);
         } else if (tok.kind == token::VString) {
-            printf("    string: %s\n", tok.dat.string_dat);
+            printf("    string: %s\n", tok.dat.VString_dat.str);
         }
     }
 }
