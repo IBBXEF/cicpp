@@ -108,24 +108,40 @@ decl* parse_var_decl(clist* toks, bool check_semicolon) {
 decl* parse_decl(clist* toks);
 
 instr* parse_instr(clist* toks) {
+    token* n = (token*)toks->ith(0);
+    if (n->kind == token::Return) {
+        *toks = toks->tail();
+        instr* ret = (instr*)malloc(sizeof(instr));
+        ret->kind = instr::Return;
+        ret->dat.ret_dat.v = parse_rval(toks);
+        n = (token*)toks->ith(0);
+        if (n->kind != token::Semicol) {
+            printf("expected ';' after return instruction; got token %i\n", (int)n->kind);
+            exit(-1);
+        }
+        *toks = toks->tail();
+        return ret;
+    }
+    
+
     clist left = *toks;
     while (toks->len()) {
-        token* tok = (token*)toks->ith(0);
-        if (tok->kind == token::Semicol) {
+        n = (token*)toks->ith(0);
+        if (n->kind == token::Semicol) {
             if (left.l == toks->l) {
                 return nullptr;
             } // we have not found an '=' token in our instruction, to it is a function call
-            printf("function calls not supported");
+            printf("function calls not supported\n");
             exit(-1);
-        } else if (tok->kind == token::Set) { // we have an '=' in our instruction, so it is a set operation (not always true but almost)
+        } else if (n->kind == token::Set) { // we have an '=' in our instruction, so it is a set operation (not always true but almost)
             instr* ist = (instr*)malloc(sizeof(instr));
             ist->kind = instr::Set;
             ist->dat.set_dat.l = parse_lval(&left);
             *toks = toks->tail();
             ist->dat.set_dat.r = parse_rval(toks);
-            token* tok = (token*)toks->ith(0);
-            if (tok->kind != token::Semicol) {
-                printf("expected ';' after instruction; got token %i\n", (int)tok->kind);
+            n = (token*)toks->ith(0);
+            if (n->kind != token::Semicol) {
+                printf("expected ';' after instruction; got token %i\n", (int)n->kind);
                 exit(-1);
             }
             *toks = toks->tail();

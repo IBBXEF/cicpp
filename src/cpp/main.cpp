@@ -16,7 +16,7 @@ int main(int argc, char const *argv[])
     
     clist toks = lex_file(argv[1]);
 
-    print_tokens(toks);
+    // print_tokens(toks);
     
     ast a = parse(toks);
 

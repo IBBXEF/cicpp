@@ -107,10 +107,11 @@ struct typ
 
 struct instr
 {
-    enum { Set } kind;
+    enum { Set, Return } kind;
 
     union {
         struct { lval* l; rval* r; } set_dat;
+        struct { rval* v; }          ret_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident) {
@@ -119,6 +120,11 @@ struct instr
             dat.set_dat.l->print_to_file(fptr);
             fprintf(fptr, " = ");
             dat.set_dat.r->print_to_file(fptr);
+            fprintf(fptr, ";\n");
+        } else if (kind == Return) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "return ");
+            dat.ret_dat.v->print_to_file(fptr);
             fprintf(fptr, ";\n");
         }
     }

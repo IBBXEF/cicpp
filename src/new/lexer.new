@@ -58,3 +58,7 @@ type token {
     Ident {const char* str;};
 };
 
+// func int try_match_regex(const char* regex, const char* string) {
+//     return 0;
+// }
+
