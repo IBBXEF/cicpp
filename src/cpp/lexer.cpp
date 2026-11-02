@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -237,7 +239,7 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
         pop_token_stack(cou, ret, last_buffer);
         *state = lexing_state::LEXING_STRING;
     } else {
-        printf("unexpected character: %c (code: %i).\n", c, (int)c);
+        printf("unexpected character: %c (code: %d).\n", c, (int)c);
         exit(-1);
     }
 }
@@ -265,5 +267,6 @@ clist lex_file(const char* path) {
         c = fgetc(fptr);
     }
     pop_token_stack(&cou, &ret, last_buffer);
+    ret.reverse();
     return ret;
 }

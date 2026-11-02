@@ -1,4 +1,6 @@
 
+#pragma once
+
 struct rval;
 
 struct lval
@@ -53,11 +55,17 @@ struct typ
 };
 
 
+struct decl
+{
+    const char* name;
+    typ* t;
+    rval* v;
+};
+
+
 
 struct ast
 {
-    enum {
-        
-    } kind;
+    clist decls; // list of declarations
 };
 

@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <stdlib.h>
 
 struct _clist
@@ -32,7 +34,9 @@ struct clist
 
     void* pop() {
         void* ret = l->dat;
-        l = l->next;
+        _clist* tmp = l ->next;
+        free(l);
+        l = tmp;
         return ret;
     }
 
@@ -59,12 +63,25 @@ struct clist
         while (i > 0)
         {
             if (!t) {
-                printf("out of range in list: index %i\n", i);
+                printf("out of range in list: index %d\n", i);
                 exit(0);
             }
             t = t->next;
             i = i - 1;
         }
         return t->dat;
+    }
+
+    void reverse() {
+        clist rev = {.datsize = datsize, .l = nullptr};
+        while (l)
+        {
+            rev.push(pop());
+        }
+        l = rev.l;
+    }
+
+    clist tail() {
+        return {.datsize = datsize, .l = l->next};
     }
 };
