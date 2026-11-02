@@ -1,5 +1,9 @@
 
-_build
-.vscode
-
 main
+.vscode/**
+
+_build/**
+
+!*/
+!_build/lexer.c
+

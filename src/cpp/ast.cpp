@@ -251,6 +251,8 @@ struct ast
 {
     clist decls; // list of declarations
     void print_to_file(FILE* fptr) {
+        fprintf(fptr, "#pragma once\n");
+
         for (int i = 0; i < decls.len(); i++)
         {
             decl* d = (decl*)decls.ith(i);
