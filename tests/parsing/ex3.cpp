@@ -1,22 +1,24 @@
 
-union u
+type u
 {
     int a;
 };
 
-union uuuu
+type uuuu
 {
+    one {int o;};
     int a;
+    two {int o; int t;};
     char** b;
 };
 
 // yoyoyoyo this is a comment @@ ☺
 
-struct a
+type a
 {
-    union b
+    type b
     {
-        struct c
+        type c
         {
             int a;
         };

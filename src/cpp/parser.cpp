@@ -197,102 +197,111 @@ decl* parse_fun_decl(clist* toks) {
     return ret;
 }
 
-clist parse_container_decl(clist* toks, const char** name) {
-    clist ret = clist::new_clist(sizeof(decl));
+decl::type_constr parse_type_constructor(clist* toks) {
+    decl::type_constr ret;
+    ret.fields = clist::new_clist(sizeof(decl));
+
     token* n = (token*)toks->ith(0);
-    if (n->kind == token::Ident) {
-        *name = n->dat.ident_dat;
-        *toks = toks->tail();
-    } else {
-        *name = nullptr;
+    if (n->kind != token::Ident) {
+        printf("expected identifier for type constructor declaration\n");
+        exit(-1);
     }
+    ret.name = n->dat.ident_dat;
+    *toks = toks->tail();
+    
     n = (token*)toks->ith(0);
+    if (n->kind == token::Semicol) {
+        *toks = toks->tail();
+        return ret;
+    }
+
     if (n->kind != token::LBRACK) {
-        printf("expected '{' for container declaration\n");
+        printf("expected '{' for type constructor declaration\n");
         exit(-1);
     }
     *toks = toks->tail();
+
+    n = (token*)toks->ith(0);
     while (((token*)toks->ith(0))->kind != token::RBRACK)
     {
+        n = (token*)toks->ith(0);
         decl* d = parse_decl(toks);
-        ret.push(d);
+        ret.fields.push(d);
         free(d);
+        n = (token*)toks->ith(0);
     }
     *toks = toks->tail();
     n = (token*)toks->ith(0);
     if (n->kind != token::Semicol) {
-        printf("expected ';' at end of enum declaration\n");
+        printf("expected ';' at end of type constructor declaration\n");
         exit(-1);
     }
     *toks = toks->tail();
-    ret.reverse();
+    ret.fields.reverse();
+    return ret;
+}
+
+decl* parse_type_decl(clist* toks) {
+    decl* ret = (decl*)malloc(sizeof(decl));
+    ret->kind = decl::Type;
+    ret->dat.type_dat.constrs = clist::new_clist(sizeof(decl::type_constr));
+    ret->dat.type_dat.other_decls = clist::new_clist(sizeof(decl));
+    token* n = (token*)toks->ith(0);
+    if (n->kind == token::Ident) {
+        ret->dat.type_dat.name = n->dat.ident_dat;
+        *toks = toks->tail();
+    } else {
+        ret->dat.type_dat.name = nullptr;
+    }
+    n = (token*)toks->ith(0);
+    if (n->kind != token::LBRACK) {
+        printf("expected '{' for type declaration\n");
+        exit(-1);
+    }
+    *toks = toks->tail();
+    n = (token*)toks->ith(0);
+    while (((token*)toks->ith(0))->kind != token::RBRACK)
+    {
+        n = (token*)toks->ith(0);
+        token* n2 = (token*)toks->ith(1);
+        if (n2->kind != token::Semicol && n2->kind != token::LBRACK) { // declaration inside our type
+            decl* d = parse_decl(toks);
+            ret->dat.type_dat.other_decls.push(d);
+            free(d);
+        } else {
+            decl::type_constr constr = parse_type_constructor(toks);
+            ret->dat.type_dat.constrs.push(&constr);
+        }
+        n = (token*)toks->ith(0);
+    }
+    *toks = toks->tail();
+    n = (token*)toks->ith(0);
+    if (n->kind != token::Semicol) {
+        printf("expected ';' at end of type declaration\n");
+        exit(-1);
+    }
+    *toks = toks->tail();
+    ret->dat.type_dat.constrs.reverse();
+    ret->dat.type_dat.other_decls.reverse();
+
+    if (!ret->dat.type_dat.constrs.len()) {
+        decl::type_constr unit;
+        unit.fields = clist::new_clist(sizeof(decl));
+        unit.name = "unit";
+        ret->dat.type_dat.constrs.push(&unit);
+    }
+
     return ret;
 }
 
 decl* parse_decl(clist* toks) {
-    decl* ret = (decl*)malloc(sizeof(decl));
-
     token* n = (token*)toks->ith(0);
-    if (n->kind == token::Struct) {
-        ret->kind = decl::Struct;
+    if (n->kind == token::Type) {
         *toks = toks->tail();
-        ret->dat.struct_dat.decls = parse_container_decl(toks, &ret->dat.struct_dat.name);
-        return ret;
-    } else if (n->kind == token::Union) {
-        ret->kind = decl::Union;
-        *toks = toks->tail();
-        ret->dat.union_dat.decls = parse_container_decl(toks, &ret->dat.union_dat.name);
-        return ret;
-    } else if (n->kind == token::Enum) {
-        ret->kind == decl::Enum;
-        ret->dat.enum_dat.vlues = clist::new_clist(sizeof(char*));
-        *toks = toks->tail();
-
-        n = (token*)toks->ith(0);
-        if (n->kind == token::Ident) {
-            ret->dat.enum_dat.name = n->dat.ident_dat;
-            *toks = toks->tail();
-        } else {
-            ret->dat.enum_dat.name = nullptr;
-        }
-        n = (token*)toks->ith(0);
-        if (n->kind != token::LBRACK) {
-            printf("expected '{' for enum declaration\n");
-            exit(-1);
-        }
-        *toks = toks->tail();
-
-        n = (token*)toks->ith(0);
-        while (n->kind != token::RBRACK)
-        { // this is absolutely horrendous and will sometime parse nonsense, but it will parse correct enums
-            if (n->kind != token::Comma)
-            {
-                if (n->kind != token::Ident)
-                {
-                    printf("expected ident in enum declaration\n");
-                    exit(-1);
-                }
-                ret->dat.enum_dat.vlues.push(&n->dat.ident_dat);
-            }
-            *toks = toks->tail();
-            n = (token*)toks->ith(0);
-        }
-        *toks = toks->tail();
-
-        n = (token*)toks->ith(0);
-        if (n->kind != token::Semicol) {
-            printf("expected ';' at end of enum declaration\n");
-            exit(-1);
-        }
-        *toks = toks->tail();
-        ret->dat.enum_dat.vlues.reverse();
-        return ret;
+        return parse_type_decl(toks);
     } else if (n->kind == token::Func) {
-        ret->kind = decl::Func;
         *toks = toks->tail();
-        free(ret);
-        ret = parse_fun_decl(toks);
-        return ret;
+        return parse_fun_decl(toks);
     }
 
     return parse_var_decl(toks, true);

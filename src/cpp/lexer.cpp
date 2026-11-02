@@ -18,9 +18,7 @@ struct token
         Return,
         While,
 
-        Struct,
-        Enum,
-        Union,
+        Type,
         Func,
 
         Include,
@@ -89,12 +87,8 @@ void pop_token_stack(int* cou, clist* l, const char* str) {
         tok.kind = token::Return;
     } else if (!strncmp("while", str, *cou) && *cou == 5) {
         tok.kind = token::While;
-    } else if (!strncmp("struct", str, *cou) && *cou == 6) {
-        tok.kind = token::Struct;
-    } else if (!strncmp("enum", str, *cou) && *cou == 4) {
-        tok.kind = token::Enum;
-    } else if (!strncmp("union", str, *cou) && *cou == 5) {
-        tok.kind = token::Union;
+    } else if (!strncmp("type", str, *cou) && *cou == 4) {
+        tok.kind = token::Type;
     } else if (!strncmp("func", str, *cou) && *cou == 4) {
         tok.kind = token::Func;
     } else if (!strncmp("include", str, *cou) && *cou == 7) {

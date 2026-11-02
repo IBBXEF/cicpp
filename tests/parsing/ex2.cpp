@@ -1,18 +1,18 @@
 
-struct simpl
-{
+type simpl { // equivalent to a struct
     int a;
+    char b;
 };
 
 
-struct coucou
+type coucou
 {
-    int a;
-    int reee = 0;
+    C1 {int a;};
+    C2 {int reee = 0;};
 
-    struct {char* i;};
+    type sssi {char* i;};
 };
 
-struct {int*** t;};
+type {int*** t;};
 
-struct araer{ char *a;};
+type araer{ E {char *a;}; K; R;};
