@@ -117,7 +117,8 @@ void pop_token_stack(int* cou, clist* l, const char* str) {
 struct lexing_state { enum T {
     LEXING_IDENT_OR_INT,
     LEXING_STRING,
-    LEXING_STRING_SPECIAL
+    LEXING_STRING_SPECIAL,
+    LINE_COMMENT
 }; };
 
 
@@ -145,6 +146,11 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
         last_buffer[*cou] = c;
         *cou = *cou + 1;
         *state = lexing_state::LEXING_STRING;
+        return;
+    } else if (*state == lexing_state::LINE_COMMENT) {
+        if (c == '\n') {
+            *state = lexing_state::LEXING_IDENT_OR_INT;
+        }
         return;
     }
     
@@ -235,6 +241,15 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::Star};
         ret->push(&tok);
+    } else if (c == '/') {
+        pop_token_stack(cou, ret, last_buffer);
+        if (ret->len() && ((token*)ret->ith(0))->kind == token::Div) { // last token was an ':'
+            free(ret->pop());
+            *state = lexing_state::LINE_COMMENT;
+        } else {
+            token tok = {.kind = token::Div};
+            ret->push(&tok);
+        }
     } else if (c == '"') {
         pop_token_stack(cou, ret, last_buffer);
         *state = lexing_state::LEXING_STRING;
@@ -248,7 +263,7 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
 clist lex_file(const char* path) {
     FILE* fptr = fopen(path, "r");
     if (!fptr) {
-        printf("file.txt file failed to open.\n");
+        printf("%s file failed to open.\n", path);
         exit(-1);
     }
 

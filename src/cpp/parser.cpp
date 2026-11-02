@@ -54,24 +54,26 @@ typ* parse_typ(clist* toks) {
     return t;
 }
 
-
-decl* parse_decl(clist* toks) {
+decl* parse_var_decl(clist* toks) {
     decl* ret = (decl*)malloc(sizeof(decl));
-    ret->t = parse_typ(toks);
+
+    ret->kind = decl::Var;
+    ret->dat.var_dat.t = parse_typ(toks);
+
     token* n = (token*)toks->ith(0);
     if (n->kind != token::Ident) {
         printf("expected identifier after type in declaration");
         exit(-1);
     }
     *toks = toks->tail();
-    ret->name = n->dat.ident_dat;
+    ret->dat.var_dat.name = n->dat.ident_dat;
 
     n = (token*)toks->ith(0);
     if (n->kind == token::Set) {
         *toks = toks->tail();
-        ret->v = parse_rval(toks);
+        ret->dat.var_dat.v = parse_rval(toks);
     } else {
-        ret->v = nullptr;
+        ret->dat.var_dat.v = nullptr;
     }
     
     
@@ -82,9 +84,108 @@ decl* parse_decl(clist* toks) {
     }
     *toks = toks->tail();
 
-    printf("parsed declaration of %s.\n", ret->name);
+    printf("parsed declaration of variable %s.\n", ret->dat.var_dat.name);
 
     return ret;
+
+}
+
+decl* parse_decl(clist* toks);
+
+clist parse_container_decl(clist* toks, const char** name) {
+    clist ret = clist::new_clist(sizeof(decl));
+    token* n = (token*)toks->ith(0);
+    if (n->kind == token::Ident) {
+        *name = n->dat.ident_dat;
+        *toks = toks->tail();
+    } else {
+        *name = nullptr;
+    }
+    n = (token*)toks->ith(0);
+    if (n->kind != token::LBRACK) {
+        printf("expected '{' for container declaration\n");
+        exit(-1);
+    }
+    *toks = toks->tail();
+    while (((token*)toks->ith(0))->kind != token::RBRACK)
+    {
+        decl* d = parse_decl(toks);
+        ret.push(d);
+        free(d);
+    }
+    *toks = toks->tail();
+    n = (token*)toks->ith(0);
+    if (n->kind != token::Semicol) {
+        printf("expected ';' at end of enum declaration\n");
+        exit(-1);
+    }
+    *toks = toks->tail();
+    ret.reverse();
+    return ret;
+}
+
+decl* parse_decl(clist* toks) {
+    decl* ret = (decl*)malloc(sizeof(decl));
+
+    token* n = (token*)toks->ith(0);
+    if (n->kind == token::Struct) {
+        ret->kind = decl::Struct;
+        *toks = toks->tail();
+        ret->dat.struct_dat.decls = parse_container_decl(toks, &ret->dat.struct_dat.name);
+        return ret;
+    } else if (n->kind == token::Union) {
+        ret->kind = decl::Union;
+        *toks = toks->tail();
+        ret->dat.union_dat.decls = parse_container_decl(toks, &ret->dat.union_dat.name);
+        return ret;
+    } else if (n->kind == token::Enum) {
+        ret->kind == decl::Enum;
+        ret->dat.enum_dat.vlues = clist::new_clist(sizeof(char*));
+        *toks = toks->tail();
+
+        n = (token*)toks->ith(0);
+        if (n->kind == token::Ident) {
+            ret->dat.enum_dat.name = n->dat.ident_dat;
+            *toks = toks->tail();
+        } else {
+            ret->dat.enum_dat.name = nullptr;
+        }
+        n = (token*)toks->ith(0);
+        if (n->kind != token::LBRACK) {
+            printf("expected '{' for enum declaration\n");
+            exit(-1);
+        }
+        *toks = toks->tail();
+
+        n = (token*)toks->ith(0);
+        while (n->kind != token::RBRACK)
+        { // this is absolutely horrendous and will sometime parse nonsense, but it will parse correct enums
+            if (n->kind != token::Comma)
+            {
+                if (n->kind != token::Ident)
+                {
+                    printf("expected ident in enum declaration\n");
+                    exit(-1);
+                }
+                ret->dat.enum_dat.vlues.push(&n->dat.ident_dat);
+            }
+            *toks = toks->tail();
+            n = (token*)toks->ith(0);
+        }
+        *toks = toks->tail();
+
+        n = (token*)toks->ith(0);
+        if (n->kind != token::Semicol) {
+            printf("expected ';' at end of enum declaration\n");
+            exit(-1);
+        }
+        *toks = toks->tail();
+        ret->dat.enum_dat.vlues.reverse();
+        return ret;
+    }
+
+    
+    return parse_var_decl(toks);
 }
 
 

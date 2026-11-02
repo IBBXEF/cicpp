@@ -57,9 +57,14 @@ struct typ
 
 struct decl
 {
-    const char* name;
-    typ* t;
-    rval* v;
+    enum {Var, Func, Struct, Enum, Union} kind;
+
+    union {
+        struct { const char* name; typ* t; rval* v; } var_dat;
+        struct { const char* name; clist decls; }  struct_dat;
+        struct { const char* name; clist decls; }  union_dat;
+        struct { const char* name; clist vlues; }  enum_dat;
+    } dat;
 };
 
 
