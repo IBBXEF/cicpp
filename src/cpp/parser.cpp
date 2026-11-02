@@ -42,16 +42,22 @@ typ* parse_typ(clist* toks) {
     typ* t = (typ*)malloc(sizeof(typ));
     if (curr->kind == token::TVoid) {
         t->kind = typ::TVoid;
+        *toks = toks->tail();
     } else if (curr->kind == token::TInt) {
         t->kind = typ::TInt;
+        *toks = toks->tail();
     } else if (curr->kind == token::TChar) {
         t->kind = typ::TChar;
+        *toks = toks->tail();
+    } else if (curr->kind == token::Const) {
+        t->kind = typ::TConst;
+        *toks = toks->tail();
+        t->dat.const_dat = parse_typ(toks);
     } else {
         printf("invalid type identifier\n");
         exit(-1);
     }
 
-    *toks = toks->tail();
     while (((token*)toks->ith(0))->kind == token::Star) {
         typ* p = (typ*)malloc(sizeof(typ));
         p->kind = typ::TPtr;

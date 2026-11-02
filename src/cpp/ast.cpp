@@ -74,11 +74,13 @@ struct typ
         TVoid,
         TInt,
         TChar,
-        TPtr
+        TPtr,
+        TConst
     } kind;
 
     union {
         typ* ptr_dat;
+        typ* const_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident) {
@@ -94,6 +96,10 @@ struct typ
         } else if (kind == TPtr) {
             dat.ptr_dat->print_to_file(fptr, ident);
             fprintf(fptr, "*");
+        } else if (kind == TConst) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "const ");
+            dat.const_dat->print_to_file(fptr, 0);
         }
     }
 };

@@ -18,6 +18,7 @@ struct token
         Return,
         While,
 
+        Const,
         Type,
         Func,
 
@@ -91,6 +92,8 @@ void pop_token_stack(int* cou, clist* l, const char* str) {
         tok.kind = token::Type;
     } else if (!strncmp("func", str, *cou) && *cou == 4) {
         tok.kind = token::Func;
+    } else if (!strncmp("const", str, *cou) && *cou == 5) {
+        tok.kind = token::Const;
     } else if (!strncmp("include", str, *cou) && *cou == 7) {
         tok.kind = token::Include;
     } else if (*str >= '0' && *str <= '9') {
