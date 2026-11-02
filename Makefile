@@ -16,6 +16,8 @@ tests: build
 	./main tests/parsing/ex2.cpp
 	./main tests/parsing/ex3.cpp
 	./main tests/parsing/ex4.c
+	./main tests/parsing/ex5.c
+	./main tests/parsing/ex6.c
 
 run: build
 	./_build/main

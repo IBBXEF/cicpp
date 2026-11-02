@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <stdio.h>
 
 int ident_lvl = 2;
@@ -19,10 +21,11 @@ struct lval
 
     union
     {
-        char* var_dat;
+        const char* var_dat;
         struct { rval* arr; rval* ind; } ind_dat;
     } dat;
-    
+
+    void print_to_file(FILE* fptr);
 };
 
 struct binop
@@ -48,10 +51,22 @@ struct rval
     void print_to_file(FILE* fptr) {
         if (kind == Int) {
             fprintf(fptr, "%i", dat.int_dat);
+        } else if (kind == Lval) {
+            dat.lval_dat->print_to_file(fptr);
         }
     }
 };
 
+void lval::print_to_file(FILE* fptr) {
+    if (kind == Var) {
+        fprintf(fptr, "%s", dat.var_dat);
+    } else if (kind == Index) {
+        dat.ind_dat.arr->print_to_file(fptr);
+        fprintf(fptr, "[");
+        dat.ind_dat.ind->print_to_file(fptr);
+        fprintf(fptr, "]");
+    }
+}
 
 struct typ
 {
@@ -84,19 +99,41 @@ struct typ
 };
 
 
+struct instr
+{
+    enum { Set } kind;
+
+    union {
+        struct { lval* l; rval* r; } set_dat;
+    } dat;
+
+    void print_to_file(FILE* fptr, int ident) {
+        if (kind == Set) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            dat.set_dat.l->print_to_file(fptr);
+            fprintf(fptr, " = ");
+            dat.set_dat.r->print_to_file(fptr);
+            fprintf(fptr, ";\n");
+        }
+    }
+};
+
+
 struct decl
 {
-    enum {Var, Func, Struct, Enum, Union, Include} kind;
+    enum { Var, Func, Struct, Enum, Union, Include } kind;
 
     union {
         struct { const char* name; typ* t; rval* v; } var_dat;
+        struct { const char* name; typ* ret_t;
+                 clist args_decls; clist* instrs; }  func_dat; // if instrs is nullptr, it is a function prototype
         struct { const char* name; clist decls; }  struct_dat;
         struct { const char* name; clist decls; }   union_dat;
         struct { const char* name; clist vlues; }    enum_dat;
         struct { const char* file; }              include_dat;
     } dat;
 
-    void print_to_file(FILE* fptr, int ident) {
+    void print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
         if (kind == Include) {
             print_n_spaces(ident * ident_lvl, fptr);
             if (dat.include_dat.file[0] == '~' && dat.include_dat.file[1] == '/') {
@@ -111,7 +148,32 @@ struct decl
                 fprintf(fptr, " = ");
                 dat.var_dat.v->print_to_file(fptr);
             }
-            fprintf(fptr, ";\n");
+            if (print_decl_end) {
+                fprintf(fptr, ";\n");
+            }
+        } else if (kind == Func) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            dat.func_dat.ret_t->print_to_file(fptr, ident);
+            fprintf(fptr, " %s(", dat.func_dat.name);
+            for (int i = 0; i < dat.func_dat.args_decls.len(); i++) {
+                decl* d = (decl*)dat.func_dat.args_decls.ith(i);
+                d->print_to_file(fptr, 0, false);
+                if (i != dat.func_dat.args_decls.len() - 1) {
+                    fprintf(fptr, ", ");
+                }
+            }
+            fprintf(fptr, ")");
+            
+            if (dat.func_dat.instrs) {
+                fprintf(fptr, "{\n");
+                for (int i = 0; i < dat.func_dat.instrs->len(); i++) {
+                    instr* ins = (instr*)dat.func_dat.instrs->ith(i);
+                    ins->print_to_file(fptr, ident+1);
+                }
+                fprintf(fptr, "}\n");
+            } else {
+                fprintf(fptr, ";\n");
+            }
         } else if (kind == Struct) {
             print_n_spaces(ident * ident_lvl, fptr);
             if (dat.struct_dat.name) {

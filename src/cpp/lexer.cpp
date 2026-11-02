@@ -21,6 +21,7 @@ struct token
         Struct,
         Enum,
         Union,
+        Func,
 
         Include,
 
@@ -32,7 +33,9 @@ struct token
         RBRACK,
         
         BAnd,
+        BOr,
         LAnd,
+        LOr,
         LNot,
         Star,
         Plus,
@@ -92,6 +95,8 @@ void pop_token_stack(int* cou, clist* l, const char* str) {
         tok.kind = token::Enum;
     } else if (!strncmp("union", str, *cou) && *cou == 5) {
         tok.kind = token::Union;
+    } else if (!strncmp("func", str, *cou) && *cou == 4) {
+        tok.kind = token::Func;
     } else if (!strncmp("include", str, *cou) && *cou == 7) {
         tok.kind = token::Include;
     } else if (*str >= '0' && *str <= '9') {
@@ -162,7 +167,7 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
         } else if (*cou == 1) {
             if (c != '\'')
             {
-                printf("immediate character value must be exactly one character long\n");
+                printf("immediate character value must be exactly one character long: found %c instead of '\n", c);
                 exit(-1);
             }
             
@@ -179,10 +184,10 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
         }
         return;
     } else if (*state == lexing_state::LEXING_CHAR_SPECIAL) {
-        if (*cou = 1) {
+        if (*cou == 1) {
             if (c != '\'')
             {
-                printf("immediate character value must be exactly one character long\n");
+                printf("special immediate character value must be exactly one character long: found %c instead of '\n", c);
                 exit(-1);
             }
             
@@ -286,6 +291,14 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
             ((token*)ret->ith(0))->kind = token::LAnd;
         } else {
             token tok = {.kind = token::BAnd};
+            ret->push(&tok);
+        }
+    } else if (c == '|') {
+        pop_token_stack(cou, ret, last_buffer);
+        if (ret->len() && ((token*)ret->ith(0))->kind == token::BOr) { // last token was an '|'
+            ((token*)ret->ith(0))->kind = token::LOr;
+        } else {
+            token tok = {.kind = token::BOr};
             ret->push(&tok);
         }
     } else if (c == '!') {
