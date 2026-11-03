@@ -34,6 +34,8 @@ void pop_token_stack(int* cou, old_clist* l, const char* str) {
         tok.kind = token::Func;
     } else if (!strncmp("static", str, *cou) && *cou == 6) {
         tok.kind = token::Static;
+    } else if (!strncmp("specialize", str, *cou) && *cou == 10) {
+        tok.kind = token::Specialize;
     } else if (!strncmp("const", str, *cou) && *cou == 5) {
         tok.kind = token::Const;
     } else if (!strncmp("as", str, *cou) && *cou == 2) {

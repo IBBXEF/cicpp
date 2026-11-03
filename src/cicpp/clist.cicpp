@@ -1,12 +1,12 @@
 
 #include "stdlib.h"
 
-type _clist {
-    void* dat;
-    _clist* next;
-}
+type <dat_t> clist {
+    type _clist {
+        dat_t dat;
+        _clist* next;
+    }
 
-type clist {
     int datsize;
     _clist* l;
 
@@ -90,12 +90,14 @@ type clist {
         ret.l = (*l).next;
         return ret;
     }
+
+    static func clist new_clist(int datsize) {
+        clist r;
+        r.l = nullptr;
+        r.datsize = datsize;
+        return r;
+    }
 }
 
-func clist new_clist(int datsize) {
-    clist r;
-    r.l = nullptr;
-    r.datsize = datsize;
-    return r;
-}
+// specialize clist<void*> as clist_v
 

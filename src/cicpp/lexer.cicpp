@@ -32,6 +32,7 @@ type token {
     Type;
     Func;
     Static;
+    Specialize;
 
     Include;
 

@@ -184,7 +184,7 @@ struct decl
     };
     
 
-    enum { Var, Func, Type, Include, Static } kind;
+    enum { Var, Func, Type, Include, Static, Templated, Specialize } kind;
 
     union {
         struct { const char* name; typ* t; rval* v; } var_dat;
@@ -194,6 +194,8 @@ struct decl
                  old_clist other_decls;               }  type_dat;
         struct { const char* file; }              include_dat;
         struct { decl* d; }              static_dat;
+        struct { decl* d; const char* param_name; } templated_dat;
+        struct { const char* templated_t; decl* param; } specialize_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident, bool print_decl_end);
@@ -273,7 +275,9 @@ struct instr
 };
 
 void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
-    if (kind == Include) {
+    if (kind == Templated) {
+        // we do nothing, a template alone does not count as a type
+    } else if (kind == Include) {
         print_n_spaces(ident * ident_lvl, fptr);
         if (dat.include_dat.file[0] == '.' && dat.include_dat.file[1] == '/') {
             fprintf(fptr, "#include \"%s\"\n", dat.include_dat.file+2);

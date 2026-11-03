@@ -504,6 +504,25 @@ decl* parse_type_decl(old_clist* toks) {
     if (n->kind == token::Ident) {
         ret->dat.type_dat.name = n->dat.Ident_dat.str;
         *toks = toks->tail();
+    } else if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Lt) {
+        // declaration is a templated type
+        *toks = toks->tail();
+        ret->kind = decl::Templated;
+        n = (token*)toks->ith(0);
+        if (n->kind != token::Ident) {
+            printf("expected identifier as template parameter, got token id %d\n", (int)n->kind);
+            exit(-1);
+        }
+        ret->dat.templated_dat.param_name = n->dat.Ident_dat.str;
+        *toks = toks->tail();
+        n = (token*)toks->ith(0);
+        if (!(n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Gt)) {
+            printf("expected '>' after template parameter, got token id %d\n", (int)n->kind);
+            exit(-1);
+        }
+        *toks = toks->tail();
+        ret->dat.templated_dat.d = parse_type_decl(toks);
+        return ret;
     } else {
         ret->dat.type_dat.name = nullptr;
     }
