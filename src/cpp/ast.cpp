@@ -105,7 +105,9 @@ struct rval
         } else if (kind == Lval) {
             dat.lval_dat->print_to_file(fptr);
         } else if (kind == Binop) {
+            fprintf(fptr, "(");
             dat.binop_dat.v1->print_to_file(fptr);
+            fprintf(fptr, ")");
             if (dat.binop_dat.op.kind == binop::Eq) {
                 fprintf(fptr, " == ");
             } else if (dat.binop_dat.op.kind == binop::Neq) {
@@ -127,14 +129,17 @@ struct rval
             } else if (dat.binop_dat.op.kind == binop::Add) {
                 fprintf(fptr, " + ");
             }
+            fprintf(fptr, "(");
             dat.binop_dat.v2->print_to_file(fptr);
+            fprintf(fptr, ")");
         } else if (kind == Unop) {
             if (dat.unop_dat.op.kind == unop::Lnot) {
-                fprintf(fptr, "!");
+                fprintf(fptr, "!(");
             } else if (dat.unop_dat.op.kind == unop::Neg) {
-                fprintf(fptr, "-");
+                fprintf(fptr, "-(");
             }
             dat.unop_dat.v->print_to_file(fptr);
+            fprintf(fptr, ")");
         } else if (kind == Fcall) {
             dat.fcall_dat.func->print_to_file(fptr);
             fprintf(fptr, "(");

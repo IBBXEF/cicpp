@@ -34,15 +34,7 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         exit(-1);
     }
     n = (token*)toks->ith(0);
-    if (n->kind == token::Binop) {
-        *toks = toks->tail();
-        rval* opret = (rval*)malloc(sizeof(rval));
-        opret->kind = rval::Binop;
-        opret->dat.binop_dat.op = n->dat.Binop_dat.op;
-        opret->dat.binop_dat.v1 = ret;
-        opret->dat.binop_dat.v2 = parse_rval(toks);
-        ret = opret;
-    } if (n->kind == token::LPAREN) {
+    if (n->kind == token::LPAREN) {
         rval* fcal = (rval*)malloc(sizeof(rval));
         fcal->kind = rval::Fcall;
         fcal->dat.fcall_dat.func = ret;
@@ -62,7 +54,19 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         fcal->dat.fcall_dat.args.reverse();
         *toks = toks->tail();
         ret = fcal;
-    } else if (n->kind == token::As) {
+    }
+    n = (token*)toks->ith(0);
+    if (n->kind == token::Binop) {
+        *toks = toks->tail();
+        rval* opret = (rval*)malloc(sizeof(rval));
+        opret->kind = rval::Binop;
+        opret->dat.binop_dat.op = n->dat.Binop_dat.op;
+        opret->dat.binop_dat.v1 = ret;
+        opret->dat.binop_dat.v2 = parse_rval(toks);
+        ret = opret;
+    }
+    n = (token*)toks->ith(0);
+    if (n->kind == token::As) {
         *toks = toks->tail();
         rval* opret = (rval*)malloc(sizeof(rval));
         opret->kind = rval::Typecast;
