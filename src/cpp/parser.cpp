@@ -7,7 +7,7 @@
 
 lval* parse_lval(clist* toks);
 
-rval* parse_rval(clist* toks) {
+rval* parse_rval(clist* toks, bool can_fallback = true) {
     rval* ret = (rval*)malloc(sizeof(rval));
     token* n = (token*)toks->ith(0);
 
@@ -15,28 +15,70 @@ rval* parse_rval(clist* toks) {
         *toks = toks->tail();
         ret->kind = rval::Int;
         ret->dat.int_dat = n->dat.VInt_dat.dat;
-    } else { // we fallback to parsing an lvalue
+    } else if (can_fallback) { // we fallback to parsing an lvalue
         ret->kind = rval::Lval;
         ret->dat.lval_dat = parse_lval(toks);
+    } else {
+        printf("invalid rvalue (got token id %d)\n", (int)n->kind);
+        exit(-1);
     }
     n = (token*)toks->ith(0);
-    if (n->kind == token::VInt) {}
+    if (n->kind == token::Binop) {
+        *toks = toks->tail();
+        rval* opret = (rval*)malloc(sizeof(rval));
+        opret->kind = rval::Binop;
+        opret->dat.binop_dat.op = n->dat.Binop_dat.op;
+        opret->dat.binop_dat.v1 = ret;
+        opret->dat.binop_dat.v2 = parse_rval(toks);
+        ret = opret;
+    }
 
     return ret;
 }
 
 lval* parse_lval(clist* toks) {
     lval* ret = (lval*)malloc(sizeof(lval));
-    token* curr = (token*)toks->ith(0);
+    token* n = (token*)toks->ith(0);
 
-    if (curr->kind == token::Ident) {
+    if (n->kind == token::Ident) {
         *toks = toks->tail();
         ret->kind = lval::Var;
-        ret->dat.var_dat = curr->dat.Ident_dat.str;
-        return ret;
+        ret->dat.var_dat = n->dat.Ident_dat.str;
+        n = (token*)toks->ith(0);
+        if (n->kind == token::LSQUAR) { // we are parsing an array set
+            *toks = toks->tail();
+            rval* arr = (rval*)malloc(sizeof(rval));
+            arr->kind = rval::Lval;
+            arr->dat.lval_dat = ret;
+            ret = (lval*)malloc(sizeof(lval));
+            ret->kind = lval::Index;
+            ret->dat.ind_dat.arr = arr;
+            ret->dat.ind_dat.ind = parse_rval(toks);
+            n = (token*)toks->ith(0);
+            if (n->kind != token::RSQUAR) {
+                printf("expected ']' for array index lvalue");
+                exit(-1);
+            }
+            *toks = toks->tail();
+        }
+    } else { // we try to parse an array index
+        ret->kind = lval::Index;
+        ret->dat.ind_dat.arr = parse_rval(toks, false);
+        n = (token*)toks->ith(0);
+        if (n->kind != token::LSQUAR) {
+            printf("expected '[' for array index lvalue");
+            exit(-1);
+        }
+        *toks = toks->tail();
+        ret->dat.ind_dat.ind = parse_rval(toks);
+        n = (token*)toks->ith(0);
+        if (n->kind != token::RSQUAR) {
+            printf("expected ']' for array index lvalue");
+            exit(-1);
+        }
+        *toks = toks->tail();
     }
-    printf("invalid lvalue\n");
-    exit(-1);
+    return ret;
 }
 
 typ* parse_typ(clist* toks) {
@@ -123,7 +165,7 @@ clist parse_instr_block(clist* toks) {
     
     token* n = (token*)toks->ith(0);
     if (n->kind != token::LBRACK) {
-        printf("expected '{' after arguments in function declaration\n");
+        printf("expected '{' to start a code block\n");
         exit(-1);
     }
     *toks = toks->tail();

@@ -42,7 +42,7 @@ struct rval
     union {
         lval* lval_dat;
         int int_dat;
-        struct { rval* v1; binop op; rval* v2; } ind_dat;
+        struct { rval* v1; binop op; rval* v2; } binop_dat;
     } dat;
 
     void print_to_file(FILE* fptr) {
@@ -50,6 +50,30 @@ struct rval
             fprintf(fptr, "%i", dat.int_dat);
         } else if (kind == Lval) {
             dat.lval_dat->print_to_file(fptr);
+        } else if (kind == Binop) {
+            dat.binop_dat.v1->print_to_file(fptr);
+            if (dat.binop_dat.op.kind == binop::Eq) {
+                fprintf(fptr, " == ");
+            } else if (dat.binop_dat.op.kind == binop::Neq) {
+                fprintf(fptr, " != ");
+            } else if (dat.binop_dat.op.kind == binop::Lt) {
+                fprintf(fptr, " < ");
+            } else if (dat.binop_dat.op.kind == binop::Leq) {
+                fprintf(fptr, " <= ");
+            } else if (dat.binop_dat.op.kind == binop::Gt) {
+                fprintf(fptr, " > ");
+            } else if (dat.binop_dat.op.kind == binop::Geq) {
+                fprintf(fptr, " >= ");
+            } else if (dat.binop_dat.op.kind == binop::Div) {
+                fprintf(fptr, " / ");
+            } else if (dat.binop_dat.op.kind == binop::Mul) {
+                fprintf(fptr, " * ");
+            } else if (dat.binop_dat.op.kind == binop::Sub) {
+                fprintf(fptr, " - ");
+            } else if (dat.binop_dat.op.kind == binop::Add) {
+                fprintf(fptr, " + ");
+            }
+            dat.binop_dat.v2->print_to_file(fptr);
         }
     }
 };

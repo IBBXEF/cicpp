@@ -7,7 +7,7 @@ struct binop {
   enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt } kind;
 };
 struct token {
-  enum { Nothing, TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Type, Func, Include, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, LNot, Eq, Leq, Geq, Lt, Gt, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident } kind;
+  enum { Nothing, TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Type, Func, Include, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, LNot, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident } kind;
   union {
     struct {
       binop op;
@@ -22,8 +22,4 @@ struct token {
       const char* str;
     } Ident_dat;
    } dat;
-};
-struct regex_match_state {
-  const char* regex;
-  clist pos_pos;
 };

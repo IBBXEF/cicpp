@@ -38,12 +38,6 @@ type token {
     Binop { binop op; };
     LNot;
 
-    Eq;
-    Leq;
-    Geq;
-    Lt;
-    Gt;
-
     Comma;
     Semicol;
     Set;
@@ -56,12 +50,4 @@ type token {
     VString {const char* str;};
 
     Ident {const char* str;};
-};
-
-// func int try_match_regex(const char* regex, const char* string) {
-//     if (regex[0] == '\0') {
-//         return 0;
-//     }
-//     return 0;
-// }
-
+}

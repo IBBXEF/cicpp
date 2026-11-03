@@ -12,12 +12,18 @@ func int ternary(bool b, int t, int f) {
     }
 }
 
+int a = 1 + 1;
+
+int* ptr0 = 0;
+
 func int tri_ternary(int b, int _1, int _2, int _3) {
-    if b {
+    if b == 1 {
         return _1;
-    } elif b {
+    } elif b == 2 {
         return _2;
     } else {
+        b = _1 - _2;
         return _3;
     }
+    ptr0[b] = _3;
 }
