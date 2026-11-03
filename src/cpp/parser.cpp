@@ -544,14 +544,19 @@ decl* parse_type_decl(old_clist* toks) {
 
 decl* parse_decl(old_clist* toks) {
     token* n = (token*)toks->ith(0);
-    if (n->kind == token::Type) {
+    if (n->kind == token::Static) {
+        *toks = toks->tail();
+        decl* ret = (decl*)malloc(sizeof(decl));
+        ret->kind = decl::Static;
+        ret->dat.static_dat.d = parse_decl(toks);
+        return ret;
+    } else if (n->kind == token::Type) {
         *toks = toks->tail();
         return parse_type_decl(toks);
     } else if (n->kind == token::Func) {
         *toks = toks->tail();
         return parse_fun_decl(toks);
     }
-
     return parse_var_decl(toks, true);
 }
 

@@ -184,7 +184,7 @@ struct decl
     };
     
 
-    enum { Var, Func, Type, Include } kind;
+    enum { Var, Func, Type, Include, Static } kind;
 
     union {
         struct { const char* name; typ* t; rval* v; } var_dat;
@@ -193,6 +193,7 @@ struct decl
         struct { const char* name; old_clist constrs;
                  old_clist other_decls;               }  type_dat;
         struct { const char* file; }              include_dat;
+        struct { decl* d; }              static_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident, bool print_decl_end);
@@ -279,6 +280,10 @@ void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
         } else {
             fprintf(fptr, "#include <%s>\n", dat.include_dat.file);
         }
+    } else if (kind == Static) {
+        print_n_spaces(ident * ident_lvl, fptr);
+        fprintf(fptr, "static\n");
+        dat.static_dat.d->print_to_file(fptr, ident);
     } else if (kind == Var) {
         dat.var_dat.t->print_to_file(fptr, ident);
         fprintf(fptr, " %s", dat.var_dat.name);
