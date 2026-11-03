@@ -21,6 +21,16 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         ret->kind = rval::Unop;
         ret->dat.unop_dat.op = n->dat.Unop_dat.op;
         ret->dat.unop_dat.v = parse_rval(toks);
+    } else if (n->kind == token::LPAREN) {
+        *toks = toks->tail();
+        free(ret);
+        ret = parse_rval(toks);
+        n = (token*)toks->ith(0);
+        if (n->kind != token::RPAREN) {
+            printf("unmatched '(' (expected ')' at end of rvalue)\n");
+            exit(-1);
+        }
+        *toks = toks->tail();
     } else if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Sub) { // the token for '-' is not a binop, we have to treat it separately
         *toks = toks->tail();
         ret->kind = rval::Unop;
