@@ -3,6 +3,8 @@ main
 test
 .vscode/**
 
+out.c
+
 _build/**
 
 !*/
