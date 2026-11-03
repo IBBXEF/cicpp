@@ -2,10 +2,10 @@
 
 int a;
 
-type emp {};
+type emp {}
 
 void* c;
 
-type e {A; B; C; EEEE;}; // similar to an enum
+type e {A; B; C; EEEE;} // similar to an enum
 
 char b;

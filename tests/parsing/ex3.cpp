@@ -2,7 +2,7 @@
 type u
 {
     int a;
-};
+}
 
 type uuuu
 {
@@ -10,7 +10,7 @@ type uuuu
     int a;
     two {int o; int t;};
     char** b;
-};
+}
 
 // yoyoyoyo this is a comment @@ ☺
 
@@ -21,8 +21,8 @@ type a
         type c
         {
             int a;
-        };
-    };
-};
+        }
+    }
+}
 
 

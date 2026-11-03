@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-int ident_lvl = 2;
+const int ident_lvl = 2;
 void print_n_spaces(int n, FILE* fptr) {
     for (int i = 0; i < n; i++) {
         fprintf(fptr, " ");
@@ -112,11 +112,12 @@ struct typ
 
 struct instr
 {
-    enum { Set, Return } kind;
+    enum { Set, Return, If } kind;
 
     union {
-        struct { lval* l; rval* r; } set_dat;
-        struct { rval* v; }          ret_dat;
+        struct { lval* l; rval* r; }     set_dat;
+        struct { rval* v; }              ret_dat;
+        struct { rval* b; clist instrs; } if_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident) {
@@ -131,6 +132,17 @@ struct instr
             fprintf(fptr, "return ");
             dat.ret_dat.v->print_to_file(fptr);
             fprintf(fptr, ";\n");
+        } else if (kind == If) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "if (");
+            dat.if_dat.b->print_to_file(fptr);
+            fprintf(fptr, ") {\n");
+            for (int i = 0; i < dat.if_dat.instrs.len(); i++) {
+                instr* ist = (instr*)dat.if_dat.instrs.ith(i);
+                ist->print_to_file(fptr, ident+1);
+            }
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "}");
         }
     }
 };

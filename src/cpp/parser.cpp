@@ -111,6 +111,33 @@ decl* parse_var_decl(clist* toks, bool check_semicolon) {
 
 decl* parse_decl(clist* toks);
 
+instr* parse_instr(clist* toks);
+
+clist parse_instr_block(clist* toks) {
+    clist ret = clist::new_clist(sizeof(instr));
+    
+    token* n = (token*)toks->ith(0);
+    if (n->kind != token::LBRACK) {
+        printf("expected '{' after arguments in function declaration\n");
+        exit(-1);
+    }
+    *toks = toks->tail();
+
+    n = (token*)toks->ith(0);
+    while (n->kind != token::RBRACK) {
+        instr* instrs = parse_instr(toks);
+        if (instrs) {
+            ret.push(instrs);
+            free(instrs);
+        }
+        n = (token*)toks->ith(0);
+    }
+    ret.reverse();
+    *toks = toks->tail();
+    return ret;
+}
+
+
 instr* parse_instr(clist* toks) {
     token* n = (token*)toks->ith(0);
     if (n->kind == token::Return) {
@@ -125,8 +152,14 @@ instr* parse_instr(clist* toks) {
         }
         *toks = toks->tail();
         return ret;
+    } else if (n->kind == token::If) {
+        *toks = toks->tail();
+        instr* ret = (instr*)malloc(sizeof(instr));
+        ret->kind = instr::If;
+        ret->dat.if_dat.b = parse_rval(toks);
+        ret->dat.if_dat.instrs = parse_instr_block(toks);
+        return ret;
     }
-    
 
     clist left = *toks;
     while (toks->len()) {
@@ -200,25 +233,7 @@ decl* parse_fun_decl(clist* toks) {
         return ret;
     }
     ret->dat.func_dat.instrs = (clist*)malloc(sizeof(clist));
-    *ret->dat.func_dat.instrs = clist::new_clist(sizeof(instr));
-    
-    if (n->kind != token::LBRACK) {
-        printf("expected '{' after arguments in function declaration");
-        exit(-1);
-    }
-    *toks = toks->tail();
-
-    n = (token*)toks->ith(0);
-    while (n->kind != token::RBRACK) {
-        instr* instrs = parse_instr(toks);
-        if (instrs) {
-            ret->dat.func_dat.instrs->push(instrs);
-            free(instrs);
-        }
-        n = (token*)toks->ith(0);
-    }
-    ret->dat.func_dat.instrs->reverse();
-    *toks = toks->tail();
+    *ret->dat.func_dat.instrs = parse_instr_block(toks);
 
     return ret;
 }
@@ -299,12 +314,6 @@ decl* parse_type_decl(clist* toks) {
             ret->dat.type_dat.constrs.push(&constr);
         }
         n = (token*)toks->ith(0);
-    }
-    *toks = toks->tail();
-    n = (token*)toks->ith(0);
-    if (n->kind != token::Semicol) {
-        printf("expected ';' at end of type declaration\n");
-        exit(-1);
     }
     *toks = toks->tail();
     ret->dat.type_dat.constrs.reverse();

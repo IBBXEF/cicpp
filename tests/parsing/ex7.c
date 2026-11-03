@@ -4,9 +4,9 @@ func int first(int a, int b) {
 }
 
 func int ternary(bool b, int t, int f) {
-    // if (b)
-    // {
-    //     return t;
-    // }
+    if b
+    {
+        return t;
+    }
     return f;
 }

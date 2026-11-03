@@ -8,9 +8,11 @@ clean:
 	rm -fr _build
 
 _build/%.c: src/new/%.new main
+	mkdir -p _build
 	./main $< -o $@
 
 _build/test/%.c: src/new/%.new main
+	mkdir -p _build
 	mkdir -p _build/test
 	./test $< -o $@
 
@@ -23,7 +25,7 @@ build_test: $(SOURCE_FILES) $(TEMP_TEST_FILES)
 	mkdir -p _build/test
 	g++ -I_build/test -Isrc/cpp src/cpp/main.cpp -o _build/main
 
-replace: tests
+replace:
 	cp _build/main main
 
 tests: build
@@ -39,7 +41,3 @@ tests: build
 
 	make build_test
 	diff test _build/main
-	
-
-run: build
-	./_build/main

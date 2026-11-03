@@ -2,7 +2,7 @@
 type simpl { // equivalent to a struct
     int a;
     char b;
-};
+}
 
 
 type coucou
@@ -10,9 +10,9 @@ type coucou
     C1 {int a;};
     C2 {int reee = 0;};
 
-    type sssi {char* i;};
-};
+    type sssi {char* i;}
+}
 
-type {int*** t;};
+type {int*** t;}
 
-type araer{ E {char *a;}; K; R;};
+type araer{ E {char *a;}; K; R;}
