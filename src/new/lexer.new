@@ -11,6 +11,7 @@ type token {
     TChar;
 
     If;
+    Elif;
     Else;
     Return;
     While;

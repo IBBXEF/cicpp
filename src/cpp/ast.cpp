@@ -2,6 +2,7 @@
 #pragma once
 
 #include <stdio.h>
+#include "utils.cpp"
 
 const int ident_lvl = 2;
 void print_n_spaces(int n, FILE* fptr) {
@@ -112,12 +113,13 @@ struct typ
 
 struct instr
 {
-    enum { Set, Return, If } kind;
+    enum { Set, Return, If, While } kind;
 
     union {
         struct { lval* l; rval* r; }     set_dat;
         struct { rval* v; }              ret_dat;
-        struct { rval* b; clist instrs; } if_dat;
+        struct { rval* b; clist truebrc; clist falsebrc; } if_dat;
+        struct { rval* b; clist instrs; } while_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident) {
@@ -137,13 +139,40 @@ struct instr
             fprintf(fptr, "if (");
             dat.if_dat.b->print_to_file(fptr);
             fprintf(fptr, ") {\n");
-            for (int i = 0; i < dat.if_dat.instrs.len(); i++) {
-                instr* ist = (instr*)dat.if_dat.instrs.ith(i);
+            for (int i = 0; i < dat.if_dat.truebrc.len(); i++) {
+                instr* ist = (instr*)dat.if_dat.truebrc.ith(i);
                 ist->print_to_file(fptr, ident+1);
             }
             print_n_spaces(ident * ident_lvl, fptr);
             fprintf(fptr, "}");
+            if (dat.if_dat.falsebrc.len() == 1) {
+                fprintf(fptr, " else\n");
+                ((instr*)dat.if_dat.falsebrc.ith(0))->print_to_file(fptr, ident+1);
+            } else if (dat.if_dat.falsebrc.len() > 1) {
+                fprintf(fptr, " else {\n");
+                for (int i = 0; i < dat.if_dat.truebrc.len(); i++) {
+                    instr* ist = (instr*)dat.if_dat.truebrc.ith(i);
+                    ist->print_to_file(fptr, ident+1);
+                }
+                print_n_spaces(ident * ident_lvl, fptr);
+                fprintf(fptr, "}\n");
+            }
+        } else if (kind == While) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "while (");
+            dat.while_dat.b->print_to_file(fptr);
+            fprintf(fptr, ") {\n");
+            for (int i = 0; i < dat.while_dat.instrs.len(); i++) {
+                instr* ist = (instr*)dat.while_dat.instrs.ith(i);
+                ist->print_to_file(fptr, ident+1);
+            }
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "}");
+        } else {
+            printf("invalid kind of instruction (id %d)\n", (int)kind);
+            exit(-1);
         }
+        
     }
 };
 

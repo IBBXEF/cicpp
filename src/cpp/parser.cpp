@@ -157,7 +157,27 @@ instr* parse_instr(clist* toks) {
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::If;
         ret->dat.if_dat.b = parse_rval(toks);
-        ret->dat.if_dat.instrs = parse_instr_block(toks);
+        ret->dat.if_dat.truebrc = parse_instr_block(toks);
+        ret->dat.if_dat.falsebrc = clist::new_clist(sizeof(instr));
+        instr* curr = ret;
+        n = (token*)toks->ith(0);
+        while (n->kind == token::Elif) {
+            *toks = toks->tail();
+            instr cif;
+            cif.kind = instr::If;
+            cif.dat.if_dat.b = parse_rval(toks);
+            cif.dat.if_dat.truebrc = parse_instr_block(toks);
+            cif.dat.if_dat.falsebrc = clist::new_clist(sizeof(instr));
+            curr->dat.if_dat.falsebrc.push(&cif);
+            curr = (instr*)curr->dat.if_dat.falsebrc.ith(0);
+            n = (token*)toks->ith(0);
+        }
+        if (n->kind == token::Else) {
+            *toks = toks->tail();
+            clist block = parse_instr_block(toks);
+            curr->dat.if_dat.falsebrc.del();
+            curr->dat.if_dat.falsebrc = block;
+        }
         return ret;
     }
 
