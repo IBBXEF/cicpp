@@ -7,16 +7,19 @@ type regex_match_state {
 }
 
 func bool try_match_regex(regex_match_state* state, const char* string) {
-    clist newlist = clist::new_clist(sizeof(int));
+    clist newlist;
+    // newlist = clist::new_clist(sizeof(int));
     int i;
     i = 0;
     // while i < 
     if regex[regpos] == '\0' {
         return 0;
     }
-    if (*string == '\0') {
+    char k;
+    if *string == '\0' {
         return -1;
     }
+    char j;
     if regex[regpos] == '\\' {
         if regex[regpos+1] != *string {
             return -1;

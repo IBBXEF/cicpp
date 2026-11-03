@@ -26,6 +26,10 @@ func int tri_ternary(int b, int _1, int _2, int _3) {
         return _3;
     }
     ptr0[b] = _3;
+
+    void* p;
+    ptr0 = p as int*;
+
 }
 
 int i;

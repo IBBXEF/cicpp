@@ -21,7 +21,7 @@ _build/test2/%.c: src/cicpp/%.cicpp test
 	mkdir -p _build/test2
 	./test $< -o $@
 
-build: $(SOURCE_FILES) $(TEMP_TEST_FILES)
+build: $(SOURCE_FILES) $(TEMP_FILES)
 	mkdir -p _build
 	g++ -I_build -Isrc/cpp src/cpp/main.cpp -o _build/main
 

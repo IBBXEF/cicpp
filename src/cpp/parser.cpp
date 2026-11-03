@@ -6,6 +6,7 @@
 #include "lexer.cpp"
 
 lval* parse_lval(clist* toks);
+typ* parse_typ(clist* toks);
 
 rval* parse_rval(clist* toks, bool can_fallback = true) {
     rval* ret = (rval*)malloc(sizeof(rval));
@@ -61,6 +62,13 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         fcal->dat.fcall_dat.args.reverse();
         *toks = toks->tail();
         ret = fcal;
+    } else if (n->kind == token::As) {
+        *toks = toks->tail();
+        rval* opret = (rval*)malloc(sizeof(rval));
+        opret->kind = rval::Typecast;
+        opret->dat.typecast_dat.v = ret;
+        opret->dat.typecast_dat.t = parse_typ(toks);
+        ret = opret;
     }
 
     return ret;

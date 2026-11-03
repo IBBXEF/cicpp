@@ -27,6 +27,7 @@ type token {
     Return;
     While;
     Const;
+    As;
 
     Type;
     Func;

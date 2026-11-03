@@ -12,6 +12,49 @@ void print_n_spaces(int n, FILE* fptr) {
     }
 }
 
+
+struct typ
+{
+    enum {
+        TVoid,
+        TInt,
+        TChar,
+        TPtr,
+        TConst,
+        TIdent
+    } kind;
+
+    union {
+        typ* ptr_dat;
+        typ* const_dat;
+        const char* TIdent_dat;
+    } dat;
+
+    void print_to_file(FILE* fptr, int ident) {
+        if (kind == TInt) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "int");
+        } else if (kind == TChar) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "char");
+        } else if (kind == TVoid) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "void");
+        } else if (kind == TPtr) {
+            dat.ptr_dat->print_to_file(fptr, ident);
+            fprintf(fptr, "*");
+        } else if (kind == TIdent) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "%s", dat.TIdent_dat);
+        } else if (kind == TConst) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "const ");
+            dat.const_dat->print_to_file(fptr, 0);
+        }
+    }
+};
+
+
 struct rval;
 
 struct lval
@@ -38,7 +81,8 @@ struct rval
         Int,
         Binop,
         Unop,
-        Fcall
+        Fcall,
+        Typecast
     } kind;
 
     union {
@@ -47,11 +91,17 @@ struct rval
         struct { rval* v1; binop op; rval* v2; } binop_dat;
         struct { unop op; rval* v; } unop_dat;
         struct { rval* func; clist args; } fcall_dat;
+        struct { typ* t; rval* v; } typecast_dat;
     } dat;
 
     void print_to_file(FILE* fptr) {
         if (kind == Int) {
             fprintf(fptr, "%i", dat.int_dat);
+        } else if (kind == Typecast) {
+            fprintf(fptr, "(");
+            dat.typecast_dat.t->print_to_file(fptr, 0);
+            fprintf(fptr, ")");
+            dat.typecast_dat.v->print_to_file(fptr);
         } else if (kind == Lval) {
             dat.lval_dat->print_to_file(fptr);
         } else if (kind == Binop) {
@@ -109,47 +159,6 @@ void lval::print_to_file(FILE* fptr) {
         fprintf(fptr, "]");
     }
 }
-
-struct typ
-{
-    enum {
-        TVoid,
-        TInt,
-        TChar,
-        TPtr,
-        TConst,
-        TIdent
-    } kind;
-
-    union {
-        typ* ptr_dat;
-        typ* const_dat;
-        const char* TIdent_dat;
-    } dat;
-
-    void print_to_file(FILE* fptr, int ident) {
-        if (kind == TInt) {
-            print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "int");
-        } else if (kind == TChar) {
-            print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "char");
-        } else if (kind == TVoid) {
-            print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "void");
-        } else if (kind == TPtr) {
-            dat.ptr_dat->print_to_file(fptr, ident);
-            fprintf(fptr, "*");
-        } else if (kind == TIdent) {
-            print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "%s", dat.TIdent_dat);
-        } else if (kind == TConst) {
-            print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "const ");
-            dat.const_dat->print_to_file(fptr, 0);
-        }
-    }
-};
 
 
 struct decl
