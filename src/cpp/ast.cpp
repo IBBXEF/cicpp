@@ -61,13 +61,15 @@ struct lval
 {
     enum {
         Var,
-        Index
+        Index,
+        Field
     } kind;
 
     union
     {
         const char* var_dat;
         struct { rval* arr; rval* ind; } ind_dat;
+        struct { rval* stru; const char* field; } field_dat;
     } dat;
 
     void print_to_file(FILE* fptr);
@@ -79,6 +81,7 @@ struct rval
     enum {
         Lval,
         Int,
+        String,
         Binop,
         Unop,
         Fcall,
@@ -88,6 +91,7 @@ struct rval
     union {
         lval* lval_dat;
         int int_dat;
+        const char* string_dat;
         struct { rval* v1; binop op; rval* v2; } binop_dat;
         struct { unop op; rval* v; } unop_dat;
         struct { rval* func; clist args; } fcall_dat;
@@ -97,6 +101,8 @@ struct rval
     void print_to_file(FILE* fptr) {
         if (kind == Int) {
             fprintf(fptr, "%i", dat.int_dat);
+        } else if (kind == String) {
+            fprintf(fptr, "\"%s\"", dat.string_dat);
         } else if (kind == Typecast) {
             fprintf(fptr, "(");
             dat.typecast_dat.t->print_to_file(fptr, 0);
@@ -162,6 +168,10 @@ void lval::print_to_file(FILE* fptr) {
         fprintf(fptr, "[");
         dat.ind_dat.ind->print_to_file(fptr);
         fprintf(fptr, "]");
+    } else if (kind == Field) {
+        fprintf(fptr, "(");
+        dat.field_dat.stru->print_to_file(fptr);
+        fprintf(fptr, ").%s", dat.field_dat.field);
     }
 }
 

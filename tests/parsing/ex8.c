@@ -26,7 +26,7 @@ func bool try_match_regex(regex_match_state* state, const char* string) {
         }
         int ret;
         ret = 0;
-        try_match_regex(regex, string+1, regpos+1);
+        try_match_regex(regex, (string+1), regpos+1);
         if ret >= 0 {ret = ret + 1;}
         return ret;
     }

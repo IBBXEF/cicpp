@@ -16,6 +16,10 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         *toks = toks->tail();
         ret->kind = rval::Int;
         ret->dat.int_dat = n->dat.VInt_dat.dat;
+    } else if (n->kind == token::VString) {
+        *toks = toks->tail();
+        ret->kind = rval::String;
+        ret->dat.string_dat = n->dat.VString_dat.str;
     } else if (n->kind == token::Unop) {
         *toks = toks->tail();
         ret->kind = rval::Unop;
@@ -27,7 +31,7 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         ret = parse_rval(toks);
         n = (token*)toks->ith(0);
         if (n->kind != token::RPAREN) {
-            printf("unmatched '(' (expected ')' at end of rvalue)\n");
+            printf("unmatched '(' (expected ')' at end of rvalue, got token id %d)\n", (int)n->kind);
             exit(-1);
         }
         *toks = toks->tail();
@@ -84,7 +88,23 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         opret->dat.typecast_dat.t = parse_typ(toks);
         ret = opret;
     }
-
+    n = (token*)toks->ith(0);
+    if (n->kind == token::Dot && can_fallback) { // our expression if a structure field access
+        *toks = toks->tail();
+        lval* lv = (lval*)malloc(sizeof(lv));
+        lv->kind = lval::Field;
+        lv->dat.field_dat.stru = ret;
+        ret = (rval*)malloc(sizeof(rval));
+        ret->kind = rval::Lval;
+        n = (token*)toks->ith(0);
+        if (n->kind != token::Ident) {
+            printf("expected identifier for struct field name\n");
+            exit(-1);
+        }
+        *toks = toks->tail();
+        lv->dat.field_dat.field = n->dat.Ident_dat.str;
+        ret->dat.lval_dat = lv;
+    }
     return ret;
 }
 
@@ -113,6 +133,7 @@ lval* parse_lval(clist* toks) {
             }
             *toks = toks->tail();
         }
+        return ret;
     } else if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Mul) { // we are parsing a pointer dereference
         *toks = toks->tail();
         ret->kind = lval::Index;
@@ -120,23 +141,38 @@ lval* parse_lval(clist* toks) {
         ret->dat.ind_dat.ind->kind = rval::Int;
         ret->dat.ind_dat.ind->dat.int_dat = 0; // we parse *p as p[0]
         ret->dat.ind_dat.arr = parse_rval(toks);
-    } else { // we try to parse an array index
-        ret->kind = lval::Index;
-        ret->dat.ind_dat.arr = parse_rval(toks, false);
-        n = (token*)toks->ith(0);
-        if (n->kind != token::LSQUAR) {
-            printf("expected '[' for array index lvalue");
-            exit(-1);
-        }
-        *toks = toks->tail();
-        ret->dat.ind_dat.ind = parse_rval(toks);
-        n = (token*)toks->ith(0);
-        if (n->kind != token::RSQUAR) {
-            printf("expected ']' for array index lvalue");
-            exit(-1);
-        }
-        *toks = toks->tail();
+        return ret;
     }
+    // we try to parse an array index / a strctu field access
+    rval* mai = parse_rval(toks, false);
+    n = (token*)toks->ith(0);
+    if (n->kind == token::Dot) {
+        *toks = toks->tail();
+        ret->kind = lval::Field;
+        ret->dat.field_dat.stru = mai;
+        n = (token*)toks->ith(0);
+        if (n->kind != token::Ident) {
+            printf("expected identifier for struct field name\n");
+            exit(-1);
+        }
+        *toks = toks->tail();
+        ret->dat.field_dat.field = n->dat.Ident_dat.str;
+        return ret;
+    }
+    if (n->kind != token::LSQUAR) {
+        printf("expected '[' for array index lvalue\n");
+        exit(-1);
+    }
+    ret->kind = lval::Index;
+    ret->dat.ind_dat.arr = mai;
+    *toks = toks->tail();
+    ret->dat.ind_dat.ind = parse_rval(toks);
+    n = (token*)toks->ith(0);
+    if (n->kind != token::RSQUAR) {
+        printf("expected ']' for array index lvalue");
+        exit(-1);
+    }
+    *toks = toks->tail();
     return ret;
 }
 
@@ -187,7 +223,7 @@ decl* parse_var_decl(clist* toks, bool check_semicolon) {
 
     token* n = (token*)toks->ith(0);
     if (n->kind != token::Ident) {
-        printf("expected identifier after type in declaration");
+        printf("expected identifier after type in declaration\n");
         exit(-1);
     }
     *toks = toks->tail();
@@ -285,14 +321,35 @@ instr* parse_instr(clist* toks) {
             curr->dat.if_dat.falsebrc = block;
         }
         return ret;
+    } else if (n->kind == token::While) {
+        *toks = toks->tail();
+        instr* ret = (instr*)malloc(sizeof(instr));
+        ret->kind = instr::If;
+        ret->dat.while_dat.b = parse_rval(toks);
+        ret->dat.while_dat.instrs = parse_instr_block(toks);
+        return ret;
     }
 
     clist left = *toks;
+    bool found_par = false;
     while (toks->len()) {
         n = (token*)toks->ith(0);
         if (n->kind == token::Semicol) {
             if (left.l == toks->l) {
                 return nullptr; // empty intruction
+            } else if (found_par) { // found parentheses and no '=', so a function call
+                *toks = left;
+                // we parse function calls as an rvalue
+                instr* ist = (instr*)malloc(sizeof(instr));
+                ist->kind = instr::Fcall;
+                ist->dat.fcall_dat.call = parse_rval(toks);
+                n = (token*)toks->ith(0);
+                if (n->kind != token::Semicol) {
+                    printf("expected ';' after instruction; got token %i\n", (int)n->kind);
+                    exit(-1);
+                }
+                *toks = toks->tail();
+                return ist;
             }
             // we have found neither '=' or '(' tokens in our instruction, to it is a declaration
             instr* ist = (instr*)malloc(sizeof(instr));
@@ -314,18 +371,7 @@ instr* parse_instr(clist* toks) {
             *toks = toks->tail();
             return ist;
         } else if (n->kind == token::LPAREN) {
-            *toks = left;
-            // we parse function calls as an rvalue
-            instr* ist = (instr*)malloc(sizeof(instr));
-            ist->kind = instr::Fcall;
-            ist->dat.fcall_dat.call = parse_rval(toks);
-            n = (token*)toks->ith(0);
-            if (n->kind != token::Semicol) {
-                printf("expected ';' after instruction; got token %i\n", (int)n->kind);
-                exit(-1);
-            }
-            *toks = toks->tail();
-            return ist;
+            found_par = true;
         }
         *toks = toks->tail();
     }

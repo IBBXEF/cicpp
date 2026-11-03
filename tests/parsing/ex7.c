@@ -37,3 +37,11 @@ int i;
 func void tet() {
     i = tri_ternary(0, 1, 2, 3);
 }
+
+func int exp(int b, int i) {
+    while (i) {
+        b = b * b;
+        i = i - 1;
+    }
+    return b;
+}
