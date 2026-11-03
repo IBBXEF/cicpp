@@ -6,10 +6,18 @@ type regex_match_state {
     clist pos_pos; // possible positions
 }
 
-func int try_match_regex(const char* regex, const char* string, int regpos = 0) {
+func bool try_match_regex(regex_match_state* state, const char* string) {
+    clist newlist = clist::new_clist(sizeof(int));
+    int i;
+    i = 0;
+    // while i < 
     if regex[regpos] == '\0' {
         return 0;
-    } elif regex[regpos] == '\\' {
+    }
+    if (*string == '\0') {
+        return -1;
+    }
+    if regex[regpos] == '\\' {
         if regex[regpos+1] != *string {
             return -1;
         }

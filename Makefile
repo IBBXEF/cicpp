@@ -11,12 +11,12 @@ clean:
 	rm -fr _build/test
 	rm -fr _build/test2
 
-_build/test/%.c: src/new/%.new main
+_build/test/%.c: src/cicpp/%.cicpp main
 	mkdir -p _build/test
 	mkdir -p _build
 	./main $< -o $@
 
-_build/test2/%.c: src/new/%.new test
+_build/test2/%.c: src/cicpp/%.cicpp test
 	mkdir -p _build
 	mkdir -p _build/test2
 	./test $< -o $@
