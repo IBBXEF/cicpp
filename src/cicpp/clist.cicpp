@@ -1,5 +1,5 @@
 
-#include "stdlib.h"
+#include_C "stdlib.h"
 
 type <dat_t> clist {
     type _clist {
@@ -7,29 +7,19 @@ type <dat_t> clist {
         _clist* next;
     }
 
-    int datsize;
     _clist* l;
 
 
-    func void push(void* dat) {
+    func void push(dat_t dat) {
         _clist* n;
         n = ( malloc(sizeof(_clist)) as _clist* );
-        int j;
-        (*n).dat = malloc(datsize);
-        int k;
-        int i;
-        i = 0;
-        while (i < datsize) {
-            int o;
-            // ((*n).dat as char*)[i] = (dat as char*)[i];
-            i = i + 1;
-        }
+        (*n).dat = dat;
         (*n).next = l;
         l = n;
     }
 
-    func void* pop() {
-        void* ret;
+    func dat_t pop() {
+        dat ret;
         ret = (*l).dat;
         _clist* tmp;
         tmp = (*l).next;
@@ -39,10 +29,7 @@ type <dat_t> clist {
     }
 
     func void del() {
-        while (l)
-        {
-            free(pop());
-        }
+        while (l) { pop(); }
     }
 
     func int len() {
@@ -57,7 +44,7 @@ type <dat_t> clist {
         return ret;
     }
 
-    func void* ith(int i) {
+    func dat_t ith(int i) {
         _clist* t;
         t = l;
         while (i > 0)
@@ -80,7 +67,6 @@ type <dat_t> clist {
         {
             rev.push(pop());
         }
-        int y;
         l = rev.l;
     }
 
@@ -91,13 +77,10 @@ type <dat_t> clist {
         return ret;
     }
 
-    static func clist new_clist(int datsize) {
-        clist r;
-        r.l = nullptr;
-        r.datsize = datsize;
-        return r;
+    func clist init() {
+        l = nullptr;
     }
 }
 
-// specialize clist<void*> as clist_v
+specialize clist<void*> as clist_voidptr
 

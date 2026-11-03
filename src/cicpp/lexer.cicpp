@@ -1,9 +1,9 @@
 
-#include "stdio.h"
-#include "string.h"
-#include "stdlib.h"
+#include_C "stdio.h"
+#include_C "string.h"
+#include_C "stdlib.h"
 
-#include "./utils.cpp"
+#include_C "./utils.cpp"
 
 type binop {
     Add; Mul; Sub; Div; Band; Bor; Land; Lor; Eq; Leq; Lt; Neq; Geq; Gt;
@@ -35,6 +35,7 @@ type token {
     Specialize;
 
     Include;
+    Include_C;
 
     LPAREN;
     RPAREN;

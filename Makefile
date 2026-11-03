@@ -37,8 +37,9 @@ replacelib: $(TEMP_FILES)
 	cp _build/test/lexer.c _build/lexer.c
 	cp _build/test/clist.c _build/clist.c
 
-replace: replacelib
+replace:
 	cp _build/main main
+	make replacelib
 
 tests: build
 	cp _build/main test

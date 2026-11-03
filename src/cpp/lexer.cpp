@@ -42,6 +42,10 @@ void pop_token_stack(int* cou, old_clist* l, const char* str) {
         tok.kind = token::As;
     } else if (!strncmp("include", str, *cou) && *cou == 7) {
         tok.kind = token::Include;
+    } else if (!strncmp("include_C", str, *cou) && *cou == 9) {
+        tok.kind = token::Include_C;
+    } else if (!strncmp("include_c", str, *cou) && *cou == 9) {
+        tok.kind = token::Include_C;
     } else if (*str >= '0' && *str <= '9') {
         tok.kind = token::VInt;
         char* end;

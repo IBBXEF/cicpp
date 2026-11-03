@@ -1,5 +1,5 @@
 
-#include "./utils.cpp"
+#include_c "./utils.cpp"
 
 type regex_match_state {
     const char* regex;

@@ -627,9 +627,9 @@ decl* parse_decl(old_clist* toks) {
     return parse_var_decl(toks, true);
 }
 
+ast parse_file(const char* path);
 
-ast parse(old_clist toks) {
-    ast ret = {.decls = old_clist::new_clist(sizeof(decl))};
+void parse_aux(old_clist toks, ast* ret) {
     while (toks.len()) {
         printf("r:%d\n", toks.len());
 
@@ -637,29 +637,48 @@ ast parse(old_clist toks) {
         if (tok->kind == token::Hashtag) {
             toks = toks.tail();
             tok = (token*)toks.ith(0);
-            if (tok->kind != token::Include) {
-                printf("expected include after '#'\n");
-                exit(-1);
+            if (tok->kind == token::Include) {
+                toks = toks.tail();
+                tok = (token*)toks.ith(0);
+                if (tok->kind != token::VString) {
+                    printf("expected string after '#include'\n");
+                    exit(-1);
+                }
+                toks = toks.tail();
+                // we parse the file as if it was copy-pasted in this one
+                old_clist toks = lex_file(tok->dat.VString_dat.str);
+                parse_aux(toks, ret);
+                toks.del(); // yes this is a memory leak
+            } else {
+                if (tok->kind != token::Include_C) {
+                    printf("expected include_C after '#'\n");
+                    exit(-1);
+                }
+                toks = toks.tail();
+                tok = (token*)toks.ith(0);
+                decl* d = (decl*)malloc(sizeof(decl));
+                d->kind = decl::Include_C;
+                if (tok->kind != token::VString) {
+                    printf("expected string after '#include_C'\n");
+                    exit(-1);
+                }
+                d->dat.include_dat.file = tok->dat.VString_dat.str;
+                toks = toks.tail();
+                ret->decls.push(d);
             }
-            toks = toks.tail();
-            tok = (token*)toks.ith(0);
-            decl* d = (decl*)malloc(sizeof(decl));
-            d->kind = decl::Include;
-            if (tok->kind != token::VString) {
-                printf("expected string after '#include'\n");
-                exit(-1);
-            }
-            d->dat.include_dat.file = tok->dat.VString_dat.str;
-            toks = toks.tail();
-            ret.decls.push(d);
         } else if (tok->kind == token::Nothing) {
             toks = toks.tail();
         } else {
             decl* d = parse_decl(&toks);
-            ret.decls.push(d);
+            ret->decls.push(d);
             free(d);
         }
     }
+}
+
+ast parse(old_clist toks) {
+    ast ret = {.decls = old_clist::new_clist(sizeof(decl))};
+    parse_aux(toks, &ret);
     ret.decls.reverse();
     return ret;
 }

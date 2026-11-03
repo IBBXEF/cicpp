@@ -185,7 +185,7 @@ struct decl
     };
     
 
-    enum { Var, Func, Type, Include, Static, Templated, Specialize } kind;
+    enum { Var, Func, Type, Include_C, Static, Templated, Specialize } kind;
 
     union {
         struct { const char* name; typ* t; rval* v; } var_dat;
@@ -308,7 +308,7 @@ void decl::print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end =
 
         print_n_spaces(ident * ident_lvl, fptr);
         fprintf(fptr, "#undef %s\n", templated_decl->dat.templated_dat.param_name);
-    } else if (kind == Include) {
+    } else if (kind == Include_C) {
         print_n_spaces(ident * ident_lvl, fptr);
         if (dat.include_dat.file[0] == '.' && dat.include_dat.file[1] == '/') {
             fprintf(fptr, "#include \"%s\"\n", dat.include_dat.file+2);
