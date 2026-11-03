@@ -49,6 +49,10 @@ typ* parse_typ(clist* toks) {
     } else if (curr->kind == token::TChar) {
         t->kind = typ::TChar;
         *toks = toks->tail();
+    } else if (curr->kind == token::Ident) {
+        t->kind = typ::TIdent;
+        t->dat.TIdent_dat = curr->dat.Ident_dat.str;
+        *toks = toks->tail();
     } else if (curr->kind == token::Const) {
         t->kind = typ::TConst;
         *toks = toks->tail();

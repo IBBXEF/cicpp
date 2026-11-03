@@ -15,9 +15,10 @@ func void one() {
 
 int d;
 
-func void buffet(int a, char* b, void*** ppptr) {
+func void*** buffet(int a, char* b, void*** ppptr) {
     d = a;
     a = c;
     ppptr = b;
+    return ppptr;
 }
 

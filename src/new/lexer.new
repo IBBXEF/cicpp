@@ -59,6 +59,9 @@ type token {
 };
 
 // func int try_match_regex(const char* regex, const char* string) {
+//     if (regex[0] == '\0') {
+//         return 0;
+//     }
 //     return 0;
 // }
 
