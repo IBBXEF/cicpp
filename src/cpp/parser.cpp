@@ -9,16 +9,19 @@ lval* parse_lval(clist* toks);
 
 rval* parse_rval(clist* toks) {
     rval* ret = (rval*)malloc(sizeof(rval));
-    token* curr = (token*)toks->ith(0);
+    token* n = (token*)toks->ith(0);
 
-    if (curr->kind == token::VInt) {
+    if (n->kind == token::VInt) {
         *toks = toks->tail();
         ret->kind = rval::Int;
-        ret->dat.int_dat = curr->dat.VInt_dat.dat;
+        ret->dat.int_dat = n->dat.VInt_dat.dat;
     } else { // we fallback to parsing an lvalue
         ret->kind = rval::Lval;
         ret->dat.lval_dat = parse_lval(toks);
     }
+    n = (token*)toks->ith(0);
+    if (n->kind == token::VInt) {}
+
     return ret;
 }
 

@@ -5,6 +5,10 @@
 
 #include "./utils.cpp"
 
+type binop {
+    Add; Mul; Sub; Div; Band; Bor; Eq; Leq; Lt; Neq; Geq; Gt;
+}
+
 type token {
     TVoid;
     TInt;

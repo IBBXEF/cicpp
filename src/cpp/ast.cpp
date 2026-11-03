@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "utils.cpp"
+#include "lexer.c"
 
 const int ident_lvl = 2;
 void print_n_spaces(int n, FILE* fptr) {
@@ -29,11 +30,6 @@ struct lval
     void print_to_file(FILE* fptr);
 };
 
-struct binop
-{
-    enum T {Add, Mul, Sub, Div, Band, Bor, Eq, Leq, Lt};
-};
-
 
 struct rval
 {
@@ -46,7 +42,7 @@ struct rval
     union {
         lval* lval_dat;
         int int_dat;
-        struct { rval* v1; binop::T op; rval* v2; } ind_dat;
+        struct { rval* v1; binop op; rval* v2; } ind_dat;
     } dat;
 
     void print_to_file(FILE* fptr) {
