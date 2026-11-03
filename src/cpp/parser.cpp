@@ -105,6 +105,30 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         lv->dat.field_dat.field = n->dat.Ident_dat.str;
         ret->dat.lval_dat = lv;
     }
+    
+    n = (token*)toks->ith(0);
+    if (n->kind == token::LPAREN) {
+        rval* fcal = (rval*)malloc(sizeof(rval));
+        fcal->kind = rval::Fcall;
+        fcal->dat.fcall_dat.func = ret;
+        fcal->dat.fcall_dat.args = clist::new_clist(sizeof(rval));
+        *toks = toks->tail();
+        n = (token*)toks->ith(0);
+        while (n->kind != token::RPAREN) {
+            if (n->kind == token::Comma) {
+                *toks = toks->tail(); // this will sometimes parse nonsense but it's okay
+            } else {
+                rval* arg = parse_rval(toks);
+                fcal->dat.fcall_dat.args.push(arg);
+                free(arg);
+            }
+            n = (token*)toks->ith(0);
+        }
+        fcal->dat.fcall_dat.args.reverse();
+        *toks = toks->tail();
+        ret = fcal;
+    }
+    
     return ret;
 }
 

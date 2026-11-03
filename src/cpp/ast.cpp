@@ -291,7 +291,7 @@ void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
         }
     } else if (kind == Func) {
         print_n_spaces(ident * ident_lvl, fptr);
-        dat.func_dat.ret_t->print_to_file(fptr, ident);
+        dat.func_dat.ret_t->print_to_file(fptr, 0);
         fprintf(fptr, " %s(", dat.func_dat.name);
         for (int i = 0; i < dat.func_dat.args_decls.len(); i++) {
             decl* d = (decl*)dat.func_dat.args_decls.ith(i);
@@ -308,6 +308,7 @@ void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
                 instr* ins = (instr*)dat.func_dat.instrs->ith(i);
                 ins->print_to_file(fptr, ident+1);
             }
+            print_n_spaces(ident * ident_lvl, fptr);
             fprintf(fptr, "}\n");
         } else {
             fprintf(fptr, ";\n");

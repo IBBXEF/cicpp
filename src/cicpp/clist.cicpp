@@ -1,87 +1,101 @@
 
-#pragma once
+#include "stdlib.h"
 
-#include <stdlib.h>
-
-struct _clist
-{
+type _clist {
     void* dat;
     _clist* next;
-};
+}
 
-struct clist
-{
+type clist {
     int datsize;
     _clist* l;
 
-    static clist new_clist(int datsize) {
-        clist r;
-        r.l = nullptr;
-        r.datsize = datsize;
-        return r;
-    }
 
-    void push(void* dat) {
-        _clist* n = (_clist*)malloc(sizeof(_clist));
-        n->dat = malloc(datsize);
-        for (int i = 0; i < datsize; i++)
-        {
-            ((char*)n->dat)[i] = ((char*)dat)[i];
+    func void push(void* dat) {
+        _clist* n;
+        n = ( malloc(sizeof(_clist)) as _clist* );
+        int j;
+        (*n).dat = malloc(datsize);
+        int k;
+        int i;
+        i = 0;
+        while (i < datsize) {
+            int o;
+            // ((*n).dat as char*)[i] = (dat as char*)[i];
+            i = i + 1;
         }
-        n->next = l;
+        (*n).next = l;
         l = n;
     }
 
-    void* pop() {
-        void* ret = l->dat;
-        _clist* tmp = l ->next;
+    func void* pop() {
+        void* ret;
+        ret = (*l).dat;
+        _clist* tmp;
+        tmp = (*l).next;
         free(l);
         l = tmp;
         return ret;
     }
 
-    void del() {
+    func void del() {
         while (l)
         {
             free(pop());
         }
     }
 
-    int len() {
-        int ret = 0;
-        _clist* t = l;
-        while (t)
-        {
+    func int len() {
+        int ret;
+        ret = 0;
+        _clist* t;
+        t = l;
+        while t {
             ret = ret + 1;
-            t = t->next;
+            t = (*t).next;
         }
         return ret;
     }
 
-    void* ith(int i) {
-        _clist* t = l;
+    func void* ith(int i) {
+        _clist* t;
+        t = l;
         while (i > 0)
         {
             if (!t) {
                 printf("out of range in list: index %d\n", i);
                 exit(0);
             }
-            t = t->next;
+            t = (*t).next;
             i = i - 1;
         }
-        return t->dat;
+        return (*t).dat;
     }
 
-    void reverse() {
-        clist rev = {.datsize = datsize, .l = nullptr};
+    func void reverse() {
+        clist rev;
+        rev.datsize = datsize;
+        rev.l = nullptr;
         while (l)
         {
             rev.push(pop());
         }
+        int y;
         l = rev.l;
     }
 
-    clist tail() {
-        return {.datsize = datsize, .l = l->next};
+    func clist tail() {
+        clist ret;
+        ret.datsize = datsize;
+        ret.l = (*l).next;
+        return ret;
     }
-};
+}
+
+func clist new_clist(int datsize) {
+    clist r;
+    r.l = nullptr;
+    r.datsize = datsize;
+    return r;
+}
+
