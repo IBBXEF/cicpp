@@ -175,6 +175,7 @@ void lval::print_to_file(FILE* fptr) {
     }
 }
 
+struct ast;
 
 struct decl
 {
@@ -194,11 +195,18 @@ struct decl
                  old_clist other_decls;               }  type_dat;
         struct { const char* file; }              include_dat;
         struct { decl* d; }              static_dat;
-        struct { decl* d; const char* param_name; } templated_dat;
-        struct { const char* templated_t; decl* param; } specialize_dat;
+        struct { decl* d; const char* param_name; const char* name; } templated_dat;
+        struct { const char* templated_t; typ* param; const char* newname; } specialize_dat;
     } dat;
 
-    void print_to_file(FILE* fptr, int ident, bool print_decl_end);
+    void print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end);
+};
+
+
+struct ast
+{
+    old_clist decls; // list of declarations
+    void print_to_file(FILE* fptr);
 };
 
 
@@ -215,7 +223,7 @@ struct instr
         struct { rval* call; }                          fcall_dat;
     } dat;
 
-    void print_to_file(FILE* fptr, int ident) {
+    void print_to_file(FILE* fptr, int ident, ast* prog) {
         if (kind == Set) {
             print_n_spaces(ident * ident_lvl, fptr);
             dat.set_dat.l->print_to_file(fptr);
@@ -228,7 +236,7 @@ struct instr
             dat.ret_dat.v->print_to_file(fptr);
             fprintf(fptr, ";\n");
         } else if (kind == Decl) {
-            dat.decl_dat.d->print_to_file(fptr, ident, true);
+            dat.decl_dat.d->print_to_file(fptr, ident, prog, true);
         } else if (kind == Fcall) {
             print_n_spaces(ident * ident_lvl, fptr);
             dat.fcall_dat.call->print_to_file(fptr);
@@ -240,18 +248,18 @@ struct instr
             fprintf(fptr, ") {\n");
             for (int i = 0; i < dat.if_dat.truebrc.len(); i++) {
                 instr* ist = (instr*)dat.if_dat.truebrc.ith(i);
-                ist->print_to_file(fptr, ident+1);
+                ist->print_to_file(fptr, ident+1, prog);
             }
             print_n_spaces(ident * ident_lvl, fptr);
             fprintf(fptr, "}");
             if (dat.if_dat.falsebrc.len() == 1) {
                 fprintf(fptr, " else\n");
-                ((instr*)dat.if_dat.falsebrc.ith(0))->print_to_file(fptr, ident+1);
+                ((instr*)dat.if_dat.falsebrc.ith(0))->print_to_file(fptr, ident+1, prog);
             } else if (dat.if_dat.falsebrc.len() > 1) {
                 fprintf(fptr, " else {\n");
                 for (int i = 0; i < dat.if_dat.truebrc.len(); i++) {
                     instr* ist = (instr*)dat.if_dat.truebrc.ith(i);
-                    ist->print_to_file(fptr, ident+1);
+                    ist->print_to_file(fptr, ident+1, prog);
                 }
                 print_n_spaces(ident * ident_lvl, fptr);
                 fprintf(fptr, "}\n");
@@ -265,7 +273,7 @@ struct instr
             fprintf(fptr, ") {\n");
             for (int i = 0; i < dat.while_dat.instrs.len(); i++) {
                 instr* ist = (instr*)dat.while_dat.instrs.ith(i);
-                ist->print_to_file(fptr, ident+1);
+                ist->print_to_file(fptr, ident+1, prog);
             }
             print_n_spaces(ident * ident_lvl, fptr);
             fprintf(fptr, "}");
@@ -274,9 +282,32 @@ struct instr
     }
 };
 
-void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
+void decl::print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end = true) {
     if (kind == Templated) {
         // we do nothing, a template alone does not count as a type
+    } else if (kind == Specialize) {
+        decl* templated_decl = nullptr;
+        for (int i = 0; i < prog->decls.len(); i++) {
+            decl* cur = (decl*)prog->decls.ith(i);
+            if (cur->kind == decl::Templated) {
+                if (!strcmp(cur->dat.templated_dat.name, dat.specialize_dat.templated_t)) {
+                    templated_decl = cur;
+                }
+            }
+        }
+        if (!templated_decl) {
+            printf("templated type \"%s\" is not defined\n", dat.specialize_dat.templated_t);
+            exit(-1);
+        }
+        print_n_spaces(ident * ident_lvl, fptr);
+        fprintf(fptr, "#define %s (", templated_decl->dat.templated_dat.param_name);
+        dat.specialize_dat.param->print_to_file(fptr, 0);
+        fprintf(fptr, ")\n");
+
+        templated_decl->dat.templated_dat.d->print_to_file(fptr, ident, prog);
+
+        print_n_spaces(ident * ident_lvl, fptr);
+        fprintf(fptr, "#undef %s\n", templated_decl->dat.templated_dat.param_name);
     } else if (kind == Include) {
         print_n_spaces(ident * ident_lvl, fptr);
         if (dat.include_dat.file[0] == '.' && dat.include_dat.file[1] == '/') {
@@ -287,7 +318,7 @@ void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
     } else if (kind == Static) {
         print_n_spaces(ident * ident_lvl, fptr);
         fprintf(fptr, "static\n");
-        dat.static_dat.d->print_to_file(fptr, ident);
+        dat.static_dat.d->print_to_file(fptr, ident, prog);
     } else if (kind == Var) {
         dat.var_dat.t->print_to_file(fptr, ident);
         fprintf(fptr, " %s", dat.var_dat.name);
@@ -304,7 +335,7 @@ void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
         fprintf(fptr, " %s(", dat.func_dat.name);
         for (int i = 0; i < dat.func_dat.args_decls.len(); i++) {
             decl* d = (decl*)dat.func_dat.args_decls.ith(i);
-            d->print_to_file(fptr, 0, false);
+            d->print_to_file(fptr, 0, prog, false);
             if (i != dat.func_dat.args_decls.len() - 1) {
                 fprintf(fptr, ", ");
             }
@@ -315,7 +346,7 @@ void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
             fprintf(fptr, "{\n");
             for (int i = 0; i < dat.func_dat.instrs->len(); i++) {
                 instr* ins = (instr*)dat.func_dat.instrs->ith(i);
-                ins->print_to_file(fptr, ident+1);
+                ins->print_to_file(fptr, ident+1, prog);
             }
             print_n_spaces(ident * ident_lvl, fptr);
             fprintf(fptr, "}\n");
@@ -360,7 +391,7 @@ void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
                     fprintf(fptr, "struct {\n");
                     for (int i = 0; i < constr->fields.len(); i++) {
                         decl* d = (decl*)constr->fields.ith(i);
-                        d->print_to_file(fptr, ident + 3);
+                        d->print_to_file(fptr, ident + 3, prog);
                     }
                     print_n_spaces((ident+2) * ident_lvl, fptr);
                     fprintf(fptr, "} %s_dat;\n", constr->name);
@@ -373,7 +404,7 @@ void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
         for (int i = 0; i < dat.type_dat.other_decls.len(); i++)
         {
             decl* d = (decl*)dat.type_dat.other_decls.ith(i);
-            d->print_to_file(fptr, ident + 1);
+            d->print_to_file(fptr, ident + 1, prog);
         }
         
         print_n_spaces(ident * ident_lvl, fptr);
@@ -383,17 +414,12 @@ void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
 
 
 
-struct ast
-{
-    old_clist decls; // list of declarations
-    void print_to_file(FILE* fptr) {
-        fprintf(fptr, "#pragma once\n");
+void ast::print_to_file(FILE* fptr) {
+    fprintf(fptr, "#pragma once\n");
 
-        for (int i = 0; i < decls.len(); i++)
-        {
-            decl* d = (decl*)decls.ith(i);
-            d->print_to_file(fptr, 0);
-        }
+    for (int i = 0; i < decls.len(); i++)
+    {
+        decl* d = (decl*)decls.ith(i);
+        d->print_to_file(fptr, 0, this);
     }
-};
-
+}

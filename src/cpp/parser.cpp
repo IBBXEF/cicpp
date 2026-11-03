@@ -522,6 +522,15 @@ decl* parse_type_decl(old_clist* toks) {
         }
         *toks = toks->tail();
         ret->dat.templated_dat.d = parse_type_decl(toks);
+        if (ret->dat.templated_dat.d->kind == decl::Type) {
+            ret->dat.templated_dat.name = ret->dat.templated_dat.d->dat.type_dat.name;
+        } else if (ret->dat.templated_dat.d->kind == decl::Templated) {
+            ret->dat.templated_dat.name = ret->dat.templated_dat.name;
+        } else {
+            printf("kind of templated type unsupported (id %d)\n", (int)ret->dat.templated_dat.d->kind);
+            exit(-1);
+        }
+        printf("templated type %s parsed\n", ret->dat.templated_dat.name);
         return ret;
     } else {
         ret->dat.type_dat.name = nullptr;
@@ -575,6 +584,45 @@ decl* parse_decl(old_clist* toks) {
     } else if (n->kind == token::Func) {
         *toks = toks->tail();
         return parse_fun_decl(toks);
+    } else if (n->kind == token::Specialize) {
+        decl* ret = (decl*)malloc(sizeof(decl));
+        // declaration of a specialization
+        *toks = toks->tail();
+        ret->kind = decl::Specialize;
+        n = (token*)toks->ith(0);
+        if (n->kind != token::Ident) {
+            printf("expected identifier for specialized type, got token id %d\n", (int)n->kind);
+            exit(-1);
+        }
+        ret->dat.specialize_dat.templated_t = n->dat.Ident_dat.str;
+        *toks = toks->tail();
+        n = (token*)toks->ith(0);
+        if (!(n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Lt)) {
+            printf("expected '<' for template specialization, got token id %d\n", (int)n->kind);
+            exit(-1);
+        }
+        *toks = toks->tail();
+        ret->dat.specialize_dat.param = parse_typ(toks);
+        n = (token*)toks->ith(0);
+        if (!(n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Gt)) {
+            printf("expected '>' after template parameter, got token id %d\n", (int)n->kind);
+            exit(-1);
+        }
+        *toks = toks->tail();
+        n = (token*)toks->ith(0);
+        if (!(n->kind == token::As)) {
+            printf("expected 'as' after template specialization, got token id %d\n", (int)n->kind);
+            exit(-1);
+        }
+        *toks = toks->tail();
+        n = (token*)toks->ith(0);
+        if (n->kind != token::Ident) {
+            printf("expected identifier for specialized type new name, got token id %d\n", (int)n->kind);
+            exit(-1);
+        }
+        ret->dat.specialize_dat.newname = n->dat.Ident_dat.str;
+        *toks = toks->tail();
+        return ret;
     }
     return parse_var_decl(toks, true);
 }
