@@ -8,7 +8,7 @@
 #include "lexer.c"
 
 
-void pop_token_stack(int* cou, clist* l, const char* str) {
+void pop_token_stack(int* cou, old_clist* l, const char* str) {
     if (!*cou) { return; }
     
     token tok;
@@ -70,7 +70,7 @@ struct lexing_state { enum T {
 }; };
 
 
-void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::T* state) {
+void lexing_step(int* cou, old_clist* ret, char c, char* last_buffer, lexing_state::T* state) {
     if (*state == lexing_state::LEXING_STRING) {
         last_buffer[*cou] = c;
         *cou = *cou + 1;
@@ -307,14 +307,14 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
 }
 
 
-clist lex_file(const char* path) {
+old_clist lex_file(const char* path) {
     FILE* fptr = fopen(path, "r");
     if (!fptr) {
         printf("%s file failed to open.\n", path);
         exit(-1);
     }
 
-    clist ret = clist::new_clist(sizeof(token));
+    old_clist ret = old_clist::new_clist(sizeof(token));
     token no;
     no.kind = token::Nothing;
     ret.push(&no);
@@ -337,7 +337,7 @@ clist lex_file(const char* path) {
 }
 
 
-void print_tokens(clist toks) {
+void print_tokens(old_clist toks) {
     for (int i = 0; i < toks.len(); i++) {
         token tok = *(token*)toks.ith(i);
 

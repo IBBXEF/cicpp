@@ -94,7 +94,7 @@ struct rval
         const char* string_dat;
         struct { rval* v1; binop op; rval* v2; } binop_dat;
         struct { unop op; rval* v; } unop_dat;
-        struct { rval* func; clist args; } fcall_dat;
+        struct { rval* func; old_clist args; } fcall_dat;
         struct { typ* t; rval* v; } typecast_dat;
     } dat;
 
@@ -180,7 +180,7 @@ struct decl
 {
     struct type_constr {
         const char* name;
-        clist fields; // list of declarations
+        old_clist fields; // list of declarations
     };
     
 
@@ -189,9 +189,9 @@ struct decl
     union {
         struct { const char* name; typ* t; rval* v; } var_dat;
         struct { const char* name; typ* ret_t;
-                 clist args_decls; clist* instrs; }  func_dat; // if instrs is nullptr, it is a function prototype
-        struct { const char* name; clist constrs;
-                 clist other_decls;               }  type_dat;
+                 old_clist args_decls; old_clist* instrs; }  func_dat; // if instrs is nullptr, it is a function prototype
+        struct { const char* name; old_clist constrs;
+                 old_clist other_decls;               }  type_dat;
         struct { const char* file; }              include_dat;
     } dat;
 
@@ -206,8 +206,8 @@ struct instr
     union {
         struct { lval* l; rval* r; }                      set_dat;
         struct { rval* v; }                               ret_dat;
-        struct { rval* b; clist truebrc; clist falsebrc; } if_dat;
-        struct { rval* b; clist instrs; }               while_dat;
+        struct { rval* b; old_clist truebrc; old_clist falsebrc; } if_dat;
+        struct { rval* b; old_clist instrs; }               while_dat;
         struct { decl* d; }                              decl_dat;
         struct { rval* call; }                          fcall_dat;
     } dat;
@@ -376,7 +376,7 @@ void decl::print_to_file(FILE* fptr, int ident, bool print_decl_end = true) {
 
 struct ast
 {
-    clist decls; // list of declarations
+    old_clist decls; // list of declarations
     void print_to_file(FILE* fptr) {
         fprintf(fptr, "#pragma once\n");
 

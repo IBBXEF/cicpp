@@ -14,7 +14,7 @@ int main(int argc, char const *argv[])
     printf("%s\n", argv[1]);
     // return 0;
     
-    clist toks = lex_file(argv[1]);
+    old_clist toks = lex_file(argv[1]);
 
     // print_tokens(toks);
     

@@ -3,26 +3,26 @@
 
 #include <stdlib.h>
 
-struct _clist
+struct _old_clist
 {
     void* dat;
-    _clist* next;
+    _old_clist* next;
 };
 
-struct clist
+struct old_clist
 {
     int datsize;
-    _clist* l;
+    _old_clist* l;
 
-    static clist new_clist(int datsize) {
-        clist r;
+    static old_clist new_clist(int datsize) {
+        old_clist r;
         r.l = nullptr;
         r.datsize = datsize;
         return r;
     }
 
     void push(void* dat) {
-        _clist* n = (_clist*)malloc(sizeof(_clist));
+        _old_clist* n = (_old_clist*)malloc(sizeof(_old_clist));
         n->dat = malloc(datsize);
         for (int i = 0; i < datsize; i++)
         {
@@ -34,7 +34,7 @@ struct clist
 
     void* pop() {
         void* ret = l->dat;
-        _clist* tmp = l ->next;
+        _old_clist* tmp = l ->next;
         free(l);
         l = tmp;
         return ret;
@@ -49,7 +49,7 @@ struct clist
 
     int len() {
         int ret = 0;
-        _clist* t = l;
+        _old_clist* t = l;
         while (t)
         {
             ret = ret + 1;
@@ -59,7 +59,7 @@ struct clist
     }
 
     void* ith(int i) {
-        _clist* t = l;
+        _old_clist* t = l;
         while (i > 0)
         {
             if (!t) {
@@ -73,7 +73,7 @@ struct clist
     }
 
     void reverse() {
-        clist rev = {.datsize = datsize, .l = nullptr};
+        old_clist rev = {.datsize = datsize, .l = nullptr};
         while (l)
         {
             rev.push(pop());
@@ -81,7 +81,7 @@ struct clist
         l = rev.l;
     }
 
-    clist tail() {
+    old_clist tail() {
         return {.datsize = datsize, .l = l->next};
     }
 };

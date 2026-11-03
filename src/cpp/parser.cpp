@@ -5,10 +5,10 @@
 #include "ast.cpp"
 #include "lexer.cpp"
 
-lval* parse_lval(clist* toks);
-typ* parse_typ(clist* toks);
+lval* parse_lval(old_clist* toks);
+typ* parse_typ(old_clist* toks);
 
-rval* parse_rval(clist* toks, bool can_fallback = true) {
+rval* parse_rval(old_clist* toks, bool can_fallback = true) {
     rval* ret = (rval*)malloc(sizeof(rval));
     token* n = (token*)toks->ith(0);
 
@@ -52,7 +52,7 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         rval* fcal = (rval*)malloc(sizeof(rval));
         fcal->kind = rval::Fcall;
         fcal->dat.fcall_dat.func = ret;
-        fcal->dat.fcall_dat.args = clist::new_clist(sizeof(rval));
+        fcal->dat.fcall_dat.args = old_clist::new_clist(sizeof(rval));
         *toks = toks->tail();
         n = (token*)toks->ith(0);
         while (n->kind != token::RPAREN) {
@@ -111,7 +111,7 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         rval* fcal = (rval*)malloc(sizeof(rval));
         fcal->kind = rval::Fcall;
         fcal->dat.fcall_dat.func = ret;
-        fcal->dat.fcall_dat.args = clist::new_clist(sizeof(rval));
+        fcal->dat.fcall_dat.args = old_clist::new_clist(sizeof(rval));
         *toks = toks->tail();
         n = (token*)toks->ith(0);
         while (n->kind != token::RPAREN) {
@@ -132,7 +132,7 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
     return ret;
 }
 
-lval* parse_lval(clist* toks) {
+lval* parse_lval(old_clist* toks) {
     lval* ret = (lval*)malloc(sizeof(lval));
     token* n = (token*)toks->ith(0);
 
@@ -200,7 +200,7 @@ lval* parse_lval(clist* toks) {
     return ret;
 }
 
-typ* parse_typ(clist* toks) {
+typ* parse_typ(old_clist* toks) {
     token* n = (token*)toks->ith(0);
 
     typ* t = (typ*)malloc(sizeof(typ));
@@ -239,7 +239,7 @@ typ* parse_typ(clist* toks) {
     return t;
 }
 
-decl* parse_var_decl(clist* toks, bool check_semicolon) {
+decl* parse_var_decl(old_clist* toks, bool check_semicolon) {
     decl* ret = (decl*)malloc(sizeof(decl));
 
     ret->kind = decl::Var;
@@ -275,12 +275,12 @@ decl* parse_var_decl(clist* toks, bool check_semicolon) {
 
 }
 
-decl* parse_decl(clist* toks);
+decl* parse_decl(old_clist* toks);
 
-instr* parse_instr(clist* toks);
+instr* parse_instr(old_clist* toks);
 
-clist parse_instr_block(clist* toks) {
-    clist ret = clist::new_clist(sizeof(instr));
+old_clist parse_instr_block(old_clist* toks) {
+    old_clist ret = old_clist::new_clist(sizeof(instr));
     
     token* n = (token*)toks->ith(0);
     if (n->kind != token::LBRACK) {
@@ -304,7 +304,7 @@ clist parse_instr_block(clist* toks) {
 }
 
 
-instr* parse_instr(clist* toks) {
+instr* parse_instr(old_clist* toks) {
     token* n = (token*)toks->ith(0);
     if (n->kind == token::Return) {
         *toks = toks->tail();
@@ -324,7 +324,7 @@ instr* parse_instr(clist* toks) {
         ret->kind = instr::If;
         ret->dat.if_dat.b = parse_rval(toks);
         ret->dat.if_dat.truebrc = parse_instr_block(toks);
-        ret->dat.if_dat.falsebrc = clist::new_clist(sizeof(instr));
+        ret->dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
         instr* curr = ret;
         n = (token*)toks->ith(0);
         while (n->kind == token::Elif) {
@@ -333,14 +333,14 @@ instr* parse_instr(clist* toks) {
             cif.kind = instr::If;
             cif.dat.if_dat.b = parse_rval(toks);
             cif.dat.if_dat.truebrc = parse_instr_block(toks);
-            cif.dat.if_dat.falsebrc = clist::new_clist(sizeof(instr));
+            cif.dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
             curr->dat.if_dat.falsebrc.push(&cif);
             curr = (instr*)curr->dat.if_dat.falsebrc.ith(0);
             n = (token*)toks->ith(0);
         }
         if (n->kind == token::Else) {
             *toks = toks->tail();
-            clist block = parse_instr_block(toks);
+            old_clist block = parse_instr_block(toks);
             curr->dat.if_dat.falsebrc.del();
             curr->dat.if_dat.falsebrc = block;
         }
@@ -354,7 +354,7 @@ instr* parse_instr(clist* toks) {
         return ret;
     }
 
-    clist left = *toks;
+    old_clist left = *toks;
     bool found_par = false;
     while (toks->len()) {
         n = (token*)toks->ith(0);
@@ -403,11 +403,11 @@ instr* parse_instr(clist* toks) {
     exit(-1);
 }
 
-decl* parse_fun_decl(clist* toks) {
+decl* parse_fun_decl(old_clist* toks) {
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Func;
     ret->dat.func_dat.ret_t = parse_typ(toks);
-    ret->dat.func_dat.args_decls = clist::new_clist(sizeof(decl));
+    ret->dat.func_dat.args_decls = old_clist::new_clist(sizeof(decl));
 
     token* n = (token*)toks->ith(0);
     if (n->kind != token::Ident) {
@@ -445,15 +445,15 @@ decl* parse_fun_decl(clist* toks) {
         ret->dat.func_dat.instrs = nullptr;
         return ret;
     }
-    ret->dat.func_dat.instrs = (clist*)malloc(sizeof(clist));
+    ret->dat.func_dat.instrs = (old_clist*)malloc(sizeof(old_clist));
     *ret->dat.func_dat.instrs = parse_instr_block(toks);
 
     return ret;
 }
 
-decl::type_constr parse_type_constructor(clist* toks) {
+decl::type_constr parse_type_constructor(old_clist* toks) {
     decl::type_constr ret;
-    ret.fields = clist::new_clist(sizeof(decl));
+    ret.fields = old_clist::new_clist(sizeof(decl));
 
     token* n = (token*)toks->ith(0);
     if (n->kind != token::Ident) {
@@ -495,11 +495,11 @@ decl::type_constr parse_type_constructor(clist* toks) {
     return ret;
 }
 
-decl* parse_type_decl(clist* toks) {
+decl* parse_type_decl(old_clist* toks) {
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Type;
-    ret->dat.type_dat.constrs = clist::new_clist(sizeof(decl::type_constr));
-    ret->dat.type_dat.other_decls = clist::new_clist(sizeof(decl));
+    ret->dat.type_dat.constrs = old_clist::new_clist(sizeof(decl::type_constr));
+    ret->dat.type_dat.other_decls = old_clist::new_clist(sizeof(decl));
     token* n = (token*)toks->ith(0);
     if (n->kind == token::Ident) {
         ret->dat.type_dat.name = n->dat.Ident_dat.str;
@@ -534,7 +534,7 @@ decl* parse_type_decl(clist* toks) {
 
     if (!ret->dat.type_dat.constrs.len()) {
         decl::type_constr unit;
-        unit.fields = clist::new_clist(sizeof(decl));
+        unit.fields = old_clist::new_clist(sizeof(decl));
         unit.name = "_";
         ret->dat.type_dat.constrs.push(&unit);
     }
@@ -542,7 +542,7 @@ decl* parse_type_decl(clist* toks) {
     return ret;
 }
 
-decl* parse_decl(clist* toks) {
+decl* parse_decl(old_clist* toks) {
     token* n = (token*)toks->ith(0);
     if (n->kind == token::Type) {
         *toks = toks->tail();
@@ -556,8 +556,8 @@ decl* parse_decl(clist* toks) {
 }
 
 
-ast parse(clist toks) {
-    ast ret = {.decls = clist::new_clist(sizeof(decl))};
+ast parse(old_clist toks) {
+    ast ret = {.decls = old_clist::new_clist(sizeof(decl))};
     while (toks.len()) {
         printf("r:%d\n", toks.len());
 
