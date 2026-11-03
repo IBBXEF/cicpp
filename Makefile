@@ -1,8 +1,8 @@
 
 SOURCE_FILES = src/cpp/ast.cpp src/cpp/lexer.cpp src/cpp/main.cpp src/cpp/parser.cpp src/cpp/utils.cpp
 
-TEMP_FILES = _build/test/lexer.c
-TEMP_TEST_FILES = _build/test2/lexer.c
+TEMP_FILES = _build/test/lexer.c _build/test/clist.c
+TEMP_TEST_FILES = _build/test2/lexer.c _build/test2/clist.c
 
 hardclean:
 	rm -fr _build
@@ -33,6 +33,7 @@ build_test: $(SOURCE_FILES) $(TEMP_TEST_FILES)
 
 replacelib: $(TEMP_FILES)
 	cp _build/test/lexer.c _build/lexer.c
+	cp _build/test/clist.c _build/clist.c
 
 replace: replacelib
 	cp _build/main main
