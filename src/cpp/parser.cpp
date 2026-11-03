@@ -525,7 +525,7 @@ decl* parse_type_decl(old_clist* toks) {
         if (ret->dat.templated_dat.d->kind == decl::Type) {
             ret->dat.templated_dat.name = ret->dat.templated_dat.d->dat.type_dat.name;
         } else if (ret->dat.templated_dat.d->kind == decl::Templated) {
-            ret->dat.templated_dat.name = ret->dat.templated_dat.name;
+            ret->dat.templated_dat.name = ret->dat.templated_dat.d->dat.templated_dat.name;
         } else {
             printf("kind of templated type unsupported (id %d)\n", (int)ret->dat.templated_dat.d->kind);
             exit(-1);

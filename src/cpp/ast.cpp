@@ -304,10 +304,16 @@ void decl::print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end =
         dat.specialize_dat.param->print_to_file(fptr, 0);
         fprintf(fptr, ")\n");
 
+        print_n_spaces(ident * ident_lvl, fptr);
+        fprintf(fptr, "#define %s %s\n", dat.specialize_dat.newname, templated_decl->dat.templated_dat.name);
+
+
         templated_decl->dat.templated_dat.d->print_to_file(fptr, ident, prog);
 
         print_n_spaces(ident * ident_lvl, fptr);
         fprintf(fptr, "#undef %s\n", templated_decl->dat.templated_dat.param_name);
+        print_n_spaces(ident * ident_lvl, fptr);
+        fprintf(fptr, "#undef %s\n", templated_decl->dat.templated_dat.name);
     } else if (kind == Include_C) {
         print_n_spaces(ident * ident_lvl, fptr);
         if (dat.include_dat.file[0] == '.' && dat.include_dat.file[1] == '/') {
