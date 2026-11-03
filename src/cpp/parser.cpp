@@ -41,6 +41,26 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         opret->dat.binop_dat.v1 = ret;
         opret->dat.binop_dat.v2 = parse_rval(toks);
         ret = opret;
+    } if (n->kind == token::LPAREN) {
+        rval* fcal = (rval*)malloc(sizeof(rval));
+        fcal->kind = rval::Fcall;
+        fcal->dat.fcall_dat.func = ret;
+        fcal->dat.fcall_dat.args = clist::new_clist(sizeof(rval));
+        *toks = toks->tail();
+        n = (token*)toks->ith(0);
+        while (n->kind != token::RPAREN) {
+            if (n->kind == token::Comma) {
+                *toks = toks->tail(); // this will sometimes parse nonsense but it's okay
+            } else {
+                rval* arg = parse_rval(toks);
+                fcal->dat.fcall_dat.args.push(arg);
+                free(arg);
+            }
+            n = (token*)toks->ith(0);
+        }
+        fcal->dat.fcall_dat.args.reverse();
+        *toks = toks->tail();
+        ret = fcal;
     }
 
     return ret;
@@ -272,8 +292,18 @@ instr* parse_instr(clist* toks) {
             *toks = toks->tail();
             return ist;
         } else if (n->kind == token::LPAREN) {
-            printf("function calls not supported\n");
-            exit(-1);
+            *toks = left;
+            // we parse function calls as an rvalue
+            instr* ist = (instr*)malloc(sizeof(instr));
+            ist->kind = instr::Fcall;
+            ist->dat.fcall_dat.call = parse_rval(toks);
+            n = (token*)toks->ith(0);
+            if (n->kind != token::Semicol) {
+                printf("expected ';' after instruction; got token %i\n", (int)n->kind);
+                exit(-1);
+            }
+            *toks = toks->tail();
+            return ist;
         }
         *toks = toks->tail();
     }

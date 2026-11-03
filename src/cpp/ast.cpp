@@ -37,7 +37,8 @@ struct rval
         Lval,
         Int,
         Binop,
-        Unop
+        Unop,
+        Fcall
     } kind;
 
     union {
@@ -45,6 +46,7 @@ struct rval
         int int_dat;
         struct { rval* v1; binop op; rval* v2; } binop_dat;
         struct { unop op; rval* v; } unop_dat;
+        struct { rval* func; clist args; } fcall_dat;
     } dat;
 
     void print_to_file(FILE* fptr) {
@@ -83,6 +85,16 @@ struct rval
                 fprintf(fptr, "-");
             }
             dat.unop_dat.v->print_to_file(fptr);
+        } else if (kind == Fcall) {
+            dat.fcall_dat.func->print_to_file(fptr);
+            fprintf(fptr, "(");
+            for (int i = 0; i < dat.fcall_dat.args.len(); i++) {
+                if (i) {
+                    fprintf(fptr, ", ");
+                }
+                ((rval*)dat.fcall_dat.args.ith(i))->print_to_file(fptr);
+            }
+            fprintf(fptr, ")");
         }
     }
 };
@@ -165,7 +177,7 @@ struct decl
 
 struct instr
 {
-    enum { Set, Return, If, While, Decl } kind;
+    enum { Set, Return, If, While, Decl, Fcall } kind;
 
     union {
         struct { lval* l; rval* r; }                      set_dat;
@@ -173,6 +185,7 @@ struct instr
         struct { rval* b; clist truebrc; clist falsebrc; } if_dat;
         struct { rval* b; clist instrs; }               while_dat;
         struct { decl* d; }                              decl_dat;
+        struct { rval* call; }                          fcall_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident) {
@@ -189,6 +202,10 @@ struct instr
             fprintf(fptr, ";\n");
         } else if (kind == Decl) {
             dat.decl_dat.d->print_to_file(fptr, ident, true);
+        } else if (kind == Fcall) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            dat.fcall_dat.call->print_to_file(fptr);
+            fprintf(fptr, ";\n");
         } else if (kind == If) {
             print_n_spaces(ident * ident_lvl, fptr);
             fprintf(fptr, "if (");

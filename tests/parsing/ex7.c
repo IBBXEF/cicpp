@@ -27,3 +27,9 @@ func int tri_ternary(int b, int _1, int _2, int _3) {
     }
     ptr0[b] = _3;
 }
+
+int i;
+
+func void tet() {
+    i = tri_ternary(0, 1, 2, 3);
+}

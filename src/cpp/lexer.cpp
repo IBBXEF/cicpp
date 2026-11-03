@@ -219,6 +219,8 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
         } else if (n->kind == token::Unop && n->dat.Unop_dat.op.kind == unop::Lnot) { // last token was an '!'
             n->kind = token::Binop;
             n->dat.Binop_dat.op.kind = binop::Neq;
+        } else if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Gt) { // last token was an '>'
+            n->dat.Binop_dat.op.kind = binop::Geq;
         } else {
             token tok = {.kind = token::Set};
             ret->push(&tok);
