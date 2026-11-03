@@ -15,6 +15,10 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         *toks = toks->tail();
         ret->kind = rval::Int;
         ret->dat.int_dat = n->dat.VInt_dat.dat;
+    // } else if (n->kind == token::LNot) {
+    //     *toks = toks->tail();
+    //     ret->kind = rval::Int;
+    //     ret->dat.int_dat = n->dat.VInt_dat.dat;
     } else if (can_fallback) { // we fallback to parsing an lvalue
         ret->kind = rval::Lval;
         ret->dat.lval_dat = parse_lval(toks);
@@ -61,6 +65,13 @@ lval* parse_lval(clist* toks) {
             }
             *toks = toks->tail();
         }
+    } else if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Mul) { // we are parsing a pointer dereference
+        *toks = toks->tail();
+        ret->kind = lval::Index;
+        ret->dat.ind_dat.ind = (rval*)malloc(sizeof(rval));
+        ret->dat.ind_dat.ind->kind = rval::Int;
+        ret->dat.ind_dat.ind->dat.int_dat = 0; // we parse *p as p[0]
+        ret->dat.ind_dat.arr = parse_rval(toks);
     } else { // we try to parse an array index
         ret->kind = lval::Index;
         ret->dat.ind_dat.arr = parse_rval(toks, false);
@@ -165,7 +176,7 @@ clist parse_instr_block(clist* toks) {
     
     token* n = (token*)toks->ith(0);
     if (n->kind != token::LBRACK) {
-        printf("expected '{' to start a code block\n");
+        printf("expected '{' to start a code block, got token id %d\n", (int)n->kind);
         exit(-1);
     }
     *toks = toks->tail();
@@ -389,7 +400,7 @@ decl* parse_type_decl(clist* toks) {
     if (!ret->dat.type_dat.constrs.len()) {
         decl::type_constr unit;
         unit.fields = clist::new_clist(sizeof(decl));
-        unit.name = "unit";
+        unit.name = "_";
         ret->dat.type_dat.constrs.push(&unit);
     }
 

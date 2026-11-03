@@ -9,6 +9,10 @@ type binop {
     Add; Mul; Sub; Div; Band; Bor; Land; Lor; Eq; Leq; Lt; Neq; Geq; Gt;
 }
 
+type unop {
+    Lnot;
+}
+
 type token {
     Nothing;
 
@@ -36,7 +40,7 @@ type token {
     RBRACK;
     
     Binop { binop op; };
-    LNot;
+    Unop  { unop  op; };
 
     Comma;
     Semicol;

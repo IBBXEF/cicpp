@@ -254,7 +254,9 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
         }
     } else if (c == '!') {
         pop_token_stack(cou, ret, last_buffer);
-        token tok = {.kind = token::LNot};
+        token tok;
+        tok.kind = token::Unop;
+        tok.dat.Unop_dat.op.kind = unop::Lnot;
         ret->push(&tok);
     } else if (c == '+') {
         pop_token_stack(cou, ret, last_buffer);

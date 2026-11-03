@@ -36,13 +36,15 @@ struct rval
     enum {
         Lval,
         Int,
-        Binop
+        Binop,
+        Unop
     } kind;
 
     union {
         lval* lval_dat;
         int int_dat;
         struct { rval* v1; binop op; rval* v2; } binop_dat;
+        struct { binop op; rval* v; } unop_dat;
     } dat;
 
     void print_to_file(FILE* fptr) {
@@ -265,7 +267,7 @@ struct decl
                 fprintf(fptr, "struct {\n");
             }
 
-            if (dat.type_dat.constrs.len() != 1)
+            if (!(dat.type_dat.constrs.len() == 1 && !strcmp(((type_constr*)dat.type_dat.constrs.ith(0))->name, "_")))
             {
                 print_n_spaces((ident+1) * ident_lvl, fptr);
                 fprintf(fptr, "enum { ");

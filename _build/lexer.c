@@ -6,12 +6,18 @@
 struct binop {
   enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt } kind;
 };
+struct unop {
+  enum { Lnot } kind;
+};
 struct token {
-  enum { Nothing, TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Type, Func, Include, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, LNot, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident } kind;
+  enum { Nothing, TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Type, Func, Include, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident } kind;
   union {
     struct {
       binop op;
     } Binop_dat;
+    struct {
+      unop op;
+    } Unop_dat;
     struct {
       int dat;
     } VInt_dat;
