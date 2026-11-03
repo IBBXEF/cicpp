@@ -1,19 +1,24 @@
 
 SOURCE_FILES = src/cpp/ast.cpp src/cpp/lexer.cpp src/cpp/main.cpp src/cpp/parser.cpp src/cpp/utils.cpp
 
-TEMP_FILES = _build/lexer.c
-TEMP_TEST_FILES = _build/test/lexer.c
+TEMP_FILES = _build/test/lexer.c
+TEMP_TEST_FILES = _build/test2/lexer.c
 
-clean:
+hardclean:
 	rm -fr _build
 
-_build/%.c: src/new/%.new main
+clean:
+	rm -fr _build/test
+	rm -fr _build/test2
+
+_build/test/%.c: src/new/%.new main
+	mkdir -p _build/test
 	mkdir -p _build
 	./main $< -o $@
 
-_build/test/%.c: src/new/%.new main
+_build/test2/%.c: src/new/%.new test
 	mkdir -p _build
-	mkdir -p _build/test
+	mkdir -p _build/test2
 	./test $< -o $@
 
 build: $(SOURCE_FILES) $(TEMP_FILES)
@@ -23,9 +28,13 @@ build: $(SOURCE_FILES) $(TEMP_FILES)
 build_test: $(SOURCE_FILES) $(TEMP_TEST_FILES)
 	mkdir -p _build
 	mkdir -p _build/test
-	g++ -I_build/test -Isrc/cpp src/cpp/main.cpp -o _build/main
+	mkdir -p _build/test2
+	g++ -I_build/test -Isrc/cpp src/cpp/main.cpp -o _build/_test
 
-replace:
+replacelib:
+	cp _build/test/lexer.c _build/lexer.c
+
+replace: replacelib
 	cp _build/main main
 
 tests: build
@@ -40,4 +49,4 @@ tests: build
 	./test tests/parsing/ex7.c
 
 	make build_test
-	diff test _build/main
+	diff test _build/_test

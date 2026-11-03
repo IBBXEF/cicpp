@@ -6,10 +6,12 @@
 #include "./utils.cpp"
 
 type binop {
-    Add; Mul; Sub; Div; Band; Bor; Eq; Leq; Lt; Neq; Geq; Gt;
+    Add; Mul; Sub; Div; Band; Bor; Land; Lor; Eq; Leq; Lt; Neq; Geq; Gt;
 }
 
 type token {
+    Nothing;
+
     TVoid;
     TInt;
     TChar;
@@ -33,15 +35,8 @@ type token {
     LBRACK;
     RBRACK;
     
-    BAnd;
-    BOr;
-    LAnd;
-    LOr;
+    Binop { binop op; };
     LNot;
-    Star;
-    Plus;
-    Minus;
-    Div;
 
     Eq;
     Leq;

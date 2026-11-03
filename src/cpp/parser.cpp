@@ -40,23 +40,23 @@ lval* parse_lval(clist* toks) {
 }
 
 typ* parse_typ(clist* toks) {
-    token* curr = (token*)toks->ith(0);
+    token* n = (token*)toks->ith(0);
 
     typ* t = (typ*)malloc(sizeof(typ));
-    if (curr->kind == token::TVoid) {
+    if (n->kind == token::TVoid) {
         t->kind = typ::TVoid;
         *toks = toks->tail();
-    } else if (curr->kind == token::TInt) {
+    } else if (n->kind == token::TInt) {
         t->kind = typ::TInt;
         *toks = toks->tail();
-    } else if (curr->kind == token::TChar) {
+    } else if (n->kind == token::TChar) {
         t->kind = typ::TChar;
         *toks = toks->tail();
-    } else if (curr->kind == token::Ident) {
+    } else if (n->kind == token::Ident) {
         t->kind = typ::TIdent;
-        t->dat.TIdent_dat = curr->dat.Ident_dat.str;
+        t->dat.TIdent_dat = n->dat.Ident_dat.str;
         *toks = toks->tail();
-    } else if (curr->kind == token::Const) {
+    } else if (n->kind == token::Const) {
         t->kind = typ::TConst;
         *toks = toks->tail();
         t->dat.const_dat = parse_typ(toks);
@@ -65,12 +65,14 @@ typ* parse_typ(clist* toks) {
         exit(-1);
     }
 
-    while (((token*)toks->ith(0))->kind == token::Star) {
+    n = (token*)toks->ith(0);
+    while (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Mul) {
         typ* p = (typ*)malloc(sizeof(typ));
         p->kind = typ::TPtr;
         p->dat.ptr_dat = t;
         t = p;
         *toks = toks->tail();
+        n = (token*)toks->ith(0);
     }
     
     return t;
@@ -390,6 +392,8 @@ ast parse(clist toks) {
             d->dat.include_dat.file = tok->dat.VString_dat.str;
             toks = toks.tail();
             ret.decls.push(d);
+        } else if (tok->kind == token::Nothing) {
+            toks = toks.tail();
         } else {
             decl* d = parse_decl(&toks);
             ret.decls.push(d);
