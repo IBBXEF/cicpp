@@ -15,10 +15,16 @@ rval* parse_rval(clist* toks, bool can_fallback = true) {
         *toks = toks->tail();
         ret->kind = rval::Int;
         ret->dat.int_dat = n->dat.VInt_dat.dat;
-    // } else if (n->kind == token::LNot) {
-    //     *toks = toks->tail();
-    //     ret->kind = rval::Int;
-    //     ret->dat.int_dat = n->dat.VInt_dat.dat;
+    } else if (n->kind == token::Unop) {
+        *toks = toks->tail();
+        ret->kind = rval::Unop;
+        ret->dat.unop_dat.op = n->dat.Unop_dat.op;
+        ret->dat.unop_dat.v = parse_rval(toks);
+    } else if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Sub) { // the token for '-' is not a binop, we have to treat it separately
+        *toks = toks->tail();
+        ret->kind = rval::Unop;
+        ret->dat.unop_dat.op.kind = unop::Neg;
+        ret->dat.unop_dat.v = parse_rval(toks);
     } else if (can_fallback) { // we fallback to parsing an lvalue
         ret->kind = rval::Lval;
         ret->dat.lval_dat = parse_lval(toks);
@@ -244,10 +250,14 @@ instr* parse_instr(clist* toks) {
         n = (token*)toks->ith(0);
         if (n->kind == token::Semicol) {
             if (left.l == toks->l) {
-                return nullptr;
-            } // we have not found an '=' token in our instruction, to it is a function call
-            printf("function calls not supported\n");
-            exit(-1);
+                return nullptr; // empty intruction
+            }
+            // we have found neither '=' or '(' tokens in our instruction, to it is a declaration
+            instr* ist = (instr*)malloc(sizeof(instr));
+            ist->kind = instr::Decl;
+            ist->dat.decl_dat.d = parse_var_decl(&left, true);
+            *toks = left;
+            return ist;
         } else if (n->kind == token::Set) { // we have an '=' in our instruction, so it is a set operation (not always true but almost)
             instr* ist = (instr*)malloc(sizeof(instr));
             ist->kind = instr::Set;
@@ -261,6 +271,9 @@ instr* parse_instr(clist* toks) {
             }
             *toks = toks->tail();
             return ist;
+        } else if (n->kind == token::LPAREN) {
+            printf("function calls not supported\n");
+            exit(-1);
         }
         *toks = toks->tail();
     }

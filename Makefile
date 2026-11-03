@@ -21,7 +21,7 @@ _build/test2/%.c: src/new/%.new test
 	mkdir -p _build/test2
 	./test $< -o $@
 
-build: $(SOURCE_FILES) $(TEMP_FILES)
+build: $(SOURCE_FILES) $(TEMP_TEST_FILES)
 	mkdir -p _build
 	g++ -I_build -Isrc/cpp src/cpp/main.cpp -o _build/main
 
@@ -31,7 +31,7 @@ build_test: $(SOURCE_FILES) $(TEMP_TEST_FILES)
 	mkdir -p _build/test2
 	g++ -I_build/test -Isrc/cpp src/cpp/main.cpp -o _build/_test
 
-replacelib:
+replacelib: $(TEMP_FILES)
 	cp _build/test/lexer.c _build/lexer.c
 
 replace: replacelib

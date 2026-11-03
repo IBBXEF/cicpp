@@ -7,7 +7,7 @@ struct binop {
   enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt } kind;
 };
 struct unop {
-  enum { Lnot } kind;
+  enum { Lnot, Neg } kind;
 };
 struct token {
   enum { Nothing, TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Type, Func, Include, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident } kind;

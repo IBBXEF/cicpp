@@ -152,7 +152,6 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
     }
     
     
-
     token* n = nullptr;
     if (c == ' ' || c == '\n' || c == '\t') {
         pop_token_stack(cou, ret, last_buffer);
@@ -217,6 +216,9 @@ void lexing_step(int* cou, clist* ret, char c, char* last_buffer, lexing_state::
         if (n->kind == token::Set) { // last token was an '='
             n->kind = token::Binop;
             n->dat.Binop_dat.op.kind = binop::Eq;
+        } else if (n->kind == token::Unop && n->dat.Unop_dat.op.kind == unop::Lnot) { // last token was an '!'
+            n->kind = token::Binop;
+            n->dat.Binop_dat.op.kind = binop::Neq;
         } else {
             token tok = {.kind = token::Set};
             ret->push(&tok);

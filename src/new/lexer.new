@@ -11,6 +11,7 @@ type binop {
 
 type unop {
     Lnot;
+    Neg;
 }
 
 type token {
