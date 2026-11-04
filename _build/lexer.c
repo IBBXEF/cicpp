@@ -70,22 +70,31 @@ struct clist {
     }
     return ret;
   }
-  dat_t ith(int i){
+  dat_t* ith_ref(int i){
     _clist* t;
     t = l;
     while ((i) > (0)) {
       if (!(t)) {
-        printf("out of range in list: index %d\n", i);
+        printf("out of range in list: index %d while len is %d\n", i, len());
         exit(0);
       }
       t = (t[0]).next;
       i = (i) - (1);
     }
-    return (t[0]).dat;
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", i, len());
+      exit(0);
+    }
+    dat_t* ret;
+    ret = &((t[0]).dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return ith_ref(i)[0];
   }
   void reverse(){
     clist rev;
-    (rev).l = nullptr;
+    (rev).init();
     while (l) {
       (rev).push(pop());
     }
@@ -142,22 +151,31 @@ struct clist {
     }
     return ret;
   }
-  dat_t ith(int i){
+  dat_t* ith_ref(int i){
     _clist* t;
     t = l;
     while ((i) > (0)) {
       if (!(t)) {
-        printf("out of range in list: index %d\n", i);
+        printf("out of range in list: index %d while len is %d\n", i, len());
         exit(0);
       }
       t = (t[0]).next;
       i = (i) - (1);
     }
-    return (t[0]).dat;
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", i, len());
+      exit(0);
+    }
+    dat_t* ret;
+    ret = &((t[0]).dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return ith_ref(i)[0];
   }
   void reverse(){
     clist rev;
-    (rev).l = nullptr;
+    (rev).init();
     while (l) {
       (rev).push(pop());
     }

@@ -8,7 +8,7 @@
 #include "lexer.c"
 
 
-void pop_token_stack(int* cou, old_clist* l, const char* str) {
+void pop_token_stack(int* cou, toklist* l, const char* str) {
     if (!*cou) { return; }
     
     token tok;
@@ -64,7 +64,7 @@ void pop_token_stack(int* cou, old_clist* l, const char* str) {
         tok.dat.Ident_dat.str = tmp;
     }
 
-    l->push(&tok);
+    l->push(tok);
     *cou = 0;
 }
 
@@ -80,7 +80,7 @@ struct lexing_state { enum T {
 }; };
 
 
-void lexing_step(int* cou, old_clist* ret, char c, char* last_buffer, lexing_state::T* state) {
+void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state::T* state) {
     if (*state == lexing_state::LEXING_STRING) {
         last_buffer[*cou] = c;
         *cou = *cou + 1;
@@ -93,7 +93,7 @@ void lexing_step(int* cou, old_clist* ret, char c, char* last_buffer, lexing_sta
             token tok {.kind=token::VString};
             tok.dat.VString_dat.str = tmp;
 
-            ret->push(&tok);
+            ret->push(tok);
 
             *cou = 0;
             *state = lexing_state::LEXING_IDENT_OR_INT;
@@ -123,7 +123,7 @@ void lexing_step(int* cou, old_clist* ret, char c, char* last_buffer, lexing_sta
             token tok {.kind=token::VInt}; // we lex chars as ints
             tok.dat.VInt_dat.dat = last_buffer[0];
 
-            ret->push(&tok);
+            ret->push(tok);
 
             *cou = 0;
             *state = lexing_state::LEXING_IDENT_OR_INT;
@@ -152,7 +152,7 @@ void lexing_step(int* cou, old_clist* ret, char c, char* last_buffer, lexing_sta
                 tok.dat.VInt_dat.dat = last_buffer[0];
             }
 
-            ret->push(&tok);
+            ret->push(tok);
 
             *cou = 0;
             *state = lexing_state::LEXING_IDENT_OR_INT;
@@ -164,7 +164,7 @@ void lexing_step(int* cou, old_clist* ret, char c, char* last_buffer, lexing_sta
     }
     
     
-    token* n = nullptr;
+    token* n;
     if (c == ' ' || c == '\n' || c == '\t') {
         pop_token_stack(cou, ret, last_buffer);
     } else if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
@@ -173,58 +173,58 @@ void lexing_step(int* cou, old_clist* ret, char c, char* last_buffer, lexing_sta
     } else if (c == ';') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::Semicol};
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == ',') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::Comma};
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '.') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::Dot};
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '#') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::Hashtag};
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '<') {
         pop_token_stack(cou, ret, last_buffer);
         token tok;
         tok.kind = token::Binop;
         tok.dat.Binop_dat.op.kind = binop::Lt;
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '>') {
         pop_token_stack(cou, ret, last_buffer);
         token tok;
         tok.kind = token::Binop;
         tok.dat.Binop_dat.op.kind = binop::Gt;
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '(') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::LPAREN};
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == ')') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::RPAREN};
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '[') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::LSQUAR};
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == ']') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::RSQUAR};
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '{') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::LBRACK};
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '}') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::RBRACK};
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '=') {
         pop_token_stack(cou, ret, last_buffer);
-        n = (token*)ret->ith(0);
+        n = ret->ith_ref(0);
         if (n->kind == token::Set) { // last token was an '='
             n->kind = token::Binop;
             n->dat.Binop_dat.op.kind = binop::Eq;
@@ -235,74 +235,74 @@ void lexing_step(int* cou, old_clist* ret, char c, char* last_buffer, lexing_sta
             n->dat.Binop_dat.op.kind = binop::Geq;
         } else {
             token tok = {.kind = token::Set};
-            ret->push(&tok);
+            ret->push(tok);
         }
     } else if (c == ':') {
         pop_token_stack(cou, ret, last_buffer);
-        n = (token*)ret->ith(0);
+        n = ret->ith_ref(0);
         if (n->kind == token::Colon) { // last token was an ':'
             n->kind = token::TwoColon;
         } else {
             token tok = {.kind = token::Colon};
-            ret->push(&tok);
+            ret->push(tok);
         }
     } else if (c == '&') {
         pop_token_stack(cou, ret, last_buffer);
-        n = (token*)ret->ith(0);
+        n = ret->ith_ref(0);
         if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Band) { // last token was an '&'
             n->dat.Binop_dat.op.kind = binop::Land;
         } else {
             token tok;
             tok.kind = token::Binop;
             tok.dat.Binop_dat.op.kind = binop::Band;
-            ret->push(&tok);
+            ret->push(tok);
         }
     } else if (c == '|') {
         pop_token_stack(cou, ret, last_buffer);
-        n = (token*)ret->ith(0);
+        n = ret->ith_ref(0);
         if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Bor) { // last token was an '|'
             n->dat.Binop_dat.op.kind = binop::Lor;
         } else {
             token tok;
             tok.kind = token::Binop;
             tok.dat.Binop_dat.op.kind = binop::Bor;
-            ret->push(&tok);
+            ret->push(tok);
         }
     } else if (c == '!') {
         pop_token_stack(cou, ret, last_buffer);
         token tok;
         tok.kind = token::Unop;
         tok.dat.Unop_dat.op.kind = unop::Lnot;
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '+') {
         pop_token_stack(cou, ret, last_buffer);
         token tok;
         tok.kind = token::Binop;
         tok.dat.Binop_dat.op.kind = binop::Add;
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '-') {
         pop_token_stack(cou, ret, last_buffer);
         token tok;
         tok.kind = token::Binop;
         tok.dat.Binop_dat.op.kind = binop::Sub;
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '*') {
         pop_token_stack(cou, ret, last_buffer);
         token tok;
         tok.kind = token::Binop;
         tok.dat.Binop_dat.op.kind = binop::Mul;
-        ret->push(&tok);
+        ret->push(tok);
     } else if (c == '/') {
         pop_token_stack(cou, ret, last_buffer);
-        n = (token*)ret->ith(0);
+        n = ret->ith_ref(0);
         if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Div) { // last token was an ':'
-            free(ret->pop());
+            ret->pop();
             *state = lexing_state::LINE_COMMENT;
         } else {
             token tok;
             tok.kind = token::Binop;
             tok.dat.Binop_dat.op.kind = binop::Div;
-            ret->push(&tok);
+            ret->push(tok);
         }
     } else if (c == '"') {
         pop_token_stack(cou, ret, last_buffer);
@@ -317,17 +317,18 @@ void lexing_step(int* cou, old_clist* ret, char c, char* last_buffer, lexing_sta
 }
 
 
-old_clist lex_file(const char* path) {
+toklist lex_file(const char* path) {
     FILE* fptr = fopen(path, "r");
     if (!fptr) {
         printf("%s file failed to open.\n", path);
         exit(-1);
     }
 
-    old_clist ret = old_clist::new_clist(sizeof(token));
+    toklist ret;
+    ret.init();
     token no;
     no.kind = token::Nothing;
-    ret.push(&no);
+    ret.push(no);
     
     int cou = 0;
     lexing_state::T state = lexing_state::LEXING_IDENT_OR_INT;
@@ -347,9 +348,9 @@ old_clist lex_file(const char* path) {
 }
 
 
-void print_tokens(old_clist toks) {
+void print_tokens(toklist toks) {
     for (int i = 0; i < toks.len(); i++) {
-        token tok = *(token*)toks.ith(i);
+        token tok = toks.ith(i);
 
         printf("token kind: %d\n", (int)tok.kind);
 

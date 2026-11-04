@@ -44,24 +44,34 @@ type <dat_t> clist {
         return ret;
     }
 
-    func dat_t ith(int i) {
+    func dat_t* ith_ref(int i) {
         _clist* t;
         t = l;
         while (i > 0)
         {
             if (!t) {
-                printf("out of range in list: index %d\n", i);
+                printf("out of range in list: index %d while len is %d\n", i, len());
                 exit(0);
             }
             t = (*t).next;
             i = i - 1;
         }
-        return (*t).dat;
+        if (!t) {
+            printf("out of range in list: index %d while len is %d\n", i, len());
+            exit(0);
+        }
+        dat_t* ret;
+        ret = &(*t).dat;
+        return ret;
+    }
+
+    func dat_t ith(int i) {
+        return * (ith_ref(i));
     }
 
     func void reverse() {
         clist rev;
-        (rev).l = nullptr;
+        rev.init();
         while (l)
         {
             rev.push(pop());
