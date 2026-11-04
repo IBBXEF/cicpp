@@ -44,7 +44,8 @@ struct rval
         Binop,
         Unop,
         Fcall,
-        Typecast
+        Typecast,
+        Addr
     } kind;
 
     union {
@@ -55,6 +56,7 @@ struct rval
         struct { unop op; rval* v; } unop_dat;
         struct { rval* func; old_clist args; } fcall_dat;
         struct { typ* t; rval* v; } typecast_dat;
+        struct { lval* v; } addr_dat;
     } dat;
 
     void print_to_file(FILE* fptr);

@@ -9,7 +9,7 @@ type nonterm_symb {
     Rval1;
     Rvalop;
     RvalI;
-    Lval0;
+    Lval;
 }
 
 type gram_rule_t {
@@ -47,8 +47,8 @@ type gram_rule_t {
                 base = *l;
                 while i < (rules.len()) {
                     gram_rule_t rule;
-                    rule = rules.ith(i);
-                    if (((rule).result) == ((dat.NonTerm_dat).symb)) {
+                    rule = *(rules.ith(i));
+                    if ((((rule).result).kind) == (((dat.NonTerm_dat).symb).kind)) {
                         *l = base;
                         if rule.parse_ok(l, max_depth, rules) {
                             return rule.parse(l, max_depth, rules);
@@ -58,6 +58,16 @@ type gram_rule_t {
                 }
                 return nullptr;
             }
+        }
+        
+        func void set_Term() { // temporary
+            kind = Term;
+        }
+        func void set_NonTerm() { // temporary
+            kind = NonTerm;
+        }
+        func void set_Exact() { // temporary
+            kind = Exact;
         }
     }
 
@@ -94,6 +104,41 @@ type gram_rule_t {
         ret = result_function(vlues);
         vlues.del();
         return ret;
+    }
+
+    func void init(nonterm_symb rule_result, clist_voidptr -> void* rule_result_function) {
+        result = rule_result;
+        result_function = rule_result_function;
+        pattern.init();
+    }
+
+    func void add_nonterm(nonterm_symb nt) {
+        gram_symbol_t sym;
+        sym.set_NonTerm();
+        ((sym.dat).NonTerm_dat).symb = nt;
+        pattern.append(sym);
+    }
+
+    func void add_term(const char* str) {
+        toklist l;
+        l = lex_string(str);
+        while (l.len()) {
+            gram_symbol_t sym;
+            sym.set_Term();
+            ((sym.dat).Term_dat).tok = l.pop();
+            pattern.append(sym);
+        }
+    }
+
+    func void add_exact(const char* str) {
+        toklist l;
+        l = lex_string(str);
+        while (l.len()) {
+            gram_symbol_t sym;
+            sym.set_Exact();
+            ((sym.dat).Exact_dat).tok = l.pop();
+            pattern.append(sym);
+        }
     }
 }
 

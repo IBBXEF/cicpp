@@ -231,3 +231,4 @@ struct clist {
 };
 #undef dat_t
 #undef clist
+toklist lex_string(const char* str);

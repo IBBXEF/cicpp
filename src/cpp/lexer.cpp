@@ -324,6 +324,32 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
 }
 
 
+toklist lex_string(const char* str) {
+    toklist ret;
+    ret.init();
+    token no;
+    no.kind = token::As; // we place a placeholder token that we will remove later
+    ret.append(no);
+    
+    int cou = 0;
+    lexing_state::T state = lexing_state::LEXING_IDENT_OR_INT;
+
+    char last_buffer[100];
+
+    char c;
+    c = *str;
+    while (c && c != EOF)
+    {
+        lexing_step(&cou, &ret, c, last_buffer, &state);
+        str = str + 1;
+        c = *str;
+    }
+    pop_token_stack(&cou, &ret, last_buffer);
+
+    ret.pop(); // we remove the first token, our placeholder
+    return ret;
+}
+
 toklist lex_file(const char* path) {
     FILE* fptr = fopen(path, "r");
     if (!fptr) {

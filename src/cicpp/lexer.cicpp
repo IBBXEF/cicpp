@@ -82,3 +82,5 @@ type token {
 #include "src/cicpp/clist.cicpp"
 
 specialize clist<token> as toklist
+
+func toklist lex_string(const char* str);

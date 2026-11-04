@@ -5,7 +5,7 @@
 #include "ast.cpp"
 #include "lexer.cpp"
 
-lval* parse_lval(toklist* toks);
+lval* parse_lval_old(toklist* toks);
 typ* parse_typ(toklist* toks);
 
 void* gram_rule_elt_n0(clist_voidptr l) { return l.ith(0); }
@@ -18,68 +18,119 @@ void* gram_rule_binop(clist_voidptr l) {
     ret->dat.binop_dat.v2 = (rval*)l.ith(2);
     return ret;
 }
+void* gram_rule_Rval_of_Lval(clist_voidptr l) {
+    rval* ret = (rval*)malloc(sizeof(rval));
+    ret->kind = rval::Lval;
+    ret->dat.lval_dat = (lval*)l.ith(0);
+    return ret;
+}
+void* gram_rule_dot(clist_voidptr l) {
+    lval* ret = (lval*)malloc(sizeof(lval));
+    ret->kind = lval::Field;
+    ret->dat.field_dat.stru = (rval*)l.ith(0);
+    ret->dat.field_dat.field = ((token*)l.ith(2))->dat.Ident_dat.str;
+    return ret;
+}
+void* gram_rule_arrow(clist_voidptr l) {
+    // we parse a->b as (a[0]).b
+    rval* stru = (rval*)malloc(sizeof(rval));
+    stru->kind = rval::Lval;
+
+    lval* stru2 = (lval*)malloc(sizeof(lval));
+    stru2->kind = lval::Index;
+    stru2->dat.ind_dat.arr = (rval*)l.ith(0);
+    stru2->dat.ind_dat.ind = (rval*)malloc(sizeof(rval));
+    stru2->dat.ind_dat.ind->kind = rval::Int;
+    stru2->dat.ind_dat.ind->dat.int_dat = 0;
+
+    stru->dat.lval_dat = stru2;
+
+    lval* ret = (lval*)malloc(sizeof(lval));
+    ret->kind = lval::Field;
+    ret->dat.field_dat.stru = stru;
+    ret->dat.field_dat.field = ((token*)l.ith(2))->dat.Ident_dat.str;
+    return ret;
+}
+void* gram_rule_ptr(clist_voidptr l) {
+    // we parse *a as a[0]
+    lval* ret = (lval*)malloc(sizeof(lval));
+    ret->kind = lval::Index;
+    ret->dat.ind_dat.arr = (rval*)l.ith(1);
+    ret->dat.ind_dat.ind = (rval*)malloc(sizeof(rval));
+    ret->dat.ind_dat.ind->kind = rval::Int;
+    ret->dat.ind_dat.ind->dat.int_dat = 0;
+    return ret;
+}
+void* gram_rule_addr(clist_voidptr l) {
+    // we parse *a as a[0]
+    rval* ret = (rval*)malloc(sizeof(rval));
+    ret->kind = rval::Addr;
+    ret->dat.addr_dat.v = (lval*)l.ith(1);
+    return ret;
+}
 
 gram_rules make_rules() {
     gram_rules ret;
     gram_rule_t rule;
-    gram_rule_t::gram_symbol_t symTerm;
-    gram_rule_t::gram_symbol_t symNonTerm;
-    symTerm.kind = gram_rule_t::gram_symbol_t::Term;
-    symNonTerm.kind = gram_rule_t::gram_symbol_t::NonTerm;
     ret.init();
 
-    rule.pattern.init(); // rule Rval <- '(' RvalI ')'
-    rule.result.kind = nonterm_symb::Rval;
-    symTerm.dat.Term_dat.tok.kind = token::LPAREN;
-    rule.pattern.push(symTerm);
-    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::RvalI;
-    rule.pattern.push(symNonTerm);
-    symTerm.dat.Term_dat.tok.kind = token::LPAREN;
-    rule.pattern.push(symTerm);
-    rule.pattern.reverse();
-    rule.result_function = gram_rule_elt_n1;
-    ret.push(rule);
+    rule.init({.kind = nonterm_symb::Rval}, gram_rule_elt_n1); // rule Rval -> '(' RvalI ')'
+    rule.add_exact("(");
+    rule.add_nonterm({.kind=nonterm_symb::RvalI});
+    rule.add_exact(")");
+    ret.append(rule);
 
-    rule.pattern.init(); // rule Rval1 <- Rval
-    rule.result.kind = nonterm_symb::Rval1;
-    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::Rval;
-    rule.pattern.push(symNonTerm);
-    rule.pattern.reverse();
-    rule.result_function = gram_rule_elt_n0;
-    ret.push(rule);
+    rule.init({.kind = nonterm_symb::Rval}, gram_rule_elt_n1); // rule Rval -> '&' LvalI
+    rule.add_exact("&");
+    rule.add_nonterm({.kind=nonterm_symb::Lval});
+    ret.append(rule);
 
-    rule.pattern.init(); // rule Rvalop <- Rval1
-    rule.result.kind = nonterm_symb::Rvalop;
-    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::Rval1;
-    rule.pattern.push(symNonTerm);
-    rule.pattern.reverse();
-    rule.result_function = gram_rule_elt_n0;
-    ret.push(rule);
+    rule.init({.kind = nonterm_symb::Rval1}, gram_rule_elt_n0); // rule Rval1 -> Rval
+    rule.add_nonterm({.kind=nonterm_symb::Rval});
+    ret.append(rule);
 
-    rule.pattern.init(); // rule Rvalop <- RvalI Binop Rvalop
-    rule.result.kind = nonterm_symb::Rvalop;
-    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::RvalI;
-    rule.pattern.push(symNonTerm);
-    symTerm.dat.Term_dat.tok.kind = token::Binop;
-    rule.pattern.push(symTerm);
-    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::Rvalop;
-    rule.pattern.push(symNonTerm);
-    rule.pattern.reverse();
-    rule.result_function = gram_rule_binop;
-    ret.push(rule);
+    rule.init({.kind = nonterm_symb::Rvalop}, gram_rule_elt_n0); // rule Rvalop -> Rval1
+    rule.add_nonterm({.kind=nonterm_symb::Rval1});
+    ret.append(rule);
 
-    rule.pattern.init(); // rule RvalI <- Rvalop
-    rule.result.kind = nonterm_symb::RvalI;
-    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::Rvalop;
-    rule.pattern.push(symNonTerm);
-    rule.pattern.reverse();
-    rule.result_function = gram_rule_elt_n0;
-    ret.push(rule);
+    rule.init({.kind = nonterm_symb::Rvalop}, gram_rule_binop); // rule Rvalop -> RvalI Binop Rvalop
+    rule.add_nonterm({.kind=nonterm_symb::RvalI});
+    rule.add_term("+"); // any binop is matched
+    rule.add_nonterm({.kind=nonterm_symb::Rvalop});
+    ret.append(rule);
+
+    rule.init({.kind = nonterm_symb::RvalI}, gram_rule_elt_n0); // rule RvalI -> Rvalop
+    rule.add_nonterm({.kind=nonterm_symb::Rvalop});
+    ret.append(rule);
+
+    rule.init({.kind = nonterm_symb::Lval}, gram_rule_Rval_of_Lval); // rule Lval -> RvalI
+    rule.add_nonterm({.kind=nonterm_symb::RvalI});
+    ret.append(rule);
+
+    rule.init({.kind = nonterm_symb::Lval}, gram_rule_dot); // rule Lval -> Rval '.' Ident
+    rule.add_nonterm({.kind=nonterm_symb::Rval});
+    rule.add_exact(".");
+    rule.add_term("ident");
+    ret.append(rule);
+
+    rule.init({.kind = nonterm_symb::Lval}, gram_rule_arrow); // rule Lval -> Rval '->' Ident
+    rule.add_nonterm({.kind=nonterm_symb::Rval});
+    rule.add_exact("->");
+    rule.add_term("ident");
+    ret.append(rule);
+
+    rule.init({.kind = nonterm_symb::Lval}, gram_rule_ptr); // rule Lval -> '*' Rval
+    rule.add_exact("*");
+    rule.add_nonterm({.kind=nonterm_symb::Rval});
+    ret.append(rule);
+
 
     return ret;
 }
 
-rval* parse_rval(toklist* toks, bool can_fallback = true) {
+gram_rules parsing_rules = make_rules();
+
+rval* parse_rval_old(toklist* toks, bool can_fallback = true) {
     rval* ret = (rval*)malloc(sizeof(rval));
     token n = toks->ith(0);
 
@@ -95,11 +146,11 @@ rval* parse_rval(toklist* toks, bool can_fallback = true) {
         *toks = toks->tail();
         ret->kind = rval::Unop;
         ret->dat.unop_dat.op = n.dat.Unop_dat.op;
-        ret->dat.unop_dat.v = parse_rval(toks);
+        ret->dat.unop_dat.v = parse_rval_old(toks);
     } else if (n.kind == token::LPAREN) {
         *toks = toks->tail();
         free(ret);
-        ret = parse_rval(toks);
+        ret = parse_rval_old(toks);
         n = toks->ith(0);
         if (n.kind != token::RPAREN) {
             printf("unmatched '(' (expected ')' at end of rvalue, got token id %d)\n", (int)n.kind);
@@ -110,15 +161,15 @@ rval* parse_rval(toklist* toks, bool can_fallback = true) {
         *toks = toks->tail();
         ret->kind = rval::Unop;
         ret->dat.unop_dat.op.kind = unop::Neg;
-        ret->dat.unop_dat.v = parse_rval(toks);
+        ret->dat.unop_dat.v = parse_rval_old(toks);
     } else if (n.kind == token::Binop && n.dat.Binop_dat.op.kind == binop::Band) { // the token for '&' is not a binop, we have to treat it separately
         *toks = toks->tail();
         ret->kind = rval::Unop;
         ret->dat.unop_dat.op.kind = unop::Addr;
-        ret->dat.unop_dat.v = parse_rval(toks); // yes it should be an lval but the parser will hopefully be replaced soon anyway
+        ret->dat.unop_dat.v = parse_rval_old(toks); // yes it should be an lval but the parser will hopefully be replaced soon anyway
     } else if (can_fallback) { // we fallback to parsing an lvalue
         ret->kind = rval::Lval;
-        ret->dat.lval_dat = parse_lval(toks);
+        ret->dat.lval_dat = parse_lval_old(toks);
     } else {
         printf("invalid rvalue (got token id %d)\n", (int)n.kind);
         exit(-1);
@@ -135,7 +186,7 @@ rval* parse_rval(toklist* toks, bool can_fallback = true) {
             if (n.kind == token::Comma) {
                 *toks = toks->tail(); // this will sometimes parse nonsense but it's okay
             } else {
-                rval* arg = parse_rval(toks);
+                rval* arg = parse_rval_old(toks);
                 fcal->dat.fcall_dat.args.push(arg);
                 free(arg);
             }
@@ -152,7 +203,7 @@ rval* parse_rval(toklist* toks, bool can_fallback = true) {
         opret->kind = rval::Binop;
         opret->dat.binop_dat.op = n.dat.Binop_dat.op;
         opret->dat.binop_dat.v1 = ret;
-        opret->dat.binop_dat.v2 = parse_rval(toks);
+        opret->dat.binop_dat.v2 = parse_rval_old(toks);
         ret = opret;
     }
     n = toks->ith(0);
@@ -194,7 +245,7 @@ rval* parse_rval(toklist* toks, bool can_fallback = true) {
             if (n.kind == token::Comma) {
                 *toks = toks->tail(); // this will sometimes parse nonsense but it's okay
             } else {
-                rval* arg = parse_rval(toks);
+                rval* arg = parse_rval_old(toks);
                 fcal->dat.fcall_dat.args.push(arg);
                 free(arg);
             }
@@ -208,7 +259,7 @@ rval* parse_rval(toklist* toks, bool can_fallback = true) {
     return ret;
 }
 
-lval* parse_lval(toklist* toks) {
+lval* parse_lval_old(toklist* toks) {
     lval* ret = (lval*)malloc(sizeof(lval));
     token n = toks->ith(0);
 
@@ -225,7 +276,7 @@ lval* parse_lval(toklist* toks) {
             ret = (lval*)malloc(sizeof(lval));
             ret->kind = lval::Index;
             ret->dat.ind_dat.arr = arr;
-            ret->dat.ind_dat.ind = parse_rval(toks);
+            ret->dat.ind_dat.ind = parse_rval_old(toks);
             n = toks->ith(0);
             if (n.kind != token::RSQUAR) {
                 printf("expected ']' for array index lvalue");
@@ -240,11 +291,11 @@ lval* parse_lval(toklist* toks) {
         ret->dat.ind_dat.ind = (rval*)malloc(sizeof(rval));
         ret->dat.ind_dat.ind->kind = rval::Int;
         ret->dat.ind_dat.ind->dat.int_dat = 0; // we parse *p as p[0]
-        ret->dat.ind_dat.arr = parse_rval(toks);
+        ret->dat.ind_dat.arr = parse_rval_old(toks);
         return ret;
     }
     // we try to parse an array index / a struct field access
-    rval* mai = parse_rval(toks, false);
+    rval* mai = parse_rval_old(toks, false);
     n = toks->ith(0);
     if (n.kind == token::Dot) {
         *toks = toks->tail();
@@ -267,7 +318,7 @@ lval* parse_lval(toklist* toks) {
     ret->kind = lval::Index;
     ret->dat.ind_dat.arr = mai;
     *toks = toks->tail();
-    ret->dat.ind_dat.ind = parse_rval(toks);
+    ret->dat.ind_dat.ind = parse_rval_old(toks);
     n = toks->ith(0);
     if (n.kind != token::RSQUAR) {
         printf("expected ']' for array index lvalue");
@@ -307,7 +358,7 @@ typ* parse_typ(toklist* toks) {
             exit(-1);
         }
         *toks = toks->tail();
-        t->dat.typeof_dat = parse_rval(toks);
+        t->dat.typeof_dat = parse_rval_old(toks);
         n = toks->ith(0);
         if (n.kind != token::RPAREN) {
             printf("expected ')' after typeof\n");
@@ -359,7 +410,7 @@ decl* parse_var_decl(toklist* toks, bool check_semicolon) {
     n = toks->ith(0);
     if (n.kind == token::Set) {
         *toks = toks->tail();
-        ret->dat.var_dat.v = parse_rval(toks);
+        ret->dat.var_dat.v = parse_rval_old(toks);
     } else {
         ret->dat.var_dat.v = nullptr;
     }
@@ -413,7 +464,7 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::Return;
-        ret->dat.ret_dat.v = parse_rval(toks);
+        ret->dat.ret_dat.v = parse_rval_old(toks);
         n = toks->ith(0);
         if (n.kind != token::Semicol) {
             printf("expected ';' after return instruction; got token %i\n", (int)n.kind);
@@ -425,7 +476,7 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::If;
-        ret->dat.if_dat.b = parse_rval(toks);
+        ret->dat.if_dat.b = parse_rval_old(toks);
         ret->dat.if_dat.truebrc = parse_instr_block(toks);
         ret->dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
         instr* curr = ret;
@@ -434,7 +485,7 @@ instr* parse_instr(toklist* toks) {
             *toks = toks->tail();
             instr cif;
             cif.kind = instr::If;
-            cif.dat.if_dat.b = parse_rval(toks);
+            cif.dat.if_dat.b = parse_rval_old(toks);
             cif.dat.if_dat.truebrc = parse_instr_block(toks);
             cif.dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
             curr->dat.if_dat.falsebrc.push(&cif);
@@ -452,7 +503,7 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::While;
-        ret->dat.while_dat.b = parse_rval(toks);
+        ret->dat.while_dat.b = parse_rval_old(toks);
         ret->dat.while_dat.instrs = parse_instr_block(toks);
         return ret;
     }
@@ -469,7 +520,7 @@ instr* parse_instr(toklist* toks) {
                 // we parse function calls as an rvalue
                 instr* ist = (instr*)malloc(sizeof(instr));
                 ist->kind = instr::Fcall;
-                ist->dat.fcall_dat.call = parse_rval(toks);
+                ist->dat.fcall_dat.call = parse_rval_old(toks);
                 n = toks->ith(0);
                 if (n.kind != token::Semicol) {
                     printf("expected ';' after instruction; got token %i\n", (int)n.kind);
@@ -487,9 +538,9 @@ instr* parse_instr(toklist* toks) {
         } else if (n.kind == token::Set) { // we have an '=' in our instruction, so it is a set operation (not always true but almost)
             instr* ist = (instr*)malloc(sizeof(instr));
             ist->kind = instr::Set;
-            ist->dat.set_dat.l = parse_lval(&left);
+            ist->dat.set_dat.l = parse_lval_old(&left);
             *toks = toks->tail();
-            ist->dat.set_dat.r = parse_rval(toks);
+            ist->dat.set_dat.r = parse_rval_old(toks);
             n = toks->ith(0);
             if (n.kind != token::Semicol) {
                 printf("expected ';' after instruction; got token %i\n", (int)n.kind);
