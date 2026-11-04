@@ -31,6 +31,8 @@ _build/test2/%.c: src/cicpp/%.cicpp test
 build: $(TEMP_FILES)
 	make build_test
 	g++ -I_build/test -Isrc/cpp src/cpp/main.cpp -o _build/main
+	cp _build/main test
+	make $(TEMP_TEST_FILES)
 
 build_first: $(SOURCE_FILES)
 	mkdir -p _build
