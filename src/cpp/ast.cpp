@@ -288,7 +288,7 @@ struct instr
                 ist->print_to_file(fptr, ident+1, prog);
             }
             print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "}");
+            fprintf(fptr, "}\n");
         }
         
     }

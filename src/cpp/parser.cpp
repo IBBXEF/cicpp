@@ -365,7 +365,7 @@ instr* parse_instr(old_clist* toks) {
     } else if (n->kind == token::While) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
-        ret->kind = instr::If;
+        ret->kind = instr::While;
         ret->dat.while_dat.b = parse_rval(toks);
         ret->dat.while_dat.instrs = parse_instr_block(toks);
         return ret;

@@ -25,7 +25,7 @@ struct clist {
     return ret;
   }
   void del(){
-    if (l) {
+    while (l) {
       pop();
     }
   }
@@ -34,7 +34,7 @@ struct clist {
     ret = 0;
     _clist* t;
     t = l;
-    if (t) {
+    while (t) {
       ret = (ret) + (1);
       t = (t[0]).next;
     }
@@ -43,7 +43,7 @@ struct clist {
   dat_t ith(int i){
     _clist* t;
     t = l;
-    if ((i) > (0)) {
+    while ((i) > (0)) {
       if (!(t)) {
         printf("out of range in list: index %d\n", i);
         exit(0);
@@ -56,7 +56,7 @@ struct clist {
   void reverse(){
     clist rev;
     (rev).l = nullptr;
-    if (l) {
+    while (l) {
       (rev).push(pop());
     }
     l = (rev).l;
