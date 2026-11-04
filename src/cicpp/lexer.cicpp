@@ -62,3 +62,7 @@ type token {
 
     Ident {const char* str;};
 }
+
+#include "src/cicpp/clist.cicpp"
+
+specialize clist<token> as toklist

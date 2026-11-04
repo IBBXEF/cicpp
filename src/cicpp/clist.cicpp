@@ -19,7 +19,7 @@ type <dat_t> clist {
     }
 
     func dat_t pop() {
-        dat ret;
+        dat_t ret;
         ret = (*l).dat;
         _clist* tmp;
         tmp = (*l).next;
@@ -61,8 +61,7 @@ type <dat_t> clist {
 
     func void reverse() {
         clist rev;
-        rev.datsize = datsize;
-        rev.l = nullptr;
+        (rev).l = nullptr;
         while (l)
         {
             rev.push(pop());
@@ -72,12 +71,11 @@ type <dat_t> clist {
 
     func clist tail() {
         clist ret;
-        ret.datsize = datsize;
-        ret.l = (*l).next;
+        (ret).l = (*l).next;
         return ret;
     }
 
-    func clist init() {
+    func void init() {
         l = nullptr;
     }
 }

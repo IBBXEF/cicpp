@@ -1,7 +1,7 @@
 #pragma once
 #include <stdlib.h>
-#define dat_t (void*)
-#define clist_voidptr clist
+#define dat_t void*
+#define clist clist_voidptr
 struct clist {
   struct _clist {
     dat_t dat;
@@ -16,7 +16,7 @@ struct clist {
     l = n;
   }
   dat_t pop(){
-    dat ret;
+    dat_t ret;
     ret = (l[0]).dat;
     _clist* tmp;
     tmp = (l[0]).next;
@@ -55,8 +55,7 @@ struct clist {
   }
   void reverse(){
     clist rev;
-    rev = datsize;
-    rev = nullptr;
+    (rev).l = nullptr;
     if (l) {
       (rev).push(pop());
     }
@@ -64,11 +63,10 @@ struct clist {
   }
   clist tail(){
     clist ret;
-    ret = datsize;
-    ret = (l[0]).next;
+    (ret).l = (l[0]).next;
     return ret;
   }
-  clist init(){
+  void init(){
     l = nullptr;
   }
 };

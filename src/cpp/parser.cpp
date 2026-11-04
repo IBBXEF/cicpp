@@ -167,7 +167,7 @@ lval* parse_lval(old_clist* toks) {
         ret->dat.ind_dat.arr = parse_rval(toks);
         return ret;
     }
-    // we try to parse an array index / a strctu field access
+    // we try to parse an array index / a struct field access
     rval* mai = parse_rval(toks, false);
     n = (token*)toks->ith(0);
     if (n->kind == token::Dot) {
@@ -181,6 +181,7 @@ lval* parse_lval(old_clist* toks) {
         }
         *toks = toks->tail();
         ret->dat.field_dat.field = n->dat.Ident_dat.str;
+        printf("parsed access of field %s\n", n->dat.Ident_dat.str);
         return ret;
     }
     if (n->kind != token::LSQUAR) {

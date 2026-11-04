@@ -312,12 +312,12 @@ void decl::print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end =
             exit(-1);
         }
         print_n_spaces(ident * ident_lvl, fptr);
-        fprintf(fptr, "#define %s (", templated_decl->dat.templated_dat.param_name);
+        fprintf(fptr, "#define %s ", templated_decl->dat.templated_dat.param_name);
         dat.specialize_dat.param->print_to_file(fptr, 0);
-        fprintf(fptr, ")\n");
+        fprintf(fptr, "\n");
 
         print_n_spaces(ident * ident_lvl, fptr);
-        fprintf(fptr, "#define %s %s\n", dat.specialize_dat.newname, templated_decl->dat.templated_dat.name);
+        fprintf(fptr, "#define %s %s\n", templated_decl->dat.templated_dat.name, dat.specialize_dat.newname);
 
 
         templated_decl->dat.templated_dat.d->print_to_file(fptr, ident, prog);
