@@ -194,10 +194,15 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
         ret->push(tok);
     } else if (c == '>') {
         pop_token_stack(cou, ret, last_buffer);
-        token tok;
-        tok.kind = token::Binop;
-        tok.dat.Binop_dat.op.kind = binop::Gt;
-        ret->push(tok);
+        n = ret->ith_ref(0);
+        if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Sub) { // last token was an '-'
+            n->dat.Binop_dat.op.kind = binop::Arrow;
+        } else {
+            token tok;
+            tok.kind = token::Binop;
+            tok.dat.Binop_dat.op.kind = binop::Gt;
+            ret->push(tok);
+        }
     } else if (c == '(') {
         pop_token_stack(cou, ret, last_buffer);
         token tok = {.kind = token::LPAREN};

@@ -6,7 +6,7 @@
 #include_C "./utils.cpp"
 
 type binop {
-    Add; Mul; Sub; Div; Band; Bor; Land; Lor; Eq; Leq; Lt; Neq; Geq; Gt;
+    Add; Mul; Sub; Div; Band; Bor; Land; Lor; Eq; Leq; Lt; Neq; Geq; Gt; Arrow;
 }
 
 type unop {

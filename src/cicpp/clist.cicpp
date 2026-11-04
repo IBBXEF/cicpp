@@ -20,9 +20,9 @@ type <dat_t> clist {
 
     func dat_t pop() {
         dat_t ret;
-        ret = (*l).dat;
+        ret = l->dat;
         _clist* tmp;
-        tmp = (*l).next;
+        tmp = l->next;
         free(l);
         l = tmp;
         return ret;
@@ -39,7 +39,7 @@ type <dat_t> clist {
         t = l;
         while t {
             ret = ret + 1;
-            t = (*t).next;
+            t = t->next;
         }
         return ret;
     }
@@ -53,7 +53,7 @@ type <dat_t> clist {
                 printf("out of range in list: index %d while len is %d\n", i, len());
                 exit(0);
             }
-            t = (*t).next;
+            t = t->next;
             i = i - 1;
         }
         if (!t) {
@@ -61,7 +61,7 @@ type <dat_t> clist {
             exit(0);
         }
         dat_t* ret;
-        ret = &(*t).dat;
+        ret = &(t->dat);
         return ret;
     }
 
@@ -81,7 +81,7 @@ type <dat_t> clist {
 
     func clist tail() {
         clist ret;
-        (ret).l = (*l).next;
+        (ret).l = l->next;
         return ret;
     }
 

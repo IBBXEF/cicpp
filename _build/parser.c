@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "utils.cpp"
 struct binop {
-  enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt } kind;
+  enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt, Arrow } kind;
 };
 struct unop {
   enum { Lnot, Neg, Addr } kind;
@@ -47,9 +47,9 @@ struct clist {
   }
   dat_t pop(){
     dat_t ret;
-    ret = (l[0]).dat;
+    ret = (l)->dat;
     _clist* tmp;
-    tmp = (l[0]).next;
+    tmp = (l)->next;
     free(l);
     l = tmp;
     return ret;
@@ -66,7 +66,7 @@ struct clist {
     t = l;
     while (t) {
       ret = (ret) + (1);
-      t = (t[0]).next;
+      t = (t)->next;
     }
     return ret;
   }
@@ -78,7 +78,7 @@ struct clist {
         printf("out of range in list: index %d while len is %d\n", i, len());
         exit(0);
       }
-      t = (t[0]).next;
+      t = (t)->next;
       i = (i) - (1);
     }
     if (!(t)) {
@@ -86,7 +86,7 @@ struct clist {
       exit(0);
     }
     dat_t* ret;
-    ret = &((t[0]).dat);
+    ret = &((t)->dat);
     return ret;
   }
   dat_t ith(int i){
@@ -102,7 +102,7 @@ struct clist {
   }
   clist tail(){
     clist ret;
-    (ret).l = (l[0]).next;
+    (ret).l = (l)->next;
     return ret;
   }
   void init(){
@@ -128,9 +128,9 @@ struct clist {
   }
   dat_t pop(){
     dat_t ret;
-    ret = (l[0]).dat;
+    ret = (l)->dat;
     _clist* tmp;
-    tmp = (l[0]).next;
+    tmp = (l)->next;
     free(l);
     l = tmp;
     return ret;
@@ -147,7 +147,7 @@ struct clist {
     t = l;
     while (t) {
       ret = (ret) + (1);
-      t = (t[0]).next;
+      t = (t)->next;
     }
     return ret;
   }
@@ -159,7 +159,7 @@ struct clist {
         printf("out of range in list: index %d while len is %d\n", i, len());
         exit(0);
       }
-      t = (t[0]).next;
+      t = (t)->next;
       i = (i) - (1);
     }
     if (!(t)) {
@@ -167,7 +167,7 @@ struct clist {
       exit(0);
     }
     dat_t* ret;
-    ret = &((t[0]).dat);
+    ret = &((t)->dat);
     return ret;
   }
   dat_t ith(int i){
@@ -183,7 +183,7 @@ struct clist {
   }
   clist tail(){
     clist ret;
-    (ret).l = (l[0]).next;
+    (ret).l = (l)->next;
     return ret;
   }
   void init(){
@@ -224,9 +224,9 @@ struct gram_rule_t {
     }
     dat_t pop(){
       dat_t ret;
-      ret = (l[0]).dat;
+      ret = (l)->dat;
       _clist* tmp;
-      tmp = (l[0]).next;
+      tmp = (l)->next;
       free(l);
       l = tmp;
       return ret;
@@ -243,7 +243,7 @@ struct gram_rule_t {
       t = l;
       while (t) {
         ret = (ret) + (1);
-        t = (t[0]).next;
+        t = (t)->next;
       }
       return ret;
     }
@@ -255,7 +255,7 @@ struct gram_rule_t {
           printf("out of range in list: index %d while len is %d\n", i, len());
           exit(0);
         }
-        t = (t[0]).next;
+        t = (t)->next;
         i = (i) - (1);
       }
       if (!(t)) {
@@ -263,7 +263,7 @@ struct gram_rule_t {
         exit(0);
       }
       dat_t* ret;
-      ret = &((t[0]).dat);
+      ret = &((t)->dat);
       return ret;
     }
     dat_t ith(int i){
@@ -279,7 +279,7 @@ struct gram_rule_t {
     }
     clist tail(){
       clist ret;
-      (ret).l = (l[0]).next;
+      (ret).l = (l)->next;
       return ret;
     }
     void init(){
@@ -313,9 +313,9 @@ struct clist {
   }
   dat_t pop(){
     dat_t ret;
-    ret = (l[0]).dat;
+    ret = (l)->dat;
     _clist* tmp;
-    tmp = (l[0]).next;
+    tmp = (l)->next;
     free(l);
     l = tmp;
     return ret;
@@ -332,7 +332,7 @@ struct clist {
     t = l;
     while (t) {
       ret = (ret) + (1);
-      t = (t[0]).next;
+      t = (t)->next;
     }
     return ret;
   }
@@ -344,7 +344,7 @@ struct clist {
         printf("out of range in list: index %d while len is %d\n", i, len());
         exit(0);
       }
-      t = (t[0]).next;
+      t = (t)->next;
       i = (i) - (1);
     }
     if (!(t)) {
@@ -352,7 +352,7 @@ struct clist {
       exit(0);
     }
     dat_t* ret;
-    ret = &((t[0]).dat);
+    ret = &((t)->dat);
     return ret;
   }
   dat_t ith(int i){
@@ -368,7 +368,7 @@ struct clist {
   }
   clist tail(){
     clist ret;
-    (ret).l = (l[0]).next;
+    (ret).l = (l)->next;
     return ret;
   }
   void init(){

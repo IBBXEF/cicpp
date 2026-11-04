@@ -163,9 +163,14 @@ void rval::print_to_file(FILE* fptr) {
         } else if (dat.binop_dat.op.kind == binop::Add) {
             fprintf(fptr, " + ");
         }
-        fprintf(fptr, "(");
-        dat.binop_dat.v2->print_to_file(fptr);
-        fprintf(fptr, ")");
+        if (dat.binop_dat.op.kind == binop::Arrow) {
+            fprintf(fptr, "->");
+            dat.binop_dat.v2->print_to_file(fptr);
+        } else {
+            fprintf(fptr, "(");
+            dat.binop_dat.v2->print_to_file(fptr);
+            fprintf(fptr, ")");
+        }
     } else if (kind == Unop) {
         if (dat.unop_dat.op.kind == unop::Lnot) {
             fprintf(fptr, "!(");
