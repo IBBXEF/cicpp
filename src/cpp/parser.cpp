@@ -40,6 +40,11 @@ rval* parse_rval(old_clist* toks, bool can_fallback = true) {
         ret->kind = rval::Unop;
         ret->dat.unop_dat.op.kind = unop::Neg;
         ret->dat.unop_dat.v = parse_rval(toks);
+    } else if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Band) { // the token for '&' is not a binop, we have to treat it separately
+        *toks = toks->tail();
+        ret->kind = rval::Unop;
+        ret->dat.unop_dat.op.kind = unop::Addr;
+        ret->dat.unop_dat.v = parse_rval(toks); // yes it should be an lval but the parser will hopefully be replaced soon anyway
     } else if (can_fallback) { // we fallback to parsing an lvalue
         ret->kind = rval::Lval;
         ret->dat.lval_dat = parse_lval(toks);

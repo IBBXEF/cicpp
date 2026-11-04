@@ -171,6 +171,8 @@ void rval::print_to_file(FILE* fptr) {
             fprintf(fptr, "!(");
         } else if (dat.unop_dat.op.kind == unop::Neg) {
             fprintf(fptr, "-(");
+        } else if (dat.unop_dat.op.kind == unop::Addr) {
+            fprintf(fptr, "&(");
         }
         dat.unop_dat.v->print_to_file(fptr);
         fprintf(fptr, ")");
