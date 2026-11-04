@@ -4,8 +4,15 @@ SOURCE_FILES = src/cpp/ast.cpp src/cpp/lexer.cpp src/cpp/main.cpp src/cpp/parser
 TEMP_FILES = _build/test/lexer.c _build/test/clist.c _build/test/parser.c
 TEMP_TEST_FILES = _build/test2/lexer.c _build/test2/clist.c _build/test2/parser.c
 
-hardclean:
-	rm -fr _build
+help:
+	@echo "usage:"
+	@echo " - make clean       : delete temporary files"
+	@echo " - make build_first : build project without recompiling cicpp files, using aldready available files"
+	@echo " - make build       : build project normally"
+	@echo " - make tests       : tests that the project works correctly, notably that it can correctly compile itself"
+	@echo " - make help        : display this message"
+	@echo " - make replacelib  : replace the reference compiled cicpp files with the newly compiled ones"
+	@echo " - make replace     : replace the main executable with the newly compiled one (also runs replacelib)"
 
 clean:
 	rm -fr _build/test
@@ -21,7 +28,9 @@ _build/test2/%.c: src/cicpp/%.cicpp test
 	mkdir -p _build/test2
 	./test $< -o $@
 
-build: build_first $(TEMP_FILES)
+build: $(TEMP_FILES)
+	make build_test
+	g++ -I_build/test -Isrc/cpp src/cpp/main.cpp -o _build/main
 
 build_first: $(SOURCE_FILES)
 	mkdir -p _build
