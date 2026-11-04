@@ -34,18 +34,18 @@ struct token {
     if ((kind) == (Binop)) {
       return ((((dat).Binop_dat).op).kind) != (((((b).dat).Binop_dat).op).kind);
     } else
-      if ((kind) == (Unop)) {
-        return ((((dat).Unop_dat).op).kind) != (((((b).dat).Unop_dat).op).kind);
-      } else
-        if ((kind) == (VInt)) {
-          return (((dat).VInt_dat).dat) != ((((b).dat).VInt_dat).dat);
-        } else
-          if ((kind) == (VString)) {
-            return !(strcmp(((dat).VString_dat).str, (((b).dat).VString_dat).str));
-          } else
-            if ((kind) == (Ident)) {
-              return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
-            }
+    if ((kind) == (Unop)) {
+      return ((((dat).Unop_dat).op).kind) != (((((b).dat).Unop_dat).op).kind);
+    } else
+    if ((kind) == (VInt)) {
+      return (((dat).VInt_dat).dat) != ((((b).dat).VInt_dat).dat);
+    } else
+    if ((kind) == (VString)) {
+      return !(strcmp(((dat).VString_dat).str, (((b).dat).VString_dat).str));
+    } else
+    if ((kind) == (Ident)) {
+      return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
+    }
   }
 };
 #include <stdlib.h>
@@ -123,6 +123,16 @@ struct clist {
     clist ret;
     (ret).l = (l)->next;
     return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp;
+      tmp = tail();
+      (tmp).append(dat);
+      (l[0]).next = (tmp).l;
+    }
   }
   void init(){
     l = nullptr;
@@ -204,6 +214,16 @@ struct clist {
     clist ret;
     (ret).l = (l)->next;
     return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp;
+      tmp = tail();
+      (tmp).append(dat);
+      (l[0]).next = (tmp).l;
+    }
   }
   void init(){
     l = nullptr;

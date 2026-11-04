@@ -75,6 +75,16 @@ struct clist {
     (ret).l = (l)->next;
     return ret;
   }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp;
+      tmp = tail();
+      (tmp).append(dat);
+      (l[0]).next = (tmp).l;
+    }
+  }
   void init(){
     l = nullptr;
   }

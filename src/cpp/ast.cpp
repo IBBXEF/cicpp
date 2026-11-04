@@ -274,7 +274,7 @@ struct instr
             fprintf(fptr, "}");
             if (dat.if_dat.falsebrc.len() == 1) {
                 fprintf(fptr, " else\n");
-                ((instr*)dat.if_dat.falsebrc.ith(0))->print_to_file(fptr, ident+1, prog);
+                ((instr*)dat.if_dat.falsebrc.ith(0))->print_to_file(fptr, ident, prog);
             } else if (dat.if_dat.falsebrc.len() > 1) {
                 fprintf(fptr, " else {\n");
                 for (int i = 0; i < dat.if_dat.falsebrc.len(); i++) {

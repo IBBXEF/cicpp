@@ -85,6 +85,17 @@ type <dat_t> clist {
         return ret;
     }
 
+    func void append(dat_t dat) {
+        if l == nullptr {
+            push(dat);
+        } else { // temporary
+            clist tmp;
+            tmp = tail();
+            tmp.append(dat);
+            (*l).next = tmp.l;
+        }
+    }
+
     func void init() {
         l = nullptr;
     }
