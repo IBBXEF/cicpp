@@ -356,7 +356,10 @@ void decl::print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end =
                 typ* t = (typ*)dat.var_dat.t->dat.tfunptr_dat.args_t.ith(i);
                 t->print_to_file(fptr, 0);
             }
-            fprintf(fptr, ");\n");
+            fprintf(fptr, ")");
+            if (print_decl_end) {
+                fprintf(fptr, ";\n");
+            }
         } else {
             dat.var_dat.t->print_to_file(fptr, ident);
             fprintf(fptr, " %s", dat.var_dat.name);
