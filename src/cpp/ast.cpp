@@ -13,49 +13,9 @@ void print_n_spaces(int n, FILE* fptr) {
 }
 
 
-struct typ
-{
-    enum {
-        TVoid,
-        TInt,
-        TChar,
-        TPtr,
-        TConst,
-        TIdent
-    } kind;
-
-    union {
-        typ* ptr_dat;
-        typ* const_dat;
-        const char* TIdent_dat;
-    } dat;
-
-    void print_to_file(FILE* fptr, int ident) {
-        if (kind == TInt) {
-            print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "int");
-        } else if (kind == TChar) {
-            print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "char");
-        } else if (kind == TVoid) {
-            print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "void");
-        } else if (kind == TPtr) {
-            dat.ptr_dat->print_to_file(fptr, ident);
-            fprintf(fptr, "*");
-        } else if (kind == TIdent) {
-            print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "%s", dat.TIdent_dat);
-        } else if (kind == TConst) {
-            print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "const ");
-            dat.const_dat->print_to_file(fptr, 0);
-        }
-    }
-};
-
 
 struct rval;
+struct typ;
 
 struct lval
 {
@@ -98,67 +58,58 @@ struct rval
         struct { typ* t; rval* v; } typecast_dat;
     } dat;
 
-    void print_to_file(FILE* fptr) {
-        if (kind == Int) {
-            fprintf(fptr, "%i", dat.int_dat);
-        } else if (kind == String) {
-            fprintf(fptr, "\"%s\"", dat.string_dat);
-        } else if (kind == Typecast) {
-            fprintf(fptr, "(");
-            dat.typecast_dat.t->print_to_file(fptr, 0);
+    void print_to_file(FILE* fptr);
+};
+
+
+struct typ
+{
+    enum {
+        TVoid,
+        TInt,
+        TChar,
+        TPtr,
+        TConst,
+        TIdent,
+        Typeof
+    } kind;
+
+    union {
+        typ* ptr_dat;
+        typ* const_dat;
+        const char* TIdent_dat;
+        rval* typeof_dat;
+    } dat;
+
+    void print_to_file(FILE* fptr, int ident) {
+        if (kind == TInt) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "int");
+        } else if (kind == TChar) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "char");
+        } else if (kind == TVoid) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "void");
+        } else if (kind == TPtr) {
+            dat.ptr_dat->print_to_file(fptr, ident);
+            fprintf(fptr, "*");
+        } else if (kind == Typeof) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "typeof(");
+            dat.typeof_dat->print_to_file(fptr);
             fprintf(fptr, ")");
-            dat.typecast_dat.v->print_to_file(fptr);
-        } else if (kind == Lval) {
-            dat.lval_dat->print_to_file(fptr);
-        } else if (kind == Binop) {
-            fprintf(fptr, "(");
-            dat.binop_dat.v1->print_to_file(fptr);
-            fprintf(fptr, ")");
-            if (dat.binop_dat.op.kind == binop::Eq) {
-                fprintf(fptr, " == ");
-            } else if (dat.binop_dat.op.kind == binop::Neq) {
-                fprintf(fptr, " != ");
-            } else if (dat.binop_dat.op.kind == binop::Lt) {
-                fprintf(fptr, " < ");
-            } else if (dat.binop_dat.op.kind == binop::Leq) {
-                fprintf(fptr, " <= ");
-            } else if (dat.binop_dat.op.kind == binop::Gt) {
-                fprintf(fptr, " > ");
-            } else if (dat.binop_dat.op.kind == binop::Geq) {
-                fprintf(fptr, " >= ");
-            } else if (dat.binop_dat.op.kind == binop::Div) {
-                fprintf(fptr, " / ");
-            } else if (dat.binop_dat.op.kind == binop::Mul) {
-                fprintf(fptr, " * ");
-            } else if (dat.binop_dat.op.kind == binop::Sub) {
-                fprintf(fptr, " - ");
-            } else if (dat.binop_dat.op.kind == binop::Add) {
-                fprintf(fptr, " + ");
-            }
-            fprintf(fptr, "(");
-            dat.binop_dat.v2->print_to_file(fptr);
-            fprintf(fptr, ")");
-        } else if (kind == Unop) {
-            if (dat.unop_dat.op.kind == unop::Lnot) {
-                fprintf(fptr, "!(");
-            } else if (dat.unop_dat.op.kind == unop::Neg) {
-                fprintf(fptr, "-(");
-            }
-            dat.unop_dat.v->print_to_file(fptr);
-            fprintf(fptr, ")");
-        } else if (kind == Fcall) {
-            dat.fcall_dat.func->print_to_file(fptr);
-            fprintf(fptr, "(");
-            for (int i = 0; i < dat.fcall_dat.args.len(); i++) {
-                if (i) {
-                    fprintf(fptr, ", ");
-                }
-                ((rval*)dat.fcall_dat.args.ith(i))->print_to_file(fptr);
-            }
-            fprintf(fptr, ")");
+        } else if (kind == TIdent) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "%s", dat.TIdent_dat);
+        } else if (kind == TConst) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "const ");
+            dat.const_dat->print_to_file(fptr, 0);
         }
     }
 };
+
 
 void lval::print_to_file(FILE* fptr) {
     if (kind == Var) {
@@ -172,6 +123,67 @@ void lval::print_to_file(FILE* fptr) {
         fprintf(fptr, "(");
         dat.field_dat.stru->print_to_file(fptr);
         fprintf(fptr, ").%s", dat.field_dat.field);
+    }
+}
+
+void rval::print_to_file(FILE* fptr) {
+    if (kind == Int) {
+        fprintf(fptr, "%i", dat.int_dat);
+    } else if (kind == String) {
+        fprintf(fptr, "\"%s\"", dat.string_dat);
+    } else if (kind == Typecast) {
+        fprintf(fptr, "(");
+        dat.typecast_dat.t->print_to_file(fptr, 0);
+        fprintf(fptr, ")");
+        dat.typecast_dat.v->print_to_file(fptr);
+    } else if (kind == Lval) {
+        dat.lval_dat->print_to_file(fptr);
+    } else if (kind == Binop) {
+        fprintf(fptr, "(");
+        dat.binop_dat.v1->print_to_file(fptr);
+        fprintf(fptr, ")");
+        if (dat.binop_dat.op.kind == binop::Eq) {
+            fprintf(fptr, " == ");
+        } else if (dat.binop_dat.op.kind == binop::Neq) {
+            fprintf(fptr, " != ");
+        } else if (dat.binop_dat.op.kind == binop::Lt) {
+            fprintf(fptr, " < ");
+        } else if (dat.binop_dat.op.kind == binop::Leq) {
+            fprintf(fptr, " <= ");
+        } else if (dat.binop_dat.op.kind == binop::Gt) {
+            fprintf(fptr, " > ");
+        } else if (dat.binop_dat.op.kind == binop::Geq) {
+            fprintf(fptr, " >= ");
+        } else if (dat.binop_dat.op.kind == binop::Div) {
+            fprintf(fptr, " / ");
+        } else if (dat.binop_dat.op.kind == binop::Mul) {
+            fprintf(fptr, " * ");
+        } else if (dat.binop_dat.op.kind == binop::Sub) {
+            fprintf(fptr, " - ");
+        } else if (dat.binop_dat.op.kind == binop::Add) {
+            fprintf(fptr, " + ");
+        }
+        fprintf(fptr, "(");
+        dat.binop_dat.v2->print_to_file(fptr);
+        fprintf(fptr, ")");
+    } else if (kind == Unop) {
+        if (dat.unop_dat.op.kind == unop::Lnot) {
+            fprintf(fptr, "!(");
+        } else if (dat.unop_dat.op.kind == unop::Neg) {
+            fprintf(fptr, "-(");
+        }
+        dat.unop_dat.v->print_to_file(fptr);
+        fprintf(fptr, ")");
+    } else if (kind == Fcall) {
+        dat.fcall_dat.func->print_to_file(fptr);
+        fprintf(fptr, "(");
+        for (int i = 0; i < dat.fcall_dat.args.len(); i++) {
+            if (i) {
+                fprintf(fptr, ", ");
+            }
+            ((rval*)dat.fcall_dat.args.ith(i))->print_to_file(fptr);
+        }
+        fprintf(fptr, ")");
     }
 }
 

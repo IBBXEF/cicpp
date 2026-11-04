@@ -1,6 +1,7 @@
 #pragma once
 #include <stdlib.h>
 #define dat_t (void*)
+#define clist_voidptr clist
 struct clist {
   struct _clist {
     dat_t dat;
@@ -72,3 +73,4 @@ struct clist {
   }
 };
 #undef dat_t
+#undef clist

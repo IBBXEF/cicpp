@@ -221,6 +221,22 @@ typ* parse_typ(old_clist* toks) {
         t->kind = typ::TConst;
         *toks = toks->tail();
         t->dat.const_dat = parse_typ(toks);
+    } else if (n->kind == token::Typeof) {
+        t->kind = typ::Typeof;
+        *toks = toks->tail();
+        n = (token*)toks->ith(0);
+        if (n->kind != token::LPAREN) {
+            printf("expected '(' after typeof\n");
+            exit(-1);
+        }
+        *toks = toks->tail();
+        t->dat.typeof_dat = parse_rval(toks);
+        n = (token*)toks->ith(0);
+        if (n->kind != token::RPAREN) {
+            printf("expected ')' after typeof\n");
+            exit(-1);
+        }
+        *toks = toks->tail();
     } else {
         printf("invalid type identifier\n");
         exit(-1);
