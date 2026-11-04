@@ -76,6 +76,7 @@ type token {
         } elif kind == Ident {
             return (!strcmp((dat.Ident_dat).str, ((b.dat).Ident_dat).str));
         }
+        return true;
     }
 }
 

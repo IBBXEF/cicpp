@@ -142,7 +142,4 @@ type gram_rule_t {
     }
 }
 
-specialize clist<gram_rule_t> as gram_rules
-
-
 
