@@ -11,22 +11,81 @@ type nonterm_symb {
 
 type gram_rule_t {
 
+    specialize clist<gram_rule_t*> as gram_rules
+
     type gram_symbol_t {
         Term { token tok; };
         NonTerm { nonterm_symb symb; };
+
+        func bool match_ok(toklist* l, int max_depth, gram_rules rules) {
+            return match_symb(l, max_depth, rules) != nullptr; // this will cause a memory leak but works
+        }
+        func void* match_symb(toklist* l, int max_depth, gram_rules rules) {
+            if kind == Term {
+                if (((*l).ith(0)).kind) != (((dat.Term_dat).tok).kind) {
+                    return nullptr;
+                }
+                *l = (*l).tail();
+                char tmp;
+                void* ret;
+                return (&tmp) as void* ; // we return a garbage, nonzero address
+            } else { // kind == NonTerm
+                if max_depth < 0 {
+                    return nullptr;
+                }
+                int i;
+                i = 0;
+                toklist base;
+                base = *l;
+                while i < (rules.len()) {
+                    gram_rule_t rule;
+                    rule = rules.ith(i);
+                    if (((rule).result) == ((dat.NonTerm_dat).symb)) {
+                        *l = base;
+                        if rule.parse_ok(l, max_depth, rules) {
+                            return rule.parse(l, max_depth, rules);
+                        }
+                    }
+                    i = i + 1;
+                }
+                return nullptr;
+            }
+        }
     }
 
     specialize clist<gram_symbol_t> as symlist
 
-    symlist pattern;
-    gram_symbol_t result;
+    symlist pattern; // a nonempty list of symbols
+    nonterm_symb result;
 
-    func void* dummy(clist_voidptr res);
+    // user-defined "result function" that will turn the matched pattern into the result.
+    clist_voidptr -> void* result_function;
 
-    typeof(dummy) result;
 
-    func void* parse(toklist l) {
-        return nullptr;
+    func bool parse_ok(toklist* l, int max_depth, gram_rules rules) {
+        return ((*this).parse(l, max_depth, rules)) != nullptr; // this will cause a memory leak but works
+    }
+
+    func void* parse(toklist* l, int max_depth, gram_rules rules) {
+        int i;
+        i = 0;
+        clist_voidptr vlues;
+        vlues.init();
+        while (i < pattern.len()) {
+            gram_symbol_t sym;
+            sym = pattern.ith(i);
+            if (!sym.match_ok(l, max_depth-1, rules)) {
+                return nullptr;
+            }
+            void* vals;
+            vals = sym.match_symb(l, max_depth-1, rules);
+            vlues.push(vals);
+        }
+        vlues.reverse();
+        void* ret;
+        ret = result_function(vlues);
+        vlues.del();
+        return ret;
     }
 }
 

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "utils.cpp"
-#include "lexer.c"
+#include "parser.c"
 
 
 void pop_token_stack(int* cou, toklist* l, const char* str) {

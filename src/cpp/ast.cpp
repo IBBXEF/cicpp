@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include "utils.cpp"
-#include "lexer.c"
 
 const int ident_lvl = 2;
 void print_n_spaces(int n, FILE* fptr) {

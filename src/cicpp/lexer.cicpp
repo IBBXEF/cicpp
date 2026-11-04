@@ -3,7 +3,6 @@
 #include_C "string.h"
 #include_C "stdlib.h"
 
-#include_C "./utils.cpp"
 
 type binop {
     Add; Mul; Sub; Div; Band; Bor; Land; Lor; Eq; Leq; Lt; Neq; Geq; Gt; Arrow;
