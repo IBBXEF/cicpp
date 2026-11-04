@@ -769,8 +769,6 @@ void parse_aux(toklist toks, ast* ret) {
                 toks = toks.tail();
                 ret->decls.push(d);
             }
-        } else if (tok.kind == token::Nothing) {
-            toks = toks.tail();
         } else {
             decl* d = parse_decl(&toks);
             ret->decls.push(d);

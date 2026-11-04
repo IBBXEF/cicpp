@@ -15,8 +15,6 @@ type unop {
 }
 
 type token {
-    Nothing;
-
     TVoid;
     TInt;
     TChar;

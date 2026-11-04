@@ -332,7 +332,7 @@ toklist lex_file(const char* path) {
     toklist ret;
     ret.init();
     token no;
-    no.kind = token::Nothing;
+    no.kind = token::As; // we place a placeholder token that we will remove later
     ret.push(no);
     
     int cou = 0;
@@ -349,6 +349,7 @@ toklist lex_file(const char* path) {
     }
     pop_token_stack(&cou, &ret, last_buffer);
     ret.reverse();
+    ret.pop(); // we remove our placeholder token
     return ret;
 }
 
