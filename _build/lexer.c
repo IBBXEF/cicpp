@@ -27,6 +27,26 @@ struct token {
       const char* str;
     } Ident_dat;
    } dat;
+  bool eq(token b){
+    if ((kind) != ((b).kind)) {
+      return false;
+    }
+    if ((kind) == (Binop)) {
+      return ((((dat).Binop_dat).op).kind) != (((((b).dat).Binop_dat).op).kind);
+    } else
+      if ((kind) == (Unop)) {
+        return ((((dat).Unop_dat).op).kind) != (((((b).dat).Unop_dat).op).kind);
+      } else
+        if ((kind) == (VInt)) {
+          return (((dat).VInt_dat).dat) != ((((b).dat).VInt_dat).dat);
+        } else
+          if ((kind) == (VString)) {
+            return !(strcmp(((dat).VString_dat).str, (((b).dat).VString_dat).str));
+          } else
+            if ((kind) == (Ident)) {
+              return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
+            }
+  }
 };
 #include <stdlib.h>
 #define dat_t void*

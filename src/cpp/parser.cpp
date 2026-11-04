@@ -8,6 +8,77 @@
 lval* parse_lval(toklist* toks);
 typ* parse_typ(toklist* toks);
 
+void* gram_rule_elt_n0(clist_voidptr l) { return l.ith(0); }
+void* gram_rule_elt_n1(clist_voidptr l) { return l.ith(1); }
+void* gram_rule_binop(clist_voidptr l) {
+    rval* ret = (rval*)malloc(sizeof(rval));
+    ret->kind = rval::Binop;
+    ret->dat.binop_dat.op = ((token*)l.ith(1))->dat.Binop_dat.op;
+    ret->dat.binop_dat.v1 = (rval*)l.ith(0);
+    ret->dat.binop_dat.v2 = (rval*)l.ith(2);
+    return ret;
+}
+
+gram_rules make_rules() {
+    gram_rules ret;
+    gram_rule_t rule;
+    gram_rule_t::gram_symbol_t symTerm;
+    gram_rule_t::gram_symbol_t symNonTerm;
+    symTerm.kind = gram_rule_t::gram_symbol_t::Term;
+    symNonTerm.kind = gram_rule_t::gram_symbol_t::NonTerm;
+    ret.init();
+
+    rule.pattern.init(); // rule Rval <- '(' RvalI ')'
+    rule.result.kind = nonterm_symb::Rval;
+    symTerm.dat.Term_dat.tok.kind = token::LPAREN;
+    rule.pattern.push(symTerm);
+    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::RvalI;
+    rule.pattern.push(symNonTerm);
+    symTerm.dat.Term_dat.tok.kind = token::LPAREN;
+    rule.pattern.push(symTerm);
+    rule.pattern.reverse();
+    rule.result_function = gram_rule_elt_n1;
+    ret.push(rule);
+
+    rule.pattern.init(); // rule Rval1 <- Rval
+    rule.result.kind = nonterm_symb::Rval1;
+    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::Rval;
+    rule.pattern.push(symNonTerm);
+    rule.pattern.reverse();
+    rule.result_function = gram_rule_elt_n0;
+    ret.push(rule);
+
+    rule.pattern.init(); // rule Rvalop <- Rval1
+    rule.result.kind = nonterm_symb::Rvalop;
+    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::Rval1;
+    rule.pattern.push(symNonTerm);
+    rule.pattern.reverse();
+    rule.result_function = gram_rule_elt_n0;
+    ret.push(rule);
+
+    rule.pattern.init(); // rule Rvalop <- RvalI Binop Rvalop
+    rule.result.kind = nonterm_symb::Rvalop;
+    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::RvalI;
+    rule.pattern.push(symNonTerm);
+    symTerm.dat.Term_dat.tok.kind = token::Binop;
+    rule.pattern.push(symTerm);
+    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::Rvalop;
+    rule.pattern.push(symNonTerm);
+    rule.pattern.reverse();
+    rule.result_function = gram_rule_binop;
+    ret.push(rule);
+
+    rule.pattern.init(); // rule RvalI <- Rvalop
+    rule.result.kind = nonterm_symb::RvalI;
+    symNonTerm.dat.NonTerm_dat.symb.kind = nonterm_symb::Rvalop;
+    rule.pattern.push(symNonTerm);
+    rule.pattern.reverse();
+    rule.result_function = gram_rule_elt_n0;
+    ret.push(rule);
+
+    return ret;
+}
+
 rval* parse_rval(toklist* toks, bool can_fallback = true) {
     rval* ret = (rval*)malloc(sizeof(rval));
     token n = toks->ith(0);

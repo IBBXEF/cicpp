@@ -5,8 +5,11 @@
 
 
 type nonterm_symb {
-    Rval0;
+    Rval;
     Rval1;
+    Rvalop;
+    RvalI;
+    Lval0;
 }
 
 type gram_rule_t {
@@ -15,6 +18,7 @@ type gram_rule_t {
 
     type gram_symbol_t {
         Term { token tok; };
+        Exact { token tok; };
         NonTerm { nonterm_symb symb; };
 
         func bool match_ok(toklist* l, int max_depth, gram_rules rules) {
@@ -26,9 +30,13 @@ type gram_rule_t {
                     return nullptr;
                 }
                 *l = (*l).tail();
-                char tmp;
-                void* ret;
-                return (&tmp) as void* ; // we return a garbage, nonzero address
+                return ((*l).ith_ref(0)) as void* ;
+            } elif kind == Exact {
+                if ((*l).ith(0)).eq((dat.Exact_dat).tok) {
+                    return nullptr;
+                }
+                *l = (*l).tail();
+                return ((*l).ith_ref(0)) as void* ;
             } else { // kind == NonTerm
                 if max_depth < 0 {
                     return nullptr;

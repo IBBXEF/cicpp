@@ -61,6 +61,24 @@ type token {
     VString {const char* str;};
 
     Ident {const char* str;};
+
+
+    func bool eq(token b) {
+        if (kind) != (b.kind) {
+            return false;
+        }
+        if kind == Binop {
+            return (((dat.Binop_dat).op).kind) != ((((b.dat).Binop_dat).op).kind);
+        } elif kind == Unop {
+            return (((dat.Unop_dat).op).kind) != ((((b.dat).Unop_dat).op).kind);
+        } elif kind == VInt {
+            return ((dat.VInt_dat).dat) != (((b.dat).VInt_dat).dat);
+        } elif kind == VString {
+            return (!strcmp((dat.VString_dat).str, ((b.dat).VString_dat).str));
+        } elif kind == Ident {
+            return (!strcmp((dat.Ident_dat).str, ((b.dat).Ident_dat).str));
+        }
+    }
 }
 
 #include "src/cicpp/clist.cicpp"

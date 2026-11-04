@@ -27,6 +27,26 @@ struct token {
       const char* str;
     } Ident_dat;
    } dat;
+  bool eq(token b){
+    if ((kind) != ((b).kind)) {
+      return false;
+    }
+    if ((kind) == (Binop)) {
+      return ((((dat).Binop_dat).op).kind) != (((((b).dat).Binop_dat).op).kind);
+    } else
+      if ((kind) == (Unop)) {
+        return ((((dat).Unop_dat).op).kind) != (((((b).dat).Unop_dat).op).kind);
+      } else
+        if ((kind) == (VInt)) {
+          return (((dat).VInt_dat).dat) != ((((b).dat).VInt_dat).dat);
+        } else
+          if ((kind) == (VString)) {
+            return !(strcmp(((dat).VString_dat).str, (((b).dat).VString_dat).str));
+          } else
+            if ((kind) == (Ident)) {
+              return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
+            }
+  }
 };
 #include <stdlib.h>
 #define dat_t void*
@@ -192,7 +212,7 @@ struct clist {
 #undef dat_t
 #undef clist
 struct nonterm_symb {
-  enum { Rval0, Rval1, Rval2, Lval0 } kind;
+  enum { Rval, Rval1, Rvalop, RvalI, Lval0 } kind;
 };
 struct gram_rule_t {
   #define dat_t gram_rule_t*
@@ -277,11 +297,14 @@ struct gram_rule_t {
   #undef dat_t
   #undef clist
   struct gram_symbol_t {
-    enum { Term, NonTerm } kind;
+    enum { Term, Exact, NonTerm } kind;
     union {
       struct {
         token tok;
       } Term_dat;
+      struct {
+        token tok;
+      } Exact_dat;
       struct {
         nonterm_symb symb;
       } NonTerm_dat;
@@ -295,18 +318,21 @@ struct gram_rule_t {
           return nullptr;
         }
         l[0] = (l[0]).tail();
-        char tmp;
-        void* ret;
-        return (void*)&(tmp);
-      } else {
-        if ((((l[0]).ith(0)).kind) != ((((dat).Term_dat).tok).kind)) {
-          return nullptr;
+        return (void*)(l[0]).ith_ref(0);
+      } else
+        if ((kind) == (Exact)) {
+          if (((l[0]).ith(0)).eq(((dat).Exact_dat).tok)) {
+            return nullptr;
+          }
+          l[0] = (l[0]).tail();
+          return (void*)(l[0]).ith_ref(0);
+        } else {
+          if (((l[0]).ith(0)).eq(((dat).Exact_dat).tok)) {
+            return nullptr;
+          }
+          l[0] = (l[0]).tail();
+          return (void*)(l[0]).ith_ref(0);
         }
-        l[0] = (l[0]).tail();
-        char tmp;
-        void* ret;
-        return (void*)&(tmp);
-      }
     }
   };
   #define dat_t gram_symbol_t
