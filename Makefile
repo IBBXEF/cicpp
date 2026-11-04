@@ -67,6 +67,7 @@ tests: build
 	./test tests/parsing/ex6.c
 	./test tests/parsing/ex7.c
 	./test tests/parsing/ex8.c
+	./test tests/parsing/ex9.c
 
 	make build_test
 	diff test _build/_test

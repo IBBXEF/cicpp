@@ -250,11 +250,21 @@ typ* parse_typ(toklist* toks) {
 
     n = toks->ith(0);
     while (n.kind == token::Binop && n.dat.Binop_dat.op.kind == binop::Mul) {
+        *toks = toks->tail();
         typ* p = (typ*)malloc(sizeof(typ));
         p->kind = typ::TPtr;
         p->dat.ptr_dat = t;
         t = p;
+        n = toks->ith(0);
+    }
+    if (n.kind == token::Binop && n.dat.Binop_dat.op.kind == binop::Arrow) {
         *toks = toks->tail();
+        typ* p = (typ*)malloc(sizeof(typ));
+        p->kind = typ::Tfunptr;
+        p->dat.tfunptr_dat.args_t = old_clist::new_clist(sizeof(typ));
+        p->dat.tfunptr_dat.ret_t = parse_typ(toks);
+        p->dat.tfunptr_dat.args_t.push(t);
+        t = p;
         n = toks->ith(0);
     }
     

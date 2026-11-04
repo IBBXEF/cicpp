@@ -71,7 +71,8 @@ struct typ
         TPtr,
         TConst,
         TIdent,
-        Typeof
+        Typeof,
+        Tfunptr
     } kind;
 
     union {
@@ -79,6 +80,7 @@ struct typ
         typ* const_dat;
         const char* TIdent_dat;
         rval* typeof_dat;
+        struct { typ* ret_t; old_clist args_t; } tfunptr_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident) {
@@ -345,14 +347,27 @@ void decl::print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end =
         fprintf(fptr, "static\n");
         dat.static_dat.d->print_to_file(fptr, ident, prog);
     } else if (kind == Var) {
-        dat.var_dat.t->print_to_file(fptr, ident);
-        fprintf(fptr, " %s", dat.var_dat.name);
-        if (dat.var_dat.v) {
-            fprintf(fptr, " = ");
-            dat.var_dat.v->print_to_file(fptr);
-        }
-        if (print_decl_end) {
-            fprintf(fptr, ";\n");
+        if (dat.var_dat.t->kind == typ::Tfunptr) { // our variable is a function pointer
+            dat.var_dat.t->dat.tfunptr_dat.ret_t->print_to_file(fptr, ident);
+            fprintf(fptr, " (*%s)(", dat.var_dat.name);
+            for (int i = 0; i < dat.var_dat.t->dat.tfunptr_dat.args_t.len(); i++) {
+                if (i) {
+                    fprintf(fptr, ", ");
+                }
+                typ* t = (typ*)dat.var_dat.t->dat.tfunptr_dat.args_t.ith(i);
+                t->print_to_file(fptr, 0);
+            }
+            fprintf(fptr, ");\n");
+        } else {
+            dat.var_dat.t->print_to_file(fptr, ident);
+            fprintf(fptr, " %s", dat.var_dat.name);
+            if (dat.var_dat.v) {
+                fprintf(fptr, " = ");
+                dat.var_dat.v->print_to_file(fptr);
+            }
+            if (print_decl_end) {
+                fprintf(fptr, ";\n");
+            }
         }
     } else if (kind == Func) {
         print_n_spaces(ident * ident_lvl, fptr);
