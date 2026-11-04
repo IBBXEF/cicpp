@@ -277,8 +277,8 @@ struct instr
                 ((instr*)dat.if_dat.falsebrc.ith(0))->print_to_file(fptr, ident+1, prog);
             } else if (dat.if_dat.falsebrc.len() > 1) {
                 fprintf(fptr, " else {\n");
-                for (int i = 0; i < dat.if_dat.truebrc.len(); i++) {
-                    instr* ist = (instr*)dat.if_dat.truebrc.ith(i);
+                for (int i = 0; i < dat.if_dat.falsebrc.len(); i++) {
+                    instr* ist = (instr*)dat.if_dat.falsebrc.ith(i);
                     ist->print_to_file(fptr, ident+1, prog);
                 }
                 print_n_spaces(ident * ident_lvl, fptr);
