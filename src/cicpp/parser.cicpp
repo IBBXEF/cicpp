@@ -1,0 +1,34 @@
+
+#include "src/cicpp/clist.cicpp"
+#include "src/cicpp/lexer.cicpp"
+
+
+
+type nonterm_symbs {
+    Rval0;
+    Rval1;
+}
+
+type gram_rule_t {
+
+    type gram_symbol_t {
+        Term { token tok; };
+        NonTerm { nonterm_symbs symb; };
+    }
+
+    specialize clist<gram_symbol_t> as symlist
+
+    symlist pattern;
+    gram_symbol_t result;
+
+    func void* dummy(clist_voidptr res);
+
+    typeof(dummy) result;
+
+    func void* get_result(clist_voidptr res) {
+        return result_func(res);
+    }
+}
+
+
+
