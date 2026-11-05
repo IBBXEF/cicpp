@@ -477,66 +477,58 @@ struct gram_rule_t {
         nonterm_symb symb;
       } NonTerm_dat;
      } dat;
-    bool match_ok(toklist* l, int max_depth, gram_rules rules){
-      anyptr p;
-      p = match_symb(l, max_depth, rules);
-      bool ret;
-      ret = ((p).ptr) != (nullptr);
-      (p).del();
-      return ret;
-    }
     anyptr match_symb(toklist* l, int max_depth, gram_rules rules){
       anyptr ret;
       (ret).init_null();
-      if ((max_depth) < (0)) {
+      if (((max_depth) < (0)) && (((l[0]).len()) == (0))) {
         return ret;
       }
       if ((kind) == (Term)) {
         if ((((l[0]).ith(0)).kind) != ((((dat).Term_dat).tok).kind)) {
           return ret;
         }
-        l[0] = (l[0]).tail();
         (ret).init_view((l[0]).ith_ref(0));
+        l[0] = (l[0]).tail();
         return ret;
       } else
       if ((kind) == (Exact)) {
         if (!(((l[0]).ith(0)).eq(((dat).Exact_dat).tok))) {
           return ret;
         }
-        l[0] = (l[0]).tail();
-        anyptr ret;
         (ret).init_view((l[0]).ith_ref(0));
+        l[0] = (l[0]).tail();
         return ret;
       } else {
         int i;
-        int chosen;
         int chosen_len;
         chosen_len = (l)->len();
         i = 0;
         toklist base;
+        toklist chosen_end;
         base = l[0];
+        chosen_end = l[0];
         while ((i) < ((rules).len())) {
           gram_rule_t rule;
           rule = (rules).ith(i)[0];
           if ((((rule).result).kind) == ((((dat).NonTerm_dat).symb).kind)) {
-            if ((rule).parse_ok(l, max_depth, rules)) {
+            anyptr tmp;
+            tmp = (rule).parse(l, max_depth, rules);
+            if ((tmp).ptr) {
               int curlen;
               curlen = (l)->len();
               if ((curlen) < (chosen_len)) {
                 chosen_len = curlen;
-                chosen = i;
-              }
+                (ret).del();
+                ret = tmp;
+                chosen_end = l[0];
+              } else
+              (tmp).del();
             }
             l[0] = base;
           }
           i = (i) + (1);
         }
-        if ((chosen_len) < ((l)->len())) {
-          gram_rule_t rule;
-          rule = (rules).ith(chosen)[0];
-          ret = (rule).parse(l, max_depth, rules);
-          return ret;
-        }
+        l[0] = chosen_end;
         return ret;
       }
     }
@@ -653,14 +645,6 @@ struct gram_rule_t {
   symlist pattern;
   nonterm_symb result;
   anyptr (*result_function)(clist_anyptr);
-  bool parse_ok(toklist* l, int max_depth, gram_rules rules){
-    anyptr p;
-    p = (this[0]).parse(l, max_depth, rules);
-    bool ret;
-    ret = ((p).ptr) != (nullptr);
-    (p).del();
-    return ret;
-  }
   anyptr parse(toklist* l, int max_depth, gram_rules rules){
     int i;
     i = 0;
@@ -669,24 +653,20 @@ struct gram_rule_t {
     toklist base;
     base = l[0];
     anyptr ret;
-    (ret).init_null();
     while ((i) < ((pattern).len())) {
       gram_symbol_t sym;
       sym = (pattern).ith(i);
-      l[0] = base;
-      if (!((sym).match_ok(l, (max_depth) - (1), rules))) {
+      anyptr vals;
+      vals = (sym).match_symb(l, (max_depth) - (1), rules);
+      if (!((vals).ptr)) {
         l[0] = base;
         clist_anyptr_free(vlues);
+        (ret).init_null();
         return ret;
       }
-      anyptr vals;
-      l[0] = base;
-      vals = (sym).match_symb(l, (max_depth) - (1), rules);
-      base = l[0];
-      (vlues).push(vals);
+      (vlues).append(vals);
       i = (i) + (1);
     }
-    (vlues).reverse();
     ret = result_function(vlues);
     (vlues).del();
     return ret;

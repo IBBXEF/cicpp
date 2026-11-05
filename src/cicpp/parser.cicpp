@@ -35,7 +35,7 @@ type gram_rule_t {
         func anyptr match_symb(toklist* l, int max_depth, gram_rules rules) {
             anyptr ret;
             ret.init_null();
-            if max_depth < 0 {
+            if (max_depth < 0) || (((*l).len()) == 0) {
                 return ret;
             }
             if kind == Term {
