@@ -7,6 +7,7 @@ type nonterm_symb {
     Rvalop;
     RvalI;
     Lval;
+    Lvals;
 
     func const char* to_string() {
         if kind == Rval {
@@ -120,7 +121,6 @@ type gram_rule_t {
 
 
     func anyptr parse(toklist* l, int max_depth, gram_rules rules) {
-        // printf("parsing at depth %d\n", max_depth);
         int i;
         i = 0;
         clist_anyptr vlues;
@@ -144,6 +144,7 @@ type gram_rule_t {
         }
         ret = result_function(vlues);
         vlues.del(); // this is not a memory leak, the function is responsible for the elements of the list
+        // printf("applied rule at depth %d, parsing %d symbols\n", max_depth, pattern.len());
         return ret;
     }
 

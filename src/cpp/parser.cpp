@@ -8,8 +8,22 @@
 lval* parse_lval_old(toklist* toks);
 typ* parse_typ(toklist* toks);
 
-anyptr gram_rule_elt_n0(clist_anyptr l) { return l.ith(0); }
-anyptr gram_rule_elt_n1(clist_anyptr l) { return l.ith(1); }
+anyptr gram_rule_elt_n0(clist_anyptr l) {
+    if (l.len() > 0) {
+        return l.ith(0);
+    }
+    anyptr ret;
+    ret.init_null();
+    return ret;
+}
+anyptr gram_rule_elt_n1(clist_anyptr l) {
+    if (l.len() > 1) {
+        return l.ith(1);
+    }
+    anyptr ret;
+    ret.init_null();
+    return ret;
+}
 anyptr gram_rule_binop(clist_anyptr l) {
     rval* ret = (rval*)malloc(sizeof(rval));
     ret->kind = rval::Binop;
@@ -103,9 +117,9 @@ gram_rule_t::gram_rules make_rules() {
     gram_rule_t* ptr;
     ret.init();
 
-    rule.init({.kind = nonterm_symb::Rval}, gram_rule_elt_n1); // rule Rval -> '(' RvalI ')'
+    rule.init({.kind = nonterm_symb::RvalI}, gram_rule_elt_n1); // rule RvalI -> '(' Rval ')'
     rule.add_exact("(");
-    rule.add_nonterm({.kind=nonterm_symb::RvalI});
+    rule.add_nonterm({.kind=nonterm_symb::Rval});
     rule.add_exact(")");
     ptr = (gram_rule_t*)malloc(sizeof(gram_rule_t)); *ptr=rule; ret.append(ptr);
 
@@ -170,14 +184,14 @@ gram_rule_t::gram_rules parsing_rules = make_rules();
 rval* parse_rval(toklist* toks) {
     gram_rule_t::gram_symbol_t sym = {.kind=gram_rule_t::gram_symbol_t::NonTerm};
     sym.dat.NonTerm_dat.symb.kind = nonterm_symb::Rval;
-    void* ret = sym.match_symb(toks, 10, parsing_rules).ptr;
+    void* ret = sym.match_symb(toks, 20, parsing_rules).ptr;
     return (rval*)ret;
 }
 
 lval* parse_lval(toklist* toks) {
     gram_rule_t::gram_symbol_t sym = {.kind=gram_rule_t::gram_symbol_t::NonTerm};
     sym.dat.NonTerm_dat.symb.kind = nonterm_symb::Lval;
-    void* ret = sym.match_symb(toks, 10, parsing_rules).ptr;
+    void* ret = sym.match_symb(toks, 20, parsing_rules).ptr;
     return (lval*)ret;
 }
 
@@ -269,7 +283,7 @@ rval* parse_rval_old(toklist* toks, bool can_fallback = true) {
     n = toks->ith(0);
     if (n.kind == token::Dot && can_fallback) { // our expression if a structure field access
         *toks = toks->tail();
-        lval* lv = (lval*)malloc(sizeof(lv));
+        lval* lv = (lval*)malloc(sizeof(lval));
         lv->kind = lval::Field;
         lv->dat.field_dat.stru = ret;
         ret = (rval*)malloc(sizeof(rval));
@@ -560,6 +574,7 @@ instr* parse_instr(toklist* toks) {
     }
 
     toklist left = *toks;
+    toklist base = *toks;
     bool found_par = false;
     while (toks->len()) {
         n = toks->ith(0);
@@ -589,7 +604,12 @@ instr* parse_instr(toklist* toks) {
         } else if (n.kind == token::Set) { // we have an '=' in our instruction, so it is a set operation (not always true but almost)
             instr* ist = (instr*)malloc(sizeof(instr));
             ist->kind = instr::Set;
+            // ist->dat.set_dat.l = parse_lval(&left);
             ist->dat.set_dat.l = parse_lval_old(&left);
+            if (left.len() != toks->len()) {
+                printf("impossible to parse lval for assignment operation (able to parse %d/%d tokens)\n", (int)(base.len() - left.len()), (int)(base.len() - toks->len()));
+                exit(-1);
+            }
             *toks = toks->tail();
             ist->dat.set_dat.r = parse_rval_old(toks);
             n = toks->ith(0);

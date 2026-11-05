@@ -1,8 +1,10 @@
 
 SOURCE_FILES = src/cpp/ast.cpp src/cpp/lexer.cpp src/cpp/main.cpp src/cpp/parser.cpp src/cpp/utils.cpp
 
-TEMP_FILES = _build/test/lexer.c _build/test/clist.c _build/test/parser.c _build/test/anyptr.c
-TEMP_TEST_FILES = _build/test2/lexer.c _build/test2/clist.c _build/test2/parser.c _build/test2/anyptr.c
+TEMP_FILES = _build/test/clist.c _build/test/anyptr.c _build/test/lexer.c _build/test/parser.c
+TEMP_TEST_FILES = _build/test2/clist.c _build/test2/anyptr.c _build/test2/lexer.c _build/test2/parser.c
+
+GCC_ARGS = -Wall -Wpedantic -Wextra -g -std=c++20
 
 help:
 	@echo "usage:"
@@ -31,13 +33,13 @@ _build/test2/%.c: src/cicpp/%.cicpp test
 build:
 	rm -fr _build/test
 	make $(TEMP_FILES)
-	g++ -I_build/test -Isrc/cpp src/cpp/main.cpp -o _build/main
+	g++ $(GCC_ARGS) -I_build/test -Isrc/cpp src/cpp/main.cpp -o _build/main
 	cp _build/main test
 	make $(TEMP_TEST_FILES)
 
 build_first: $(SOURCE_FILES)
 	mkdir -p _build
-	g++ -I_build -Isrc/cpp src/cpp/main.cpp -o _build/main
+	g++ $(GCC_ARGS) -I_build -Isrc/cpp src/cpp/main.cpp -o _build/main
 	rm -fr _build/test
 	make $(TEMP_FILES)
 
@@ -45,7 +47,7 @@ build_test: $(SOURCE_FILES) $(TEMP_TEST_FILES)
 	mkdir -p _build
 	mkdir -p _build/test
 	mkdir -p _build/test2
-	g++ -I_build/test -Isrc/cpp src/cpp/main.cpp -o _build/_test
+	g++ $(GCC_ARGS) -I_build/test -Isrc/cpp src/cpp/main.cpp -o _build/_test
 
 replacelib: $(TEMP_FILES)
 	cp _build/test/lexer.c _build/lexer.c
