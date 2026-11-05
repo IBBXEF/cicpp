@@ -28,6 +28,7 @@ type anyptr {
 
     func void del() {
         free_func(ptr);
+        ptr = nullptr;
     }
 }
 

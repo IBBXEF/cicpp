@@ -117,17 +117,17 @@ gram_rule_t::gram_rules make_rules() {
     gram_rule_t::gram_rules ret;
     ret.init();
 
-    ret.append( make_rule("$RvalI  -> ( $Rval )"        , gram_rule_elt_n1  , &nonterm_symbs) );
-    ret.append( make_rule("$Rval   -> & $RvalI"         , gram_rule_addr    , &nonterm_symbs) );
-    ret.append( make_rule("$Rval   -> $Rvalop"          , gram_rule_elt_n0  , &nonterm_symbs) );
-    ret.append( make_rule("$Rvalop -> $RvalI @+ $Rvalop", gram_rule_binop   , &nonterm_symbs) );
-    ret.append( make_rule("$Rvalop -> $RvalI"           , gram_rule_elt_n0  , &nonterm_symbs) );
-    ret.append( make_rule("$RvalI  -> $Lval"            , gram_rule_elt_n0  , &nonterm_symbs) );
-    ret.append( make_rule("$RvalI  -> @0"               , gram_rule_int     , &nonterm_symbs) );
-    ret.append( make_rule("$Lval   -> $Rval . @ident"   , gram_rule_dot     , &nonterm_symbs) );
-    ret.append( make_rule("$Lval   -> $Rval -> @ident"  , gram_rule_arrow   , &nonterm_symbs) );
-    ret.append( make_rule("$Lval   -> @ident"           , gram_rule_var     , &nonterm_symbs) );
-    ret.append( make_rule("$Lval   -> * $Rval"          , gram_rule_ptr     , &nonterm_symbs) );
+    ret.append( make_rule("$RvalI  -> ( $Rval )"        , gram_rule_elt_n1        , &nonterm_symbs) );
+    ret.append( make_rule("$Rval   -> & $RvalI"         , gram_rule_addr          , &nonterm_symbs) );
+    ret.append( make_rule("$Rval   -> $Rvalop"          , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$Rvalop -> $RvalI @+ $Rvalop", gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$Rvalop -> $RvalI"           , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$RvalI  -> $Lval"            , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
+    ret.append( make_rule("$RvalI  -> @0"               , gram_rule_int           , &nonterm_symbs) );
+    ret.append( make_rule("$Lval   -> $Rval . @ident"   , gram_rule_dot           , &nonterm_symbs) );
+    ret.append( make_rule("$Lval   -> $Rval -> @ident"  , gram_rule_arrow         , &nonterm_symbs) );
+    ret.append( make_rule("$Lval   -> @ident"           , gram_rule_var           , &nonterm_symbs) );
+    ret.append( make_rule("$Lval   -> * $Rval"          , gram_rule_ptr           , &nonterm_symbs) );
 
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);

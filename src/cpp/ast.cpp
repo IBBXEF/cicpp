@@ -211,10 +211,12 @@ void rval::print_to_file(FILE* fptr) {
 void lval::del_ptr(void* p) {
     ((lval*)p)->del();
     free(p);
+    p = nullptr;
 }
 void lval::del() {
     if (kind == Index) {
         rval::del_ptr(dat.ind_dat.arr);
+        rval::del_ptr(dat.ind_dat.ind);
     } else if (kind == Field) {
         rval::del_ptr(dat.field_dat.stru);
     }
@@ -222,6 +224,7 @@ void lval::del() {
 void rval::del_ptr(void* p) {
     ((rval*)p)->del();
     free(p);
+    p = nullptr;
 }
 void rval::del() {
     if (kind == Lval) {
@@ -230,7 +233,7 @@ void rval::del() {
         rval::del_ptr(dat.binop_dat.v1);
         rval::del_ptr(dat.binop_dat.v2);
     } else if (kind == rval::Addr) {
-        rval::del_ptr(dat.addr_dat.v);
+        lval::del_ptr(dat.addr_dat.v);
     } else if (kind == rval::Fcall) {
         rval::del_ptr(dat.fcall_dat.func);
         // we do not delete the argument list for now, it will be done later i swear!
@@ -244,6 +247,7 @@ void rval::del() {
 void typ::del_ptr(void* p) {
     ((typ*)p)->del();
     free(p);
+    p = nullptr;
 }
 void typ::del() {
     if (kind == typ::TConst) {
