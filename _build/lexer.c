@@ -146,6 +146,7 @@ struct anyptr {
   void (*free_func)(void*);
   static
   void do_nothing(void* p){
+    p = p;
   }
   void init(void* _ptr, void (*_free_func)(void*)){
     ptr = _ptr;

@@ -146,6 +146,7 @@ struct anyptr {
   void (*free_func)(void*);
   static
   void do_nothing(void* p){
+    p = p;
   }
   void init(void* _ptr, void (*_free_func)(void*)){
     ptr = _ptr;
@@ -353,25 +354,139 @@ struct clist {
 #undef dat_t
 #undef clist
 toklist lex_string(const char* str);
-struct nonterm_symb {
-  enum { Rval, Rvalop, RvalI, Lval } kind;
-  const char* to_string(){
-    if ((kind) == (Rval)) {
-      return "Rval";
-    } else
-    if ((kind) == (Rvalop)) {
-      return "Rvalop";
-    } else
-    if ((kind) == (RvalI)) {
-      return "RvalI";
-    } else
-    if ((kind) == (Lval)) {
-      return "Lval";
+#define dat_t const char*
+#define clist string_list
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n;
+    n = (_clist*)malloc(sizeof(_clist));
+    (n[0]).dat = dat;
+    (n[0]).next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret;
+    ret = (l)->dat;
+    _clist* tmp;
+    tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
     }
-    printf("invalid nonterminal symbol\n");
-    exit(-(1));
+  }
+  int len(){
+    int ret;
+    ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int i){
+    _clist* t;
+    t = l;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", i, len());
+        exit(0);
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", i, len());
+      exit(0);
+    }
+    dat_t* ret;
+    ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return ith_ref(i)[0];
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp;
+      tmp = tail();
+      (tmp).append(dat);
+      (l[0]).next = (tmp).l;
+    }
+  }
+  void init(){
+    l = nullptr;
   }
 };
+#undef dat_t
+#undef clist
+int string_list_find(string_list l, const char* str){
+  int i;
+  i = 0;
+  while ((i) < ((l).len())) {
+    if (!(strcmp((l).ith(i), str))) {
+      return i;
+    }
+    i = (i) + (1);
+  }
+  return -(1);
+}
+int string_list_thingy(string_list* l, char* str){
+  printf("thingyfying the string \"%s\"\n", str);
+  int i;
+  i = string_list_find(l[0], str);
+  if ((i) < (0)) {
+    (l[0]).append(str);
+    return ((l)->len()) - (1);
+  }
+  free(str);
+  return i;
+}
+char* copy_string_until_char(const char** str, char c){
+  const char* base;
+  base = str[0];
+  while ((str[0][0]) && ((str[0][0]) != (c))) {
+    str[0] = (str[0]) + (1);
+  }
+  int len;
+  len = (str[0]) - (base);
+  char* ret;
+  ret = (char*)malloc((len) + (1));
+  ret[len] = 0;
+  int i;
+  i = 0;
+  while ((i) < (len)) {
+    ret[i] = base[i];
+    i = (i) + (1);
+  }
+  printf("returned cop:y \"%s\"\n", ret);
+  return ret;
+}
 struct gram_rule_t {
   #define dat_t gram_rule_t*
   #define clist gram_rules
@@ -474,13 +589,13 @@ struct gram_rule_t {
         token tok;
       } Exact_dat;
       struct {
-        nonterm_symb symb;
+        int symb;
       } NonTerm_dat;
      } dat;
     anyptr match_symb(toklist* l, int max_depth, gram_rules rules){
       anyptr ret;
       (ret).init_null();
-      if (((max_depth) < (0)) && (((l[0]).len()) == (0))) {
+      if (((max_depth) < (0)) || (((l[0]).len()) == (0))) {
         return ret;
       }
       if ((kind) == (Term)) {
@@ -510,7 +625,7 @@ struct gram_rule_t {
         while ((i) < ((rules).len())) {
           gram_rule_t rule;
           rule = (rules).ith(i)[0];
-          if ((((rule).result).kind) == ((((dat).NonTerm_dat).symb).kind)) {
+          if (((rule).result) == (((dat).NonTerm_dat).symb)) {
             anyptr tmp;
             tmp = (rule).parse(l, max_depth, rules);
             if ((tmp).ptr) {
@@ -532,23 +647,26 @@ struct gram_rule_t {
         return ret;
       }
     }
-    void set_Term(){
-      kind = Term;
-    }
-    void set_NonTerm(){
+    void set_nonterm(int i){
       kind = NonTerm;
+      ((dat).NonTerm_dat).symb = i;
     }
-    void set_Exact(){
+    void set_term(token t){
+      kind = Term;
+      ((dat).Term_dat).tok = t;
+    }
+    void set_exact(token t){
       kind = Exact;
+      ((dat).Term_dat).tok = t;
     }
-    void print(){
+    void print(string_list nonterm_symbs){
       if ((kind) == (Term)) {
         printf("Term (id %d)", (int)(((dat).Term_dat).tok).kind);
       } else
       if ((kind) == (Exact)) {
         printf("Exact (id %d)", (int)(((dat).Term_dat).tok).kind);
       } else
-      printf("NonTerm %s", (((dat).NonTerm_dat).symb).to_string());
+      printf("$%s", (nonterm_symbs).ith(((dat).NonTerm_dat).symb));
     }
   };
   #define dat_t gram_symbol_t
@@ -643,7 +761,7 @@ struct gram_rule_t {
   #undef dat_t
   #undef clist
   symlist pattern;
-  nonterm_symb result;
+  int result;
   anyptr (*result_function)(clist_anyptr);
   anyptr parse(toklist* l, int max_depth, gram_rules rules){
     int i;
@@ -671,15 +789,14 @@ struct gram_rule_t {
     (vlues).del();
     return ret;
   }
-  void init(nonterm_symb rule_result, anyptr (*rule_result_function)(clist_anyptr)){
+  void init(int rule_result, anyptr (*rule_result_function)(clist_anyptr)){
     result = rule_result;
     result_function = rule_result_function;
     (pattern).init();
   }
-  void add_nonterm(nonterm_symb nt){
+  void add_nonterm(int nt){
     gram_symbol_t sym;
-    (sym).set_NonTerm();
-    (((sym).dat).NonTerm_dat).symb = nt;
+    (sym).set_nonterm(nt);
     (pattern).append(sym);
   }
   void add_term(const char* str){
@@ -687,8 +804,7 @@ struct gram_rule_t {
     l = lex_string(str);
     while ((l).len()) {
       gram_symbol_t sym;
-      (sym).set_Term();
-      (((sym).dat).Term_dat).tok = (l).pop();
+      (sym).set_term((l).pop());
       (pattern).append(sym);
     }
   }
@@ -697,22 +813,74 @@ struct gram_rule_t {
     l = lex_string(str);
     while ((l).len()) {
       gram_symbol_t sym;
-      (sym).set_Exact();
-      (((sym).dat).Exact_dat).tok = (l).pop();
+      (sym).set_exact((l).pop());
       (pattern).append(sym);
     }
   }
-  void print(){
-    printf("rule: %s -> ", (result).to_string());
+  void print(string_list nonterm_symbs){
+    printf("rule: $%s -> ", (nonterm_symbs).ith(result));
     int i;
     i = 0;
     while ((i) < ((pattern).len())) {
       if (i) {
         printf(" ");
       }
-      ((pattern).ith(i)).print();
+      ((pattern).ith(i)).print(nonterm_symbs);
       i = (i) + (1);
     }
     printf("\n");
   }
 };
+gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_anyptr), string_list* nonterm_symbs){
+  char* tmp;
+  if (((str[0]) != (36)) || ((str[1]) == (36))) {
+    printf("rule initial symbol must be a nonterminal\n");
+    exit(-(1));
+  }
+  str = (str) + (1);
+  gram_rule_t ret;
+  (ret).init(string_list_thingy(nonterm_symbs, copy_string_until_char(&(str), 32)), rule_result_function);
+  while ((str[0]) && ((str[0]) == (32))) {
+    str = (str) + (1);
+  }
+  if (((str[0]) != (45)) || ((str[1]) != (62))) {
+    printf("expected \"->\" after initial symbol of rule\n");
+    exit(-(1));
+  }
+  str = (str) + (2);
+  while (str[0]) {
+    while ((str[0]) && ((str[0]) == (32))) {
+      str = (str) + (1);
+    }
+    if ((str[0]) == ((36) && ((str[1]) == (123)))) {
+      str = (str) + (2);
+      tmp = copy_string_until_char(&(str), 125);
+      (ret).add_exact(tmp);
+      free(tmp);
+    } else
+    if ((str[0]) == ((36) && ((str[1]) == (123)))) {
+      str = (str) + (2);
+      tmp = copy_string_until_char(&(str), 125);
+      (ret).add_term(tmp);
+      free(tmp);
+    } else
+    if ((str[0]) == (36)) {
+      str = (str) + (1);
+      (ret).add_nonterm(string_list_thingy(nonterm_symbs, copy_string_until_char(&(str), 32)));
+    } else
+    if ((str[0]) == (64)) {
+      str = (str) + (1);
+      tmp = copy_string_until_char(&(str), 32);
+      (ret).add_term(tmp);
+      free(tmp);
+    } else {
+      tmp = copy_string_until_char(&(str), 32);
+      (ret).add_exact(tmp);
+      free(tmp);
+    }
+  }
+  gram_rule_t* ptrret;
+  ptrret = (gram_rule_t*)malloc(sizeof(gram_rule_t));
+  ptrret[0] = ret;
+  return ptrret;
+}
