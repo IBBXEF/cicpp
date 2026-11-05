@@ -32,13 +32,13 @@ struct token {
       return false;
     }
     if ((kind) == (Binop)) {
-      return ((((dat).Binop_dat).op).kind) != (((((b).dat).Binop_dat).op).kind);
+      return ((((dat).Binop_dat).op).kind) == (((((b).dat).Binop_dat).op).kind);
     } else
     if ((kind) == (Unop)) {
-      return ((((dat).Unop_dat).op).kind) != (((((b).dat).Unop_dat).op).kind);
+      return ((((dat).Unop_dat).op).kind) == (((((b).dat).Unop_dat).op).kind);
     } else
     if ((kind) == (VInt)) {
-      return (((dat).VInt_dat).dat) != ((((b).dat).VInt_dat).dat);
+      return (((dat).VInt_dat).dat) == ((((b).dat).VInt_dat).dat);
     } else
     if ((kind) == (VString)) {
       return !(strcmp(((dat).VString_dat).str, (((b).dat).VString_dat).str));
@@ -46,6 +46,7 @@ struct token {
     if ((kind) == (Ident)) {
       return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
     }
+    return true;
   }
 };
 #include <stdlib.h>
@@ -233,7 +234,23 @@ struct clist {
 #undef clist
 toklist lex_string(const char* str);
 struct nonterm_symb {
-  enum { Rval, Rval1, Rvalop, RvalI, Lval } kind;
+  enum { Rval, Rvalop, RvalI, Lval } kind;
+  const char* to_string(){
+    if ((kind) == (Rval)) {
+      return "Rval";
+    } else
+    if ((kind) == (Rvalop)) {
+      return "Rvalop";
+    } else
+    if ((kind) == (RvalI)) {
+      return "RvalI";
+    } else
+    if ((kind) == (Lval)) {
+      return "Lval";
+    }
+    printf("invalid nonterminal symbol\n");
+    exit(-(1));
+  }
 };
 struct gram_rule_t {
   #define dat_t gram_rule_t*
@@ -344,6 +361,9 @@ struct gram_rule_t {
       return (match_symb(l, max_depth, rules)) != (nullptr);
     }
     void* match_symb(toklist* l, int max_depth, gram_rules rules){
+      if ((max_depth) < (0)) {
+        return nullptr;
+      }
       if ((kind) == (Term)) {
         if ((((l[0]).ith(0)).kind) != ((((dat).Term_dat).tok).kind)) {
           return nullptr;
@@ -352,16 +372,16 @@ struct gram_rule_t {
         return (void*)(l[0]).ith_ref(0);
       } else
       if ((kind) == (Exact)) {
-        if (((l[0]).ith(0)).eq(((dat).Exact_dat).tok)) {
+        if (!(((l[0]).ith(0)).eq(((dat).Exact_dat).tok))) {
           return nullptr;
         }
         l[0] = (l[0]).tail();
         return (void*)(l[0]).ith_ref(0);
       } else {
-        if ((max_depth) < (0)) {
-          return nullptr;
-        }
         int i;
+        int chosen;
+        int chosen_len;
+        chosen_len = (l)->len();
         i = 0;
         toklist base;
         base = l[0];
@@ -369,12 +389,24 @@ struct gram_rule_t {
           gram_rule_t rule;
           rule = (rules).ith(i)[0];
           if ((((rule).result).kind) == ((((dat).NonTerm_dat).symb).kind)) {
-            l[0] = base;
             if ((rule).parse_ok(l, max_depth, rules)) {
-              return (rule).parse(l, max_depth, rules);
+              int curlen;
+              curlen = (l)->len();
+              if ((curlen) < (chosen_len)) {
+                chosen_len = curlen;
+                chosen = i;
+              }
             }
+            l[0] = base;
           }
           i = (i) + (1);
+        }
+        if ((chosen_len) < ((l)->len())) {
+          gram_rule_t rule;
+          rule = (rules).ith(chosen)[0];
+          void* ret;
+          ret = (rule).parse(l, max_depth, rules);
+          return ret;
         }
         return nullptr;
       }
@@ -387,6 +419,15 @@ struct gram_rule_t {
     }
     void set_Exact(){
       kind = Exact;
+    }
+    void print(){
+      if ((kind) == (Term)) {
+        printf("Term (id %d)", (int)(((dat).Term_dat).tok).kind);
+      } else
+      if ((kind) == (Exact)) {
+        printf("Exact (id %d)", (int)(((dat).Term_dat).tok).kind);
+      } else
+      printf("NonTerm %s", (((dat).NonTerm_dat).symb).to_string());
     }
   };
   #define dat_t gram_symbol_t
@@ -491,15 +532,23 @@ struct gram_rule_t {
     i = 0;
     clist_voidptr vlues;
     (vlues).init();
+    toklist base;
+    base = l[0];
     while ((i) < ((pattern).len())) {
       gram_symbol_t sym;
       sym = (pattern).ith(i);
+      l[0] = base;
       if (!((sym).match_ok(l, (max_depth) - (1), rules))) {
+        l[0] = base;
+        (vlues).del();
         return nullptr;
       }
       void* vals;
+      l[0] = base;
       vals = (sym).match_symb(l, (max_depth) - (1), rules);
+      base = l[0];
       (vlues).push(vals);
+      i = (i) + (1);
     }
     (vlues).reverse();
     void* ret;
@@ -538,95 +587,17 @@ struct gram_rule_t {
       (pattern).append(sym);
     }
   }
-};
-#define dat_t gram_rule_t
-#define clist gram_rules
-struct clist {
-  struct _clist {
-    dat_t dat;
-    _clist* next;
-  };
-  _clist* l;
-  void push(dat_t dat){
-    _clist* n;
-    n = (_clist*)malloc(sizeof(_clist));
-    (n[0]).dat = dat;
-    (n[0]).next = l;
-    l = n;
-  }
-  dat_t pop(){
-    dat_t ret;
-    ret = (l)->dat;
-    _clist* tmp;
-    tmp = (l)->next;
-    free(l);
-    l = tmp;
-    return ret;
-  }
-  void del(){
-    while (l) {
-      pop();
-    }
-  }
-  int len(){
-    int ret;
-    ret = 0;
-    _clist* t;
-    t = l;
-    while (t) {
-      ret = (ret) + (1);
-      t = (t)->next;
-    }
-    return ret;
-  }
-  dat_t* ith_ref(int i){
-    _clist* t;
-    t = l;
-    while ((i) > (0)) {
-      if (!(t)) {
-        printf("out of range in list: index %d while len is %d\n", i, len());
-        exit(0);
+  void print(){
+    printf("rule: %s -> ", (result).to_string());
+    int i;
+    i = 0;
+    while ((i) < ((pattern).len())) {
+      if (i) {
+        printf(" ");
       }
-      t = (t)->next;
-      i = (i) - (1);
+      ((pattern).ith(i)).print();
+      i = (i) + (1);
     }
-    if (!(t)) {
-      printf("out of range in list: index %d while len is %d\n", i, len());
-      exit(0);
-    }
-    dat_t* ret;
-    ret = &((t)->dat);
-    return ret;
-  }
-  dat_t ith(int i){
-    return ith_ref(i)[0];
-  }
-  void reverse(){
-    clist rev;
-    (rev).init();
-    while (l) {
-      (rev).push(pop());
-    }
-    l = (rev).l;
-  }
-  clist tail(){
-    clist ret;
-    (ret).l = (l)->next;
-    return ret;
-  }
-  void append(dat_t dat){
-    if ((l) == (nullptr)) {
-      push(dat);
-    } else {
-      clist tmp;
-      tmp = tail();
-      (tmp).append(dat);
-      (l[0]).next = (tmp).l;
-    }
-  }
-  void init(){
-    l = nullptr;
+    printf("\n");
   }
 };
-#undef dat_t
-#undef clist

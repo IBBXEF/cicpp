@@ -32,13 +32,13 @@ struct token {
       return false;
     }
     if ((kind) == (Binop)) {
-      return ((((dat).Binop_dat).op).kind) != (((((b).dat).Binop_dat).op).kind);
+      return ((((dat).Binop_dat).op).kind) == (((((b).dat).Binop_dat).op).kind);
     } else
     if ((kind) == (Unop)) {
-      return ((((dat).Unop_dat).op).kind) != (((((b).dat).Unop_dat).op).kind);
+      return ((((dat).Unop_dat).op).kind) == (((((b).dat).Unop_dat).op).kind);
     } else
     if ((kind) == (VInt)) {
-      return (((dat).VInt_dat).dat) != ((((b).dat).VInt_dat).dat);
+      return (((dat).VInt_dat).dat) == ((((b).dat).VInt_dat).dat);
     } else
     if ((kind) == (VString)) {
       return !(strcmp(((dat).VString_dat).str, (((b).dat).VString_dat).str));
@@ -46,6 +46,7 @@ struct token {
     if ((kind) == (Ident)) {
       return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
     }
+    return true;
   }
 };
 #include <stdlib.h>

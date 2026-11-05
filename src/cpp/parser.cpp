@@ -68,6 +68,12 @@ void* gram_rule_addr(clist_voidptr l) {
     ret->dat.addr_dat.v = (lval*)l.ith(1);
     return ret;
 }
+void* gram_rule_int(clist_voidptr l) {
+    rval* ret = (rval*)malloc(sizeof(rval));
+    ret->kind = rval::Int;
+    ret->dat.int_dat = ((token*)l.ith(0))->dat.VInt_dat.dat;
+    return ret;
+}
 
 gram_rule_t::gram_rules make_rules() {
     gram_rule_t::gram_rules ret;
@@ -86,12 +92,8 @@ gram_rule_t::gram_rules make_rules() {
     rule.add_nonterm({.kind=nonterm_symb::Lval});
     ptr = (gram_rule_t*)malloc(sizeof(gram_rule_t)); *ptr=rule; ret.append(ptr);
 
-    rule.init({.kind = nonterm_symb::Rval1}, gram_rule_elt_n0); // rule Rval1 -> Rval
-    rule.add_nonterm({.kind=nonterm_symb::Rval});
-    ptr = (gram_rule_t*)malloc(sizeof(gram_rule_t)); *ptr=rule; ret.append(ptr);
-
-    rule.init({.kind = nonterm_symb::Rvalop}, gram_rule_elt_n0); // rule Rvalop -> Rval1
-    rule.add_nonterm({.kind=nonterm_symb::Rval1});
+    rule.init({.kind = nonterm_symb::Rval}, gram_rule_elt_n0); // rule Rval -> Rvalop
+    rule.add_nonterm({.kind=nonterm_symb::Rvalop});
     ptr = (gram_rule_t*)malloc(sizeof(gram_rule_t)); *ptr=rule; ret.append(ptr);
 
     rule.init({.kind = nonterm_symb::Rvalop}, gram_rule_binop); // rule Rvalop -> RvalI Binop Rvalop
@@ -100,12 +102,16 @@ gram_rule_t::gram_rules make_rules() {
     rule.add_nonterm({.kind=nonterm_symb::Rvalop});
     ptr = (gram_rule_t*)malloc(sizeof(gram_rule_t)); *ptr=rule; ret.append(ptr);
 
-    rule.init({.kind = nonterm_symb::RvalI}, gram_rule_elt_n0); // rule RvalI -> Rvalop
-    rule.add_nonterm({.kind=nonterm_symb::Rvalop});
+    rule.init({.kind = nonterm_symb::Rvalop}, gram_rule_elt_n0); // rule Rvalop -> RvalI
+    rule.add_nonterm({.kind=nonterm_symb::RvalI});
     ptr = (gram_rule_t*)malloc(sizeof(gram_rule_t)); *ptr=rule; ret.append(ptr);
 
-    rule.init({.kind = nonterm_symb::Lval}, gram_rule_Rval_of_Lval); // rule Lval -> RvalI
-    rule.add_nonterm({.kind=nonterm_symb::RvalI});
+    rule.init({.kind = nonterm_symb::RvalI}, gram_rule_Rval_of_Lval); // rule RvalI -> Lval
+    rule.add_nonterm({.kind=nonterm_symb::Lval});
+    ptr = (gram_rule_t*)malloc(sizeof(gram_rule_t)); *ptr=rule; ret.append(ptr);
+
+    rule.init({.kind = nonterm_symb::RvalI}, gram_rule_int); // rule RvalI -> VInt
+    rule.add_term("0"); // matches any integer
     ptr = (gram_rule_t*)malloc(sizeof(gram_rule_t)); *ptr=rule; ret.append(ptr);
 
     rule.init({.kind = nonterm_symb::Lval}, gram_rule_dot); // rule Lval -> Rval '.' Ident
@@ -125,6 +131,11 @@ gram_rule_t::gram_rules make_rules() {
     rule.add_nonterm({.kind=nonterm_symb::Rval});
     ptr = (gram_rule_t*)malloc(sizeof(gram_rule_t)); *ptr=rule; ret.append(ptr);
 
+    for (int i = 0; i < ret.len(); i++) {
+        ret.ith(i)->print();
+    }
+    
+
     return ret;
 }
 
@@ -133,14 +144,14 @@ gram_rule_t::gram_rules parsing_rules = make_rules();
 rval* parse_rval(toklist* toks) {
     gram_rule_t::gram_symbol_t sym = {.kind=gram_rule_t::gram_symbol_t::NonTerm};
     sym.dat.NonTerm_dat.symb.kind = nonterm_symb::Rval;
-    void* ret = sym.match_symb(toks, 50, parsing_rules);
+    void* ret = sym.match_symb(toks, 10, parsing_rules);
     return (rval*)ret;
 }
 
 lval* parse_lval(toklist* toks) {
     gram_rule_t::gram_symbol_t sym = {.kind=gram_rule_t::gram_symbol_t::NonTerm};
     sym.dat.NonTerm_dat.symb.kind = nonterm_symb::Lval;
-    void* ret = sym.match_symb(toks, 50, parsing_rules);
+    void* ret = sym.match_symb(toks, 10, parsing_rules);
     return (lval*)ret;
 }
 
@@ -424,7 +435,7 @@ decl* parse_var_decl(toklist* toks, bool check_semicolon) {
     n = toks->ith(0);
     if (n.kind == token::Set) {
         *toks = toks->tail();
-        ret->dat.var_dat.v = parse_rval_old(toks);
+        ret->dat.var_dat.v = parse_rval(toks);
     } else {
         ret->dat.var_dat.v = nullptr;
     }

@@ -344,6 +344,7 @@ toklist lex_string(const char* str) {
         str = str + 1;
         c = *str;
     }
+    last_buffer[cou] = '\0';
     pop_token_stack(&cou, &ret, last_buffer);
 
     ret.pop(); // we remove the first token, our placeholder

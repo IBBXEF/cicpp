@@ -1,15 +1,27 @@
 
-// #include "src/cicpp/clist.cicpp"
 #include "src/cicpp/lexer.cicpp"
 
 
 
 type nonterm_symb {
     Rval;
-    Rval1;
     Rvalop;
     RvalI;
     Lval;
+
+    func const char* to_string() {
+        if kind == Rval {
+            return "Rval";
+        } elif kind == Rvalop {
+            return "Rvalop";
+        } elif kind == RvalI {
+            return "RvalI";
+        } elif kind == Lval {
+            return "Lval";
+        }
+        printf("invalid nonterminal symbol\n");
+        exit(-1);
+    }
 }
 
 type gram_rule_t {
@@ -25,6 +37,9 @@ type gram_rule_t {
             return match_symb(l, max_depth, rules) != nullptr; // this will cause a memory leak but works
         }
         func void* match_symb(toklist* l, int max_depth, gram_rules rules) {
+            if max_depth < 0 {
+                return nullptr;
+            }
             if kind == Term {
                 if (((*l).ith(0)).kind) != (((dat.Term_dat).tok).kind) {
                     return nullptr;
@@ -32,16 +47,16 @@ type gram_rule_t {
                 *l = (*l).tail();
                 return ((*l).ith_ref(0)) as void* ;
             } elif kind == Exact {
-                if ((*l).ith(0)).eq((dat.Exact_dat).tok) {
+                if !((*l).ith(0)).eq((dat.Exact_dat).tok) {
                     return nullptr;
                 }
                 *l = (*l).tail();
                 return ((*l).ith_ref(0)) as void* ;
             } else { // kind == NonTerm
-                if max_depth < 0 {
-                    return nullptr;
-                }
                 int i;
+                int chosen;
+                int chosen_len;
+                chosen_len = l->len();
                 i = 0;
                 toklist base;
                 base = *l;
@@ -49,12 +64,24 @@ type gram_rule_t {
                     gram_rule_t rule;
                     rule = *(rules.ith(i));
                     if ((((rule).result).kind) == (((dat.NonTerm_dat).symb).kind)) {
-                        *l = base;
-                        if rule.parse_ok(l, max_depth, rules) {
-                            return rule.parse(l, max_depth, rules);
+                        if (rule.parse_ok(l, max_depth, rules)) {
+                            int curlen;
+                            curlen = l->len();
+                            if curlen < chosen_len { // we select for the longest match
+                                chosen_len = curlen;
+                                chosen = i;
+                            }
                         }
+                        *l = base;
                     }
                     i = i + 1;
+                }
+                if chosen_len < l->len() {
+                    gram_rule_t rule;
+                    rule = *(rules.ith(chosen));
+                    void* ret;
+                    ret = (rule.parse(l, max_depth, rules));
+                    return ret;
                 }
                 return nullptr;
             }
@@ -68,6 +95,17 @@ type gram_rule_t {
         }
         func void set_Exact() { // temporary
             kind = Exact;
+        }
+
+        func void print() {
+            if kind == Term {
+                printf("Term (id %d)", ((((dat.Term_dat).tok).kind) as int));
+            } elif kind == Exact {
+                printf("Exact (id %d)", ((((dat.Term_dat).tok).kind) as int));
+            } else {
+                printf("NonTerm %s",
+                    ((dat.NonTerm_dat).symb).to_string());
+            }
         }
     }
 
@@ -85,19 +123,28 @@ type gram_rule_t {
     }
 
     func void* parse(toklist* l, int max_depth, gram_rules rules) {
+        // printf("parsing at depth %d\n", max_depth);
         int i;
         i = 0;
         clist_voidptr vlues;
         vlues.init();
+        toklist base;
+        base = *l;
         while (i < pattern.len()) {
             gram_symbol_t sym;
             sym = pattern.ith(i);
+            *l = base;
             if (!sym.match_ok(l, max_depth-1, rules)) {
+                *l = base;
+                vlues.del(); // this is kind of a memory leak but it's okay
                 return nullptr;
             }
             void* vals;
+            *l = base;
             vals = sym.match_symb(l, max_depth-1, rules);
+            base = *l;
             vlues.push(vals);
+            i = i + 1;
         }
         vlues.reverse();
         void* ret;
@@ -139,6 +186,20 @@ type gram_rule_t {
             ((sym.dat).Exact_dat).tok = l.pop();
             pattern.append(sym);
         }
+    }
+
+    func void print() {
+        printf("rule: %s -> ", result.to_string());
+        int i;
+        i = 0;
+        while i < (pattern.len()) {
+            if i {
+                printf(" ");
+            }
+            (pattern.ith(i)).print();
+            i = i + 1;
+        }
+        printf("\n");
     }
 }
 
