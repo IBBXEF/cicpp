@@ -2,7 +2,6 @@
 #include "src/cicpp/lexer.cicpp"
 
 
-
 type nonterm_symb {
     Rval;
     Rvalop;
@@ -33,57 +32,59 @@ type gram_rule_t {
         Exact { token tok; };
         NonTerm { nonterm_symb symb; };
 
-        func bool match_ok(toklist* l, int max_depth, gram_rules rules) {
-            return match_symb(l, max_depth, rules) != nullptr; // this will cause a memory leak but works
-        }
-        func void* match_symb(toklist* l, int max_depth, gram_rules rules) {
+        func anyptr match_symb(toklist* l, int max_depth, gram_rules rules) {
+            anyptr ret;
+            ret.init_null();
             if max_depth < 0 {
-                return nullptr;
+                return ret;
             }
             if kind == Term {
                 if (((*l).ith(0)).kind) != (((dat.Term_dat).tok).kind) {
-                    return nullptr;
+                    return ret;
                 }
+                ret.init_view((*l).ith_ref(0));
                 *l = (*l).tail();
-                return ((*l).ith_ref(0)) as void* ;
+                return ret;
             } elif kind == Exact {
                 if !((*l).ith(0)).eq((dat.Exact_dat).tok) {
-                    return nullptr;
+                    return ret;
                 }
+                ret.init_view((*l).ith_ref(0));
                 *l = (*l).tail();
-                return ((*l).ith_ref(0)) as void* ;
+                return ret;
             } else { // kind == NonTerm
                 int i;
-                int chosen;
                 int chosen_len;
                 chosen_len = l->len();
                 i = 0;
                 toklist base;
+                toklist chosen_end;
                 base = *l;
+                chosen_end = *l;
                 while i < (rules.len()) {
                     gram_rule_t rule;
                     rule = *(rules.ith(i));
                     if ((((rule).result).kind) == (((dat.NonTerm_dat).symb).kind)) {
-                        if (rule.parse_ok(l, max_depth, rules)) {
+                        anyptr tmp;
+                        tmp = rule.parse(l, max_depth, rules);
+                        if tmp.ptr {
                             int curlen;
                             curlen = l->len();
-                            if curlen < chosen_len { // we select for the longest match
+                            if curlen < chosen_len { // we select for the longest match, i.e. the one leaving the fewest tokens
                                 chosen_len = curlen;
-                                chosen = i;
+                                ret.del();
+                                ret = tmp;
+                                chosen_end = *l;
+                            } else {
+                                tmp.del();
                             }
                         }
                         *l = base;
                     }
                     i = i + 1;
                 }
-                if chosen_len < l->len() {
-                    gram_rule_t rule;
-                    rule = *(rules.ith(chosen));
-                    void* ret;
-                    ret = (rule.parse(l, max_depth, rules));
-                    return ret;
-                }
-                return nullptr;
+                *l = chosen_end;
+                return ret;
             }
         }
         
@@ -115,45 +116,38 @@ type gram_rule_t {
     nonterm_symb result;
 
     // user-defined "result function" that will turn the matched pattern into the result.
-    clist_voidptr -> void* result_function;
+    clist_anyptr -> anyptr result_function;
 
 
-    func bool parse_ok(toklist* l, int max_depth, gram_rules rules) {
-        return ((*this).parse(l, max_depth, rules)) != nullptr; // this will cause a memory leak but works
-    }
-
-    func void* parse(toklist* l, int max_depth, gram_rules rules) {
+    func anyptr parse(toklist* l, int max_depth, gram_rules rules) {
         // printf("parsing at depth %d\n", max_depth);
         int i;
         i = 0;
-        clist_voidptr vlues;
+        clist_anyptr vlues;
         vlues.init();
         toklist base;
         base = *l;
+        anyptr ret;
         while (i < pattern.len()) {
             gram_symbol_t sym;
             sym = pattern.ith(i);
-            *l = base;
-            if (!sym.match_ok(l, max_depth-1, rules)) {
-                *l = base;
-                vlues.del(); // this is kind of a memory leak but it's okay
-                return nullptr;
-            }
-            void* vals;
-            *l = base;
+            anyptr vals;
             vals = sym.match_symb(l, max_depth-1, rules);
-            base = *l;
-            vlues.push(vals);
+            if (!(vals.ptr)) {
+                *l = base;
+                clist_anyptr_free(vlues);
+                ret.init_null();
+                return ret;
+            }
+            vlues.append(vals);
             i = i + 1;
         }
-        vlues.reverse();
-        void* ret;
         ret = result_function(vlues);
-        vlues.del();
+        vlues.del(); // this is not a memory leak, the function is responsible for the elements of the list
         return ret;
     }
 
-    func void init(nonterm_symb rule_result, clist_voidptr -> void* rule_result_function) {
+    func void init(nonterm_symb rule_result, clist_anyptr -> anyptr rule_result_function) {
         result = rule_result;
         result_function = rule_result_function;
         pattern.init();

@@ -8,37 +8,43 @@
 lval* parse_lval_old(toklist* toks);
 typ* parse_typ(toklist* toks);
 
-void* gram_rule_elt_n0(clist_voidptr l) { return l.ith(0); }
-void* gram_rule_elt_n1(clist_voidptr l) { return l.ith(1); }
-void* gram_rule_binop(clist_voidptr l) {
+anyptr gram_rule_elt_n0(clist_anyptr l) { return l.ith(0); }
+anyptr gram_rule_elt_n1(clist_anyptr l) { return l.ith(1); }
+anyptr gram_rule_binop(clist_anyptr l) {
     rval* ret = (rval*)malloc(sizeof(rval));
     ret->kind = rval::Binop;
-    ret->dat.binop_dat.op = ((token*)l.ith(1))->dat.Binop_dat.op;
-    ret->dat.binop_dat.v1 = (rval*)l.ith(0);
-    ret->dat.binop_dat.v2 = (rval*)l.ith(2);
-    return ret;
+    ret->dat.binop_dat.op = ((token*)l.ith(1).ptr)->dat.Binop_dat.op;
+    ret->dat.binop_dat.v1 = (rval*)l.ith(0).ptr;
+    ret->dat.binop_dat.v2 = (rval*)l.ith(2).ptr;
+    anyptr r;
+    r.init(ret, rval::del_ptr);
+    return r;
 }
-void* gram_rule_Rval_of_Lval(clist_voidptr l) {
+anyptr gram_rule_Rval_of_Lval(clist_anyptr l) {
     rval* ret = (rval*)malloc(sizeof(rval));
     ret->kind = rval::Lval;
-    ret->dat.lval_dat = (lval*)l.ith(0);
-    return ret;
+    ret->dat.lval_dat = (lval*)l.ith(0).ptr;
+    anyptr r;
+    r.init(ret, rval::del_ptr);
+    return r;
 }
-void* gram_rule_dot(clist_voidptr l) {
+anyptr gram_rule_dot(clist_anyptr l) {
     lval* ret = (lval*)malloc(sizeof(lval));
     ret->kind = lval::Field;
-    ret->dat.field_dat.stru = (rval*)l.ith(0);
-    ret->dat.field_dat.field = ((token*)l.ith(2))->dat.Ident_dat.str;
-    return ret;
+    ret->dat.field_dat.stru = (rval*)l.ith(0).ptr;
+    ret->dat.field_dat.field = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
+    anyptr r;
+    r.init(ret, lval::del_ptr);
+    return r;
 }
-void* gram_rule_arrow(clist_voidptr l) {
+anyptr gram_rule_arrow(clist_anyptr l) {
     // we parse a->b as (a[0]).b
     rval* stru = (rval*)malloc(sizeof(rval));
     stru->kind = rval::Lval;
 
     lval* stru2 = (lval*)malloc(sizeof(lval));
     stru2->kind = lval::Index;
-    stru2->dat.ind_dat.arr = (rval*)l.ith(0);
+    stru2->dat.ind_dat.arr = (rval*)l.ith(0).ptr;
     stru2->dat.ind_dat.ind = (rval*)malloc(sizeof(rval));
     stru2->dat.ind_dat.ind->kind = rval::Int;
     stru2->dat.ind_dat.ind->dat.int_dat = 0;
@@ -48,37 +54,47 @@ void* gram_rule_arrow(clist_voidptr l) {
     lval* ret = (lval*)malloc(sizeof(lval));
     ret->kind = lval::Field;
     ret->dat.field_dat.stru = stru;
-    ret->dat.field_dat.field = ((token*)l.ith(2))->dat.Ident_dat.str;
-    return ret;
+    ret->dat.field_dat.field = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
+    anyptr r;
+    r.init(ret, lval::del_ptr);
+    return r;
 }
-void* gram_rule_ptr(clist_voidptr l) {
+anyptr gram_rule_ptr(clist_anyptr l) {
     // we parse *a as a[0]
     lval* ret = (lval*)malloc(sizeof(lval));
     ret->kind = lval::Index;
-    ret->dat.ind_dat.arr = (rval*)l.ith(1);
+    ret->dat.ind_dat.arr = (rval*)l.ith(1).ptr;
     ret->dat.ind_dat.ind = (rval*)malloc(sizeof(rval));
     ret->dat.ind_dat.ind->kind = rval::Int;
     ret->dat.ind_dat.ind->dat.int_dat = 0;
-    return ret;
+    anyptr r;
+    r.init(ret, lval::del_ptr);
+    return r;
 }
-void* gram_rule_addr(clist_voidptr l) {
+anyptr gram_rule_addr(clist_anyptr l) {
     // we parse *a as a[0]
     rval* ret = (rval*)malloc(sizeof(rval));
     ret->kind = rval::Addr;
-    ret->dat.addr_dat.v = (lval*)l.ith(1);
-    return ret;
+    ret->dat.addr_dat.v = (lval*)l.ith(1).ptr;
+    anyptr r;
+    r.init(ret, rval::del_ptr);
+    return r;
 }
-void* gram_rule_int(clist_voidptr l) {
+anyptr gram_rule_int(clist_anyptr l) {
     rval* ret = (rval*)malloc(sizeof(rval));
     ret->kind = rval::Int;
-    ret->dat.int_dat = ((token*)l.ith(0))->dat.VInt_dat.dat;
-    return ret;
+    ret->dat.int_dat = ((token*)l.ith(0).ptr)->dat.VInt_dat.dat;
+    anyptr r;
+    r.init(ret, rval::del_ptr);
+    return r;
 }
-void* gram_rule_var(clist_voidptr l) {
+anyptr gram_rule_var(clist_anyptr l) {
     lval* ret = (lval*)malloc(sizeof(lval));
     ret->kind = lval::Var;
-    ret->dat.var_dat = ((token*)l.ith(0))->dat.Ident_dat.str;
-    return ret;
+    ret->dat.var_dat = ((token*)l.ith(0).ptr)->dat.Ident_dat.str;
+    anyptr r;
+    r.init(ret, lval::del_ptr);
+    return r;
 }
 
 gram_rule_t::gram_rules make_rules() {
@@ -154,14 +170,14 @@ gram_rule_t::gram_rules parsing_rules = make_rules();
 rval* parse_rval(toklist* toks) {
     gram_rule_t::gram_symbol_t sym = {.kind=gram_rule_t::gram_symbol_t::NonTerm};
     sym.dat.NonTerm_dat.symb.kind = nonterm_symb::Rval;
-    void* ret = sym.match_symb(toks, 10, parsing_rules);
+    void* ret = sym.match_symb(toks, 10, parsing_rules).ptr;
     return (rval*)ret;
 }
 
 lval* parse_lval(toklist* toks) {
     gram_rule_t::gram_symbol_t sym = {.kind=gram_rule_t::gram_symbol_t::NonTerm};
     sym.dat.NonTerm_dat.symb.kind = nonterm_symb::Lval;
-    void* ret = sym.match_symb(toks, 10, parsing_rules);
+    void* ret = sym.match_symb(toks, 10, parsing_rules).ptr;
     return (lval*)ret;
 }
 

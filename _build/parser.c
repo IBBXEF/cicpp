@@ -141,6 +141,126 @@ struct clist {
 };
 #undef dat_t
 #undef clist
+struct anyptr {
+  void* ptr;
+  void (*free_func)(void*);
+  static
+  void do_nothing(void* p){
+  }
+  void init(void* _ptr, void (*_free_func)(void*)){
+    ptr = _ptr;
+    free_func = _free_func;
+  }
+  void init_view(void* _ptr){
+    ptr = _ptr;
+    free_func = do_nothing;
+  }
+  void init_null(){
+    init_view(nullptr);
+  }
+  void* get(){
+    return ptr;
+  }
+  void del(){
+    free_func(ptr);
+  }
+};
+#define dat_t anyptr
+#define clist clist_anyptr
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n;
+    n = (_clist*)malloc(sizeof(_clist));
+    (n[0]).dat = dat;
+    (n[0]).next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret;
+    ret = (l)->dat;
+    _clist* tmp;
+    tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret;
+    ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int i){
+    _clist* t;
+    t = l;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", i, len());
+        exit(0);
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", i, len());
+      exit(0);
+    }
+    dat_t* ret;
+    ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return ith_ref(i)[0];
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp;
+      tmp = tail();
+      (tmp).append(dat);
+      (l[0]).next = (tmp).l;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+void clist_anyptr_free(clist_anyptr l){
+  while ((l).len()) {
+    ((l).pop()).del();
+  }
+}
 #define dat_t token
 #define clist toklist
 struct clist {
@@ -358,25 +478,35 @@ struct gram_rule_t {
       } NonTerm_dat;
      } dat;
     bool match_ok(toklist* l, int max_depth, gram_rules rules){
-      return (match_symb(l, max_depth, rules)) != (nullptr);
+      anyptr p;
+      p = match_symb(l, max_depth, rules);
+      bool ret;
+      ret = ((p).ptr) != (nullptr);
+      (p).del();
+      return ret;
     }
-    void* match_symb(toklist* l, int max_depth, gram_rules rules){
+    anyptr match_symb(toklist* l, int max_depth, gram_rules rules){
+      anyptr ret;
+      (ret).init_null();
       if ((max_depth) < (0)) {
-        return nullptr;
+        return ret;
       }
       if ((kind) == (Term)) {
         if ((((l[0]).ith(0)).kind) != ((((dat).Term_dat).tok).kind)) {
-          return nullptr;
+          return ret;
         }
         l[0] = (l[0]).tail();
-        return (void*)(l[0]).ith_ref(0);
+        (ret).init_view((l[0]).ith_ref(0));
+        return ret;
       } else
       if ((kind) == (Exact)) {
         if (!(((l[0]).ith(0)).eq(((dat).Exact_dat).tok))) {
-          return nullptr;
+          return ret;
         }
         l[0] = (l[0]).tail();
-        return (void*)(l[0]).ith_ref(0);
+        anyptr ret;
+        (ret).init_view((l[0]).ith_ref(0));
+        return ret;
       } else {
         int i;
         int chosen;
@@ -404,11 +534,10 @@ struct gram_rule_t {
         if ((chosen_len) < ((l)->len())) {
           gram_rule_t rule;
           rule = (rules).ith(chosen)[0];
-          void* ret;
           ret = (rule).parse(l, max_depth, rules);
           return ret;
         }
-        return nullptr;
+        return ret;
       }
     }
     void set_Term(){
@@ -523,27 +652,34 @@ struct gram_rule_t {
   #undef clist
   symlist pattern;
   nonterm_symb result;
-  void* (*result_function)(clist_voidptr);
+  anyptr (*result_function)(clist_anyptr);
   bool parse_ok(toklist* l, int max_depth, gram_rules rules){
-    return ((this[0]).parse(l, max_depth, rules)) != (nullptr);
+    anyptr p;
+    p = (this[0]).parse(l, max_depth, rules);
+    bool ret;
+    ret = ((p).ptr) != (nullptr);
+    (p).del();
+    return ret;
   }
-  void* parse(toklist* l, int max_depth, gram_rules rules){
+  anyptr parse(toklist* l, int max_depth, gram_rules rules){
     int i;
     i = 0;
-    clist_voidptr vlues;
+    clist_anyptr vlues;
     (vlues).init();
     toklist base;
     base = l[0];
+    anyptr ret;
+    (ret).init_null();
     while ((i) < ((pattern).len())) {
       gram_symbol_t sym;
       sym = (pattern).ith(i);
       l[0] = base;
       if (!((sym).match_ok(l, (max_depth) - (1), rules))) {
         l[0] = base;
-        (vlues).del();
-        return nullptr;
+        clist_anyptr_free(vlues);
+        return ret;
       }
-      void* vals;
+      anyptr vals;
       l[0] = base;
       vals = (sym).match_symb(l, (max_depth) - (1), rules);
       base = l[0];
@@ -551,12 +687,11 @@ struct gram_rule_t {
       i = (i) + (1);
     }
     (vlues).reverse();
-    void* ret;
     ret = result_function(vlues);
     (vlues).del();
     return ret;
   }
-  void init(nonterm_symb rule_result, void* (*rule_result_function)(clist_voidptr)){
+  void init(nonterm_symb rule_result, anyptr (*rule_result_function)(clist_anyptr)){
     result = rule_result;
     result_function = rule_result_function;
     (pattern).init();

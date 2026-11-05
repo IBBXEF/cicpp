@@ -1,14 +1,25 @@
 
-type anyptr {
+#include "src/cicpp/clist.cicpp"
 
+type anyptr {
     void* ptr;
 
     void* -> void free_func;
 
-    static func void make(void* _ptr, void* -> void _free_func) {
-        anyptr ret;
-        ret.ptr = _ptr;
-        ret.free_func = _free_func;
+    static func void do_nothing(void* p) {}
+
+    func void init(void* _ptr, void* -> void _free_func) {
+        ptr = _ptr;
+        free_func = _free_func;
+    }
+
+    func void init_view(void* _ptr) {
+        ptr = _ptr;
+        free_func = do_nothing;
+    }
+
+    func void init_null() {
+        init_view(nullptr);
     }
 
     func void* get() {
@@ -18,5 +29,12 @@ type anyptr {
     func void del() {
         free_func(ptr);
     }
+}
 
+specialize clist<anyptr> as clist_anyptr
+
+func void clist_anyptr_free(clist_anyptr l) {
+    while l.len() {
+        (l.pop()).del();
+    }
 }

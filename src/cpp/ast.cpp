@@ -32,6 +32,8 @@ struct lval
     } dat;
 
     void print_to_file(FILE* fptr);
+    void del();
+    static void del_ptr(void* p);
 };
 
 
@@ -60,6 +62,8 @@ struct rval
     } dat;
 
     void print_to_file(FILE* fptr);
+    void del();
+    static void del_ptr(void*);
 };
 
 
@@ -111,6 +115,9 @@ struct typ
             dat.const_dat->print_to_file(fptr, 0);
         }
     }
+
+    void del();
+    static void del_ptr(void* p);
 };
 
 
@@ -194,6 +201,56 @@ void rval::print_to_file(FILE* fptr) {
             ((rval*)dat.fcall_dat.args.ith(i))->print_to_file(fptr);
         }
         fprintf(fptr, ")");
+    }
+}
+
+void lval::del_ptr(void* p) {
+    ((lval*)p)->del();
+    free(p);
+}
+void lval::del() {
+    if (kind == Index) {
+        rval::del_ptr(dat.ind_dat.arr);
+    } else if (kind == Field) {
+        rval::del_ptr(dat.field_dat.stru);
+    }
+}
+void rval::del_ptr(void* p) {
+    ((rval*)p)->del();
+    free(p);
+}
+void rval::del() {
+    if (kind == Lval) {
+        lval::del_ptr(dat.lval_dat);
+    } else if (kind == Binop) {
+        rval::del_ptr(dat.binop_dat.v1);
+        rval::del_ptr(dat.binop_dat.v2);
+    } else if (kind == rval::Addr) {
+        rval::del_ptr(dat.addr_dat.v);
+    } else if (kind == rval::Fcall) {
+        rval::del_ptr(dat.fcall_dat.func);
+        // we do not delete the argument list for now, it will be done later i swear!
+    } else if (kind == rval::Typecast) {
+        rval::del_ptr(dat.typecast_dat.v);
+        typ::del_ptr(dat.typecast_dat.t);
+    } else if (kind == rval::Unop) {
+        rval::del_ptr(dat.unop_dat.v);
+    }
+}
+void typ::del_ptr(void* p) {
+    ((typ*)p)->del();
+    free(p);
+}
+void typ::del() {
+    if (kind == typ::TConst) {
+        typ::del_ptr(dat.const_dat);
+    } else if (kind == typ::Tfunptr) {
+        typ::del_ptr(dat.tfunptr_dat.ret_t);
+        // we do not free the argument list for now
+    } else if (kind == typ::TPtr) {
+        typ::del_ptr(dat.ptr_dat);
+    } else if (kind == typ::Typeof) {
+        rval::del_ptr(dat.typeof_dat);
     }
 }
 
