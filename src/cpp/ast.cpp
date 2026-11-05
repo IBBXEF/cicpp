@@ -160,6 +160,10 @@ void rval::print_to_file(FILE* fptr) {
             fprintf(fptr, " < ");
         } else if (dat.binop_dat.op.kind == binop::Leq) {
             fprintf(fptr, " <= ");
+        } else if (dat.binop_dat.op.kind == binop::Land) {
+            fprintf(fptr, " && ");
+        } else if (dat.binop_dat.op.kind == binop::Lor) {
+            fprintf(fptr, " || ");
         } else if (dat.binop_dat.op.kind == binop::Gt) {
             fprintf(fptr, " > ");
         } else if (dat.binop_dat.op.kind == binop::Geq) {
