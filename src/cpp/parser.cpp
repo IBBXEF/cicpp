@@ -74,6 +74,12 @@ void* gram_rule_int(clist_voidptr l) {
     ret->dat.int_dat = ((token*)l.ith(0))->dat.VInt_dat.dat;
     return ret;
 }
+void* gram_rule_var(clist_voidptr l) {
+    lval* ret = (lval*)malloc(sizeof(lval));
+    ret->kind = lval::Var;
+    ret->dat.var_dat = ((token*)l.ith(0))->dat.Ident_dat.str;
+    return ret;
+}
 
 gram_rule_t::gram_rules make_rules() {
     gram_rule_t::gram_rules ret;
@@ -123,6 +129,10 @@ gram_rule_t::gram_rules make_rules() {
     rule.init({.kind = nonterm_symb::Lval}, gram_rule_arrow); // rule Lval -> Rval '->' Ident
     rule.add_nonterm({.kind=nonterm_symb::Rval});
     rule.add_exact("->");
+    rule.add_term("ident");
+    ptr = (gram_rule_t*)malloc(sizeof(gram_rule_t)); *ptr=rule; ret.append(ptr);
+
+    rule.init({.kind = nonterm_symb::Lval}, gram_rule_var); // rule Lval -> Ident
     rule.add_term("ident");
     ptr = (gram_rule_t*)malloc(sizeof(gram_rule_t)); *ptr=rule; ret.append(ptr);
 

@@ -1,0 +1,22 @@
+
+type anyptr {
+
+    void* ptr;
+
+    void* -> void free_func;
+
+    static func void make(void* _ptr, void* -> void _free_func) {
+        anyptr ret;
+        ret.ptr = _ptr;
+        ret.free_func = _free_func;
+    }
+
+    func void* get() {
+        return ptr;
+    }
+
+    func void del() {
+        free_func(ptr);
+    }
+
+}

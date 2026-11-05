@@ -11,4 +11,5 @@ _build/**
 !_build/lexer.c
 !_build/clist.c
 !_build/parser.c
+!_build/anyptr.c
 
