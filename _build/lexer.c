@@ -164,6 +164,7 @@ struct anyptr {
   }
   void del(){
     free_func(ptr);
+    ptr = nullptr;
   }
 };
 #define dat_t anyptr

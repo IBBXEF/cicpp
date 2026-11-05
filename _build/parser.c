@@ -164,6 +164,7 @@ struct anyptr {
   }
   void del(){
     free_func(ptr);
+    ptr = nullptr;
   }
 };
 #define dat_t anyptr
@@ -457,7 +458,6 @@ int string_list_find(string_list l, const char* str){
   return -(1);
 }
 int string_list_thingy(string_list* l, char* str){
-  printf("thingyfying the string \"%s\"\n", str);
   int i;
   i = string_list_find(l[0], str);
   if ((i) < (0)) {
@@ -484,7 +484,6 @@ char* copy_string_until_char(const char** str, char c){
     ret[i] = base[i];
     i = (i) + (1);
   }
-  printf("returned cop:y \"%s\"\n", ret);
   return ret;
 }
 struct gram_rule_t {
@@ -857,12 +856,14 @@ gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_any
       tmp = copy_string_until_char(&(str), 125);
       (ret).add_exact(tmp);
       free(tmp);
+      tmp = nullptr;
     } else
     if ((str[0]) == ((36) && ((str[1]) == (123)))) {
       str = (str) + (2);
       tmp = copy_string_until_char(&(str), 125);
       (ret).add_term(tmp);
       free(tmp);
+      tmp = nullptr;
     } else
     if ((str[0]) == (36)) {
       str = (str) + (1);
@@ -873,10 +874,12 @@ gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_any
       tmp = copy_string_until_char(&(str), 32);
       (ret).add_term(tmp);
       free(tmp);
+      tmp = nullptr;
     } else {
       tmp = copy_string_until_char(&(str), 32);
       (ret).add_exact(tmp);
       free(tmp);
+      tmp = nullptr;
     }
   }
   gram_rule_t* ptrret;

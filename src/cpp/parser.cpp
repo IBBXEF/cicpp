@@ -109,6 +109,15 @@ anyptr gram_rule_var(clist_anyptr l) {
     r.init(ret, lval::del_ptr);
     return r;
 }
+anyptr gram_rule_array(clist_anyptr l) {
+    lval* ret = (lval*)malloc(sizeof(lval));
+    ret->kind = lval::Index;
+    ret->dat.ind_dat.arr = (rval*)l.ith(0).ptr;
+    ret->dat.ind_dat.ind = (rval*)l.ith(2).ptr;
+    anyptr r;
+    r.init(ret, lval::del_ptr);
+    return r;
+}
 
 string_list nonterm_symbs;
 
@@ -117,17 +126,23 @@ gram_rule_t::gram_rules make_rules() {
     gram_rule_t::gram_rules ret;
     ret.init();
 
-    ret.append( make_rule("$RvalI  -> ( $Rval )"        , gram_rule_elt_n1        , &nonterm_symbs) );
-    ret.append( make_rule("$Rval   -> & $RvalI"         , gram_rule_addr          , &nonterm_symbs) );
-    ret.append( make_rule("$Rval   -> $Rvalop"          , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$Rvalop -> $RvalI @+ $Rvalop", gram_rule_binop         , &nonterm_symbs) );
-    ret.append( make_rule("$Rvalop -> $RvalI"           , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$RvalI  -> $Lval"            , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
-    ret.append( make_rule("$RvalI  -> @0"               , gram_rule_int           , &nonterm_symbs) );
-    ret.append( make_rule("$Lval   -> $Rval . @ident"   , gram_rule_dot           , &nonterm_symbs) );
-    ret.append( make_rule("$Lval   -> $Rval -> @ident"  , gram_rule_arrow         , &nonterm_symbs) );
-    ret.append( make_rule("$Lval   -> @ident"           , gram_rule_var           , &nonterm_symbs) );
-    ret.append( make_rule("$Lval   -> * $Rval"          , gram_rule_ptr           , &nonterm_symbs) );
+    ret.append( make_rule("$LvalAtom   -> @ident"               , gram_rule_var         , &nonterm_symbs) );
+    ret.append( make_rule("$LvalAtom   -> * $Rval"              , gram_rule_ptr         , &nonterm_symbs) );
+    ret.append( make_rule("$LvalAtom   -> ( $Lval )"            , gram_rule_elt_n1      , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> $LvalAtom"            , gram_rule_elt_n0      , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> $RvalAtom [ $Rval ]"  , gram_rule_array       , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> $RvalAtom . @ident"   , gram_rule_dot         , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> $RvalAtom -> @ident"  , gram_rule_arrow       , &nonterm_symbs) );
+
+
+    ret.append( make_rule("$RvalAtom   -> ( $Rval )"             , gram_rule_elt_n1        , &nonterm_symbs) );
+    ret.append( make_rule("$RvalAtom   -> @0"                    , gram_rule_int           , &nonterm_symbs) );
+    ret.append( make_rule("$RvalAtom   -> $LvalAtom"             , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
+    ret.append( make_rule("$Rvalop     -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$Rvalop     -> $RvalAtom @+ $Rvalop"  , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$Rval       -> $Rvalop"               , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$Rval       -> & $Rval"               , gram_rule_addr          , &nonterm_symbs) );
+    ret.append( make_rule("$Rval       -> $Lval"                 , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
 
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
@@ -432,7 +447,7 @@ decl* parse_var_decl(toklist* toks, bool check_semicolon) {
     n = toks->ith(0);
     if (n.kind == token::Set) {
         *toks = toks->tail();
-        ret->dat.var_dat.v = parse_rval_old(toks);
+        ret->dat.var_dat.v = parse_rval(toks);
     } else {
         ret->dat.var_dat.v = nullptr;
     }
@@ -561,8 +576,8 @@ instr* parse_instr(toklist* toks) {
         } else if (n.kind == token::Set) { // we have an '=' in our instruction, so it is a set operation (not always true but almost)
             instr* ist = (instr*)malloc(sizeof(instr));
             ist->kind = instr::Set;
-            // ist->dat.set_dat.l = parse_lval(&left);
-            ist->dat.set_dat.l = parse_lval_old(&left);
+            ist->dat.set_dat.l = parse_lval(&left);
+            // ist->dat.set_dat.l = parse_lval_old(&left);
             if (left.len() != toks->len()) {
                 printf("impossible to parse lval for assignment operation (able to parse %d/%d tokens)\n", (int)(base.len() - left.len()), (int)(base.len() - toks->len()));
                 exit(-1);
