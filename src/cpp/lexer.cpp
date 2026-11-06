@@ -8,8 +8,9 @@
 #include "parser.c"
 
 
-void pop_token_stack(int* cou, toklist* l, const char* str) {
+void pop_token_stack(int* cou, toklist* l, char* str) {
     if (!*cou) { return; }
+    str[*cou] = '\0';
     
     token tok;
     if (!strncmp("void", str, *cou) && *cou == 4) {
@@ -236,6 +237,8 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
         } else if (n->kind == token::Unop && n->dat.Unop_dat.op.kind == unop::Lnot) { // last token was an '!'
             n->kind = token::Binop;
             n->dat.Binop_dat.op.kind = binop::Neq;
+        } else if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Lt) { // last token was an '<'
+            n->dat.Binop_dat.op.kind = binop::Leq;
         } else if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Gt) { // last token was an '>'
             n->dat.Binop_dat.op.kind = binop::Geq;
         } else {
@@ -344,7 +347,6 @@ toklist lex_string(const char* str) {
         str = str + 1;
         c = *str;
     }
-    last_buffer[cou] = '\0';
     pop_token_stack(&cou, &ret, last_buffer);
 
     ret.pop(); // we remove the first token, our placeholder

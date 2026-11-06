@@ -28,7 +28,7 @@ func int tri_ternary(int b, int _1, int _2, int _3) {
     n = ( malloc(sizeof(_clist)) as _clist* );
     n = &n.r;
     int yy;
-    ptr0[b] = _3;
+    ptr0[b] = (_3 <= _3) >= 1;
 
     void* p;
     ptr0 = p as int*;
