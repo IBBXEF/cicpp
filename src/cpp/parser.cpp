@@ -34,6 +34,24 @@ anyptr gram_rule_binop(clist_anyptr l) {
     r.init(ret, rval::del_ptr);
     return r;
 }
+anyptr gram_rule_unop(clist_anyptr l) {
+    rval* ret = (rval*)malloc(sizeof(rval));
+    ret->kind = rval::Unop;
+    ret->dat.unop_dat.op = ((token*)l.ith(0).ptr)->dat.Unop_dat.op;
+    ret->dat.unop_dat.v = (rval*)l.ith(1).ptr;
+    anyptr r;
+    r.init(ret, rval::del_ptr);
+    return r;
+}
+anyptr gram_rule_neg(clist_anyptr l) {
+    rval* ret = (rval*)malloc(sizeof(rval));
+    ret->kind = rval::Unop;
+    ret->dat.unop_dat.op.kind = unop::Neg;
+    ret->dat.unop_dat.v = (rval*)l.ith(1).ptr;
+    anyptr r;
+    r.init(ret, rval::del_ptr);
+    return r;
+}
 anyptr gram_rule_Rval_of_Lval(clist_anyptr l) {
     rval* ret = (rval*)malloc(sizeof(rval));
     ret->kind = rval::Lval;
@@ -42,28 +60,32 @@ anyptr gram_rule_Rval_of_Lval(clist_anyptr l) {
     r.init(ret, rval::del_ptr);
     return r;
 }
-anyptr gram_rule_dot(clist_anyptr l) {
+anyptr gram_rule_lval_dot(clist_anyptr l) {
     lval* ret = (lval*)malloc(sizeof(lval));
     ret->kind = lval::Field;
-    ret->dat.field_dat.stru = (rval*)l.ith(0).ptr;
+    ret->dat.field_dat.stru = (lval*)l.ith(0).ptr;
     ret->dat.field_dat.field = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
     anyptr r;
     r.init(ret, lval::del_ptr);
     return r;
 }
+anyptr gram_rule_rval_dot(clist_anyptr l) {
+    rval* ret = (rval*)malloc(sizeof(rval));
+    ret->kind = rval::Field;
+    ret->dat.field_dat.stru = (rval*)l.ith(0).ptr;
+    ret->dat.field_dat.field = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
+    anyptr r;
+    r.init(ret, rval::del_ptr);
+    return r;
+}
 anyptr gram_rule_arrow(clist_anyptr l) {
     // we parse a->b as (a[0]).b
-    rval* stru = (rval*)malloc(sizeof(rval));
-    stru->kind = rval::Lval;
-
-    lval* stru2 = (lval*)malloc(sizeof(lval));
-    stru2->kind = lval::Index;
-    stru2->dat.ind_dat.arr = (rval*)l.ith(0).ptr;
-    stru2->dat.ind_dat.ind = (rval*)malloc(sizeof(rval));
-    stru2->dat.ind_dat.ind->kind = rval::Int;
-    stru2->dat.ind_dat.ind->dat.int_dat = 0;
-
-    stru->dat.lval_dat = stru2;
+    lval* stru = (lval*)malloc(sizeof(lval));
+    stru->kind = lval::Index;
+    stru->dat.ind_dat.arr = (rval*)l.ith(0).ptr;
+    stru->dat.ind_dat.ind = (rval*)malloc(sizeof(rval));
+    stru->dat.ind_dat.ind->kind = rval::Int;
+    stru->dat.ind_dat.ind->dat.int_dat = 0;
 
     lval* ret = (lval*)malloc(sizeof(lval));
     ret->kind = lval::Field;
@@ -73,7 +95,7 @@ anyptr gram_rule_arrow(clist_anyptr l) {
     r.init(ret, lval::del_ptr);
     return r;
 }
-anyptr gram_rule_ptr(clist_anyptr l) {
+anyptr gram_rule_ptr_lval(clist_anyptr l) {
     // we parse *a as a[0]
     lval* ret = (lval*)malloc(sizeof(lval));
     ret->kind = lval::Index;
@@ -97,6 +119,14 @@ anyptr gram_rule_int(clist_anyptr l) {
     rval* ret = (rval*)malloc(sizeof(rval));
     ret->kind = rval::Int;
     ret->dat.int_dat = ((token*)l.ith(0).ptr)->dat.VInt_dat.dat;
+    anyptr r;
+    r.init(ret, rval::del_ptr);
+    return r;
+}
+anyptr gram_rule_string(clist_anyptr l) {
+    rval* ret = (rval*)malloc(sizeof(rval));
+    ret->kind = rval::String;
+    ret->dat.string_dat = ((token*)l.ith(0).ptr)->dat.VString_dat.str;
     anyptr r;
     r.init(ret, rval::del_ptr);
     return r;
@@ -128,6 +158,17 @@ anyptr gram_rule_func(clist_anyptr l) {
     r.init(ret, rval::del_ptr);
     return r;
 }
+anyptr gram_rule_func_noarg(clist_anyptr l) {
+    rval* ret = (rval*)malloc(sizeof(rval));
+    ret->kind = rval::Fcall;
+    ret->dat.fcall_dat.func = (rval*)l.ith(0).ptr;
+    ret->dat.fcall_dat.args = (clist_voidptr*)malloc(sizeof(clist_voidptr));
+    ret->dat.fcall_dat.args->init();
+
+    anyptr r;
+    r.init(ret, rval::del_ptr);
+    return r;
+}
 anyptr gram_rule_arglist_push(clist_anyptr l) {
     clist_voidptr* ret = (clist_voidptr*)l.ith(2).ptr;
     ret->append(l.ith(0).ptr);
@@ -145,6 +186,46 @@ anyptr gram_rule_arglist_base(clist_anyptr l) {
     r.init(ret, rval_free_clist_voidptr);
     return r;
 }
+anyptr gram_rule_typecast(clist_anyptr l) {
+    rval* ret = (rval*)malloc(sizeof(rval));
+    ret->kind = rval::Typecast;
+    ret->dat.typecast_dat.v = (rval*)l.ith(0).ptr;
+    ret->dat.typecast_dat.t = (typ*)l.ith(2).ptr;
+
+    anyptr r;
+    r.init(ret, rval::del_ptr);
+    return r;
+}
+anyptr gram_rule_typ_base(clist_anyptr l) {
+    typ* ret = (typ*)malloc(sizeof(typ));
+    token n = *(token*)l.ith(0).ptr;
+    if (n.kind == token::TVoid) {
+        ret->kind = typ::TVoid;
+    } else if (n.kind == token::TInt) {
+        ret->kind = typ::TInt;
+    } else if (n.kind == token::TChar) {
+        ret->kind = typ::TChar;
+    } else if (n.kind == token::Ident) {
+        ret->kind = typ::TIdent;
+        ret->dat.TIdent_dat = n.dat.Ident_dat.str;
+    } else {
+        printf("impossible token kind\n");
+        exit(-1);
+    }
+
+    anyptr r;
+    r.init(ret, typ::del_ptr);
+    return r;
+}
+anyptr gram_rule_typ_ptr(clist_anyptr l) {
+    typ* ret = (typ*)malloc(sizeof(typ));
+    ret->kind = typ::TPtr;
+    ret->dat.ptr_dat = (typ*)l.ith(0).ptr;
+
+    anyptr r;
+    r.init(ret, typ::del_ptr);
+    return r;
+}
 
 string_list nonterm_symbs;
 
@@ -154,26 +235,44 @@ gram_rule_t::gram_rules make_rules() {
     ret.init();
 
     ret.append( make_rule("$LvalAtom   -> @ident"                , gram_rule_var         , &nonterm_symbs) );
-    ret.append( make_rule("$LvalAtom   -> * $Rval"               , gram_rule_ptr         , &nonterm_symbs) );
+    ret.append( make_rule("$LvalAtom   -> * $Rval"               , gram_rule_ptr_lval    , &nonterm_symbs) );
     ret.append( make_rule("$LvalAtom   -> ( $Lval )"             , gram_rule_elt_n1      , &nonterm_symbs) );
     ret.append( make_rule("$Lval       -> $LvalAtom"             , gram_rule_elt_n0      , &nonterm_symbs) );
     ret.append( make_rule("$Lval       -> $RvalAtom [ $Rval ]"   , gram_rule_array       , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> $RvalAtom . @ident"    , gram_rule_dot         , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> $LvalAtom . @ident"    , gram_rule_lval_dot    , &nonterm_symbs) );
     ret.append( make_rule("$Lval       -> $RvalAtom -> @ident"   , gram_rule_arrow       , &nonterm_symbs) );
 
 
     ret.append( make_rule("$RvalAtom   -> ( $Rval )"             , gram_rule_elt_n1        , &nonterm_symbs) );
     ret.append( make_rule("$RvalAtom   -> @0"                    , gram_rule_int           , &nonterm_symbs) );
-    ret.append( make_rule("$RvalAtom   -> $LvalAtom"             , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
+    ret.append( make_rule("$RvalAtom   -> @\"string\""           , gram_rule_string        , &nonterm_symbs) );
+    ret.append( make_rule("$RvalAtom   -> @! $Rval"              , gram_rule_unop          , &nonterm_symbs) );
+    ret.append( make_rule("$RvalAtom   -> -  $Rval"              , gram_rule_neg           , &nonterm_symbs) );
+    
+    ret.append( make_rule("$RvalNf     -> $Rvalop"               , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$Rvalop     -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$RvalAtom   -> $LvalAtom"             , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
     ret.append( make_rule("$Rvalop     -> $RvalAtom @+ $Rvalop"  , gram_rule_binop         , &nonterm_symbs) );
-    ret.append( make_rule("$Rval       -> $Rvalop"               , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$Rval       -> & $Lval"               , gram_rule_addr          , &nonterm_symbs) );
-    ret.append( make_rule("$Rval       -> $Lval"                 , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
-    ret.append( make_rule("$Rval       -> $RvalAtom ( $arglist )", gram_rule_func          , &nonterm_symbs) );
+    ret.append( make_rule("$RvalNf     -> $RvalAtom . @ident"    , gram_rule_rval_dot      , &nonterm_symbs) );
+    ret.append( make_rule("$RvalNf     -> $Lval"                 , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
+    ret.append( make_rule("$Rval       -> $RvalNf ( $arglist )"  , gram_rule_func          , &nonterm_symbs) );
+    ret.append( make_rule("$Rval       -> $RvalNf ( )"           , gram_rule_func_noarg    , &nonterm_symbs) );
+    ret.append( make_rule("$RvalNf     -> $RvalAtom as $Type"    , gram_rule_typecast      , &nonterm_symbs) );
+    ret.append( make_rule("$Rval       -> $RvalNf"               , gram_rule_elt_n0        , &nonterm_symbs) );
 
-    ret.append( make_rule("$arglist    -> $RvalAtom , $arglist"  , gram_rule_arglist_push  , &nonterm_symbs) );
-    ret.append( make_rule("$arglist    -> $RvalAtom"             , gram_rule_arglist_base  , &nonterm_symbs) );
+
+    ret.append( make_rule("$arglist    -> $Rval , $arglist"  , gram_rule_arglist_push  , &nonterm_symbs) );
+    ret.append( make_rule("$arglist    -> $Rval"             , gram_rule_arglist_base  , &nonterm_symbs) );
+
+
+    ret.append( make_rule("$TypeAtom   -> void"                  , gram_rule_typ_base      , &nonterm_symbs) );
+    ret.append( make_rule("$TypeAtom   -> char"                  , gram_rule_typ_base      , &nonterm_symbs) );
+    ret.append( make_rule("$TypeAtom   -> int"                   , gram_rule_typ_base      , &nonterm_symbs) );
+    ret.append( make_rule("$TypeAtom   -> @ident"                , gram_rule_typ_base      , &nonterm_symbs) );
+    ret.append( make_rule("$Type       -> $Type *"               , gram_rule_typ_ptr       , &nonterm_symbs) );
+    ret.append( make_rule("$Type       -> $TypeAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
+
 
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
@@ -194,7 +293,6 @@ rval* parse_rval(toklist* toks) {
     }
     return (rval*)ret;
 }
-
 lval* parse_lval(toklist* toks) {
     gram_rule_t::gram_symbol_t sym = {.kind=gram_rule_t::gram_symbol_t::NonTerm};
     sym.dat.NonTerm_dat.symb = string_list_find(nonterm_symbs, "Lval");
