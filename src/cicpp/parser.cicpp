@@ -1,12 +1,13 @@
 
 #include "src/cicpp/lexer.cicpp"
+#include_C "climits"
 
 specialize clist<const char*> as string_list
 
 func int string_list_find(string_list l, const char* str) {
     int i;
     i = 0;
-    while i < l.len() {
+    while i < (l.len()) {
         if !strcmp(l.ith(i), str) {
             return i;
         }
@@ -28,13 +29,13 @@ func int string_list_thingy(string_list* l, char* str) {
 func char* copy_string_until_char(const char** str, char c) {
     const char* base;
     base = *str;
-    while (**str) && ((**str) != c) {
+    while (((*(*str)) && ((*(*str)) != c))) {
         *str = (*str) + 1;
     }
     int len;
     len = (*str) - base;
     char* ret;
-    ret = malloc(len + 1) as char* ;
+    ret = (malloc(len + 1)) as char* ;
     ret[len] = '\0';
     int i;
     i = 0;
@@ -52,9 +53,9 @@ type gram_rule_t {
     type gram_symbol_t {
         Term { token tok; };
         Exact { token tok; };
-        NonTerm { int symb; };
+        NonTerm { int symb; token* last_failure; int last_failure_depth; };
 
-        func anyptr match_symb(toklist* l, int max_depth, gram_rules rules) {
+        func anyptr match_symb(toklist* l, int max_depth, gram_rules rules, gram_symbol_t* next_tok) {
             anyptr ret;
             ret.init_null();
             if (max_depth < 0) || (((*l).len()) == 0) {
@@ -75,6 +76,9 @@ type gram_rule_t {
                 *l = (*l).tail();
                 return ret;
             } else { // kind == NonTerm
+                if (((dat.NonTerm_dat).last_failure) == (l->ith_ref(0))) && (((dat.NonTerm_dat).last_failure_depth) >= max_depth) {
+                    return ret; // our last failure was in the same situation
+                }
                 int i;
                 int chosen_len;
                 chosen_len = l->len();
@@ -92,6 +96,19 @@ type gram_rule_t {
                         if tmp.ptr {
                             int curlen;
                             curlen = l->len();
+                            if next_tok && ((next_tok->kind) != NonTerm) { // we do not check nonterminals for speed reasons
+                                // we check that the next token corresponds
+                                anyptr tmp2;
+                                toklist tlist;
+                                tlist = *l;
+                                tmp2 = next_tok->match_symb(l, 1, rules, nullptr);
+                                *l = tlist;
+                                if !(tmp2.ptr) {
+                                    curlen = INT_MAX; // invalid match
+                                }
+                                tmp2.del();
+                            }
+
                             if curlen < chosen_len { // we select for the longest match, i.e. the one leaving the fewest tokens
                                 chosen_len = curlen;
                                 ret.del();
@@ -106,6 +123,12 @@ type gram_rule_t {
                     i = i + 1;
                 }
                 *l = chosen_end;
+
+                if (!(ret.ptr)) {
+                    (dat.NonTerm_dat).last_failure = l->ith_ref(0); // we cache the last failure to improve performance
+                    (dat.NonTerm_dat).last_failure_depth = max_depth;
+                }
+
                 return ret;
             }
         }
@@ -113,6 +136,8 @@ type gram_rule_t {
         func void set_nonterm(int i) {
             kind = NonTerm;
             (dat.NonTerm_dat).symb = i;
+            (dat.NonTerm_dat).last_failure = nullptr;
+            (dat.NonTerm_dat).last_failure_depth = -2;
         }
         func void set_term(token t) {
             kind = Term;
@@ -154,9 +179,14 @@ type gram_rule_t {
         anyptr ret;
         while (i < pattern.len()) {
             gram_symbol_t sym;
+            gram_symbol_t* next;
             sym = pattern.ith(i);
+            next = nullptr;
+            if (i+1) < pattern.len() {
+                next = pattern.ith_ref(i+1);
+            }
             anyptr vals;
-            vals = sym.match_symb(l, max_depth-1, rules);
+            vals = sym.match_symb(l, max_depth-1, rules, next);
             if (!(vals.ptr)) {
                 *l = base;
                 clist_anyptr_free(vlues);
