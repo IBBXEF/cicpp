@@ -28,7 +28,7 @@ struct lval
     {
         const char* var_dat;
         struct { rval* arr; rval* ind; } ind_dat;
-        struct { rval* stru; const char* field; } field_dat;
+        struct { lval* stru; const char* field; } field_dat;
     } dat;
 
     void print_to_file(FILE* fptr);
@@ -42,6 +42,7 @@ struct rval
     enum {
         Lval,
         Int,
+        Field,
         String,
         Binop,
         Unop,
@@ -54,6 +55,7 @@ struct rval
         lval* lval_dat;
         int int_dat;
         const char* string_dat;
+        struct { rval* stru; const char* field; } field_dat;
         struct { rval* v1; binop op; rval* v2; } binop_dat;
         struct { unop op; rval* v; } unop_dat;
         struct { rval* func; clist_voidptr* args; } fcall_dat;
@@ -141,6 +143,10 @@ void rval::print_to_file(FILE* fptr) {
         fprintf(fptr, "%i", dat.int_dat);
     } else if (kind == String) {
         fprintf(fptr, "\"%s\"", dat.string_dat);
+    } else if (kind == Field) {
+        fprintf(fptr, "(");
+        dat.field_dat.stru->print_to_file(fptr);
+        fprintf(fptr, ").%s", dat.field_dat.field);
     } else if (kind == Typecast) {
         fprintf(fptr, "(");
         dat.typecast_dat.t->print_to_file(fptr, 0);
@@ -222,7 +228,7 @@ void lval::del() {
         rval::del_ptr(dat.ind_dat.arr);
         rval::del_ptr(dat.ind_dat.ind);
     } else if (kind == Field) {
-        rval::del_ptr(dat.field_dat.stru);
+        lval::del_ptr(dat.field_dat.stru);
     }
 }
 void rval_free_clist_voidptr(void* varlist) { // varlist : clist_voidptr
@@ -238,6 +244,8 @@ void rval::del_ptr(void* p) {
 void rval::del() {
     if (kind == Lval) {
         lval::del_ptr(dat.lval_dat);
+    } else if (kind == Field) {
+        rval::del_ptr(dat.field_dat.stru);
     } else if (kind == Binop) {
         rval::del_ptr(dat.binop_dat.v1);
         rval::del_ptr(dat.binop_dat.v2);
