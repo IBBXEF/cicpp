@@ -86,7 +86,7 @@ type gram_rule_t {
                 while i < (rules.len()) {
                     gram_rule_t rule;
                     rule = *(rules.ith(i));
-                    if (((rule).result) == ((dat.NonTerm_dat).symb)) {
+                    if ((rule.result) == ((dat.NonTerm_dat).symb)) {
                         anyptr tmp;
                         tmp = rule.parse(l, max_depth, rules);
                         if tmp.ptr {

@@ -56,7 +56,7 @@ struct rval
         const char* string_dat;
         struct { rval* v1; binop op; rval* v2; } binop_dat;
         struct { unop op; rval* v; } unop_dat;
-        struct { rval* func; old_clist args; } fcall_dat;
+        struct { rval* func; clist_voidptr* args; } fcall_dat;
         struct { typ* t; rval* v; } typecast_dat;
         struct { lval* v; } addr_dat;
     } dat;
@@ -198,11 +198,11 @@ void rval::print_to_file(FILE* fptr) {
     } else if (kind == Fcall) {
         dat.fcall_dat.func->print_to_file(fptr);
         fprintf(fptr, "(");
-        for (int i = 0; i < dat.fcall_dat.args.len(); i++) {
+        for (int i = 0; i < dat.fcall_dat.args->len(); i++) {
             if (i) {
                 fprintf(fptr, ", ");
             }
-            ((rval*)dat.fcall_dat.args.ith(i))->print_to_file(fptr);
+            ((rval*)dat.fcall_dat.args->ith(i))->print_to_file(fptr);
         }
         fprintf(fptr, ")");
     }
@@ -221,6 +221,11 @@ void lval::del() {
         rval::del_ptr(dat.field_dat.stru);
     }
 }
+void rval_free_clist_voidptr(void* varlist) { // varlist : clist_voidptr
+    clist_voidptr* l = (clist_voidptr*)varlist;
+    while (l->len()) { rval::del_ptr(l->pop()); } // we free each rval from the list
+    free(l);
+}
 void rval::del_ptr(void* p) {
     ((rval*)p)->del();
     free(p);
@@ -236,7 +241,7 @@ void rval::del() {
         lval::del_ptr(dat.addr_dat.v);
     } else if (kind == rval::Fcall) {
         rval::del_ptr(dat.fcall_dat.func);
-        // we do not delete the argument list for now, it will be done later i swear!
+        rval_free_clist_voidptr(dat.fcall_dat.args);
     } else if (kind == rval::Typecast) {
         rval::del_ptr(dat.typecast_dat.v);
         typ::del_ptr(dat.typecast_dat.t);
