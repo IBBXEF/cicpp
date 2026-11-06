@@ -283,8 +283,14 @@ gram_rule_t::gram_rules make_rules() {
 
 gram_rule_t::gram_rules parsing_rules = make_rules();
 
-rval* parse_rval(toklist* toks) {
+rval* parse_rval(toklist* toks, token* end_token) {
     gram_rule_t::gram_symbol_t sym = {.kind=gram_rule_t::gram_symbol_t::NonTerm};
+    gram_rule_t::gram_symbol_t* endptr = nullptr;
+    gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
+    if (end_token) {
+        end.dat.Exact_dat.tok = *end_token;
+        endptr = &end;
+    }
     sym.dat.NonTerm_dat.symb = string_list_find(nonterm_symbs, "Rval");
     void* ret = sym.match_symb(toks, 20, parsing_rules).ptr;
     if (!ret) {
@@ -295,6 +301,8 @@ rval* parse_rval(toklist* toks) {
 }
 lval* parse_lval(toklist* toks) {
     gram_rule_t::gram_symbol_t sym = {.kind=gram_rule_t::gram_symbol_t::NonTerm};
+    gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
+    end.dat.Exact_dat.tok.kind = token::Set;
     sym.dat.NonTerm_dat.symb = string_list_find(nonterm_symbs, "Lval");
     void* ret = sym.match_symb(toks, 20, parsing_rules).ptr;
     if (!ret) {

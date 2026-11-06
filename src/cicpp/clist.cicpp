@@ -12,7 +12,7 @@ type <dat_t> clist {
 
     func void push(dat_t dat) {
         _clist* n;
-        n = ( malloc(sizeof(_clist)) as _clist* );
+        n = (malloc(sizeof(_clist))) as _clist*;
         (*n).dat = dat;
         (*n).next = l;
         l = n;
