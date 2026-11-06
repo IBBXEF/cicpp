@@ -589,9 +589,11 @@ struct gram_rule_t {
       } Exact_dat;
       struct {
         int symb;
+        token* last_failure;
+        int last_failure_depth;
       } NonTerm_dat;
      } dat;
-    anyptr match_symb(toklist* l, int max_depth, gram_rules rules){
+    anyptr match_symb(toklist* l, int max_depth, gram_rules rules, gram_symbol_t* next_tok){
       anyptr ret;
       (ret).init_null();
       if (((max_depth) < (0)) || (((l[0]).len()) == (0))) {
@@ -613,6 +615,9 @@ struct gram_rule_t {
         l[0] = (l[0]).tail();
         return ret;
       } else {
+        if (((((dat).NonTerm_dat).last_failure) == ((l)->ith_ref(0))) && ((((dat).NonTerm_dat).last_failure_depth) >= (max_depth))) {
+          return ret;
+        }
         int i;
         int chosen_len;
         chosen_len = (l)->len();
@@ -630,6 +635,14 @@ struct gram_rule_t {
             if ((tmp).ptr) {
               int curlen;
               curlen = (l)->len();
+              if ((next_tok) && (((next_tok)->kind) != (NonTerm))) {
+                anyptr tmp2;
+                tmp2 = (next_tok)->match_symb(l, (max_depth) - (1), rules, nullptr);
+                if (!((tmp2).ptr)) {
+                  curlen = INT_MAX;
+                }
+                (tmp2).del();
+              }
               if ((curlen) < (chosen_len)) {
                 chosen_len = curlen;
                 (ret).del();
@@ -643,12 +656,20 @@ struct gram_rule_t {
           i = (i) + (1);
         }
         l[0] = chosen_end;
+        if ((!((ret).ptr)) && ((((dat).NonTerm_dat).last_failure_depth) <= (max_depth))) {
+          int yyyy;
+          ((dat).NonTerm_dat).last_failure = (l)->ith_ref(0);
+          ((dat).NonTerm_dat).last_failure_depth = max_depth;
+          return ret;
+        }
         return ret;
       }
     }
     void set_nonterm(int i){
       kind = NonTerm;
       ((dat).NonTerm_dat).symb = i;
+      ((dat).NonTerm_dat).last_failure = nullptr;
+      ((dat).NonTerm_dat).last_failure_depth = -(2);
     }
     void set_term(token t){
       kind = Term;
@@ -772,9 +793,14 @@ struct gram_rule_t {
     anyptr ret;
     while ((i) < ((pattern).len())) {
       gram_symbol_t sym;
+      gram_symbol_t* next;
       sym = (pattern).ith(i);
+      next = nullptr;
+      if (((i) + (1)) < ((pattern).len())) {
+        next = (pattern).ith_ref(i);
+      }
       anyptr vals;
-      vals = (sym).match_symb(l, (max_depth) - (1), rules);
+      vals = (sym).match_symb(l, (max_depth) - (1), rules, next);
       if (!((vals).ptr)) {
         l[0] = base;
         clist_anyptr_free(vlues);
