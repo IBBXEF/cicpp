@@ -17,7 +17,7 @@ int a = 1 + 1;
 int* ptr0 = 0;
 
 func int tri_ternary(int b, int _1, int _2, int _3) {
-    if b == 1 {
+    if (b == 1) {
         return _1;
     } elif b == 2 {
         return _2;
@@ -26,12 +26,13 @@ func int tri_ternary(int b, int _1, int _2, int _3) {
         return _3;
     }
     n = ( malloc(sizeof(_clist)) as _clist* );
-    n = &n.r;
     int yy;
+    n = &n.r;
+    int ww;
     ptr0[b] = (_3 <= _3) >= 1;
 
     void* p;
-    ptr0 = p as int*;
+    ptr0 = (p as int*);
 
 }
 
