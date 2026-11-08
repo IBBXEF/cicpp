@@ -864,7 +864,7 @@ decl* parse_decl(toklist* toks) {
 
 ast parse_file(const char* path);
 
-void parse_aux(toklist toks, ast* ret) {
+void parse_aux(toklist toks, ast* ret, string_list* included_files) {
     while (toks.len()) {
         printf("r:%d\n", toks.len());
 
@@ -880,10 +880,13 @@ void parse_aux(toklist toks, ast* ret) {
                     exit(-1);
                 }
                 toks = toks.tail();
-                // we parse the file as if it was copy-pasted in this one
-                toklist toks = lex_file(tok.dat.VString_dat.str);
-                parse_aux(toks, ret);
-                toks.del(); // yes this is a memory leak
+                if (string_list_find(*included_files, tok.dat.VString_dat.str) < 0) { // this test is maybe a bit too simple, but i'll work for now
+                    // we parse the file as if it was copy-pasted in this one
+                    included_files->push(tok.dat.VString_dat.str);
+                    toklist toks = lex_file(tok.dat.VString_dat.str);
+                    parse_aux(toks, ret, included_files);
+                    toks.del(); // yes this is a memory leak
+                }
             } else {
                 if (tok.kind != token::Include_C) {
                     printf("expected include_C after '#'\n");
@@ -911,7 +914,9 @@ void parse_aux(toklist toks, ast* ret) {
 
 ast parse(toklist toks) {
     ast ret = {.decls = old_clist::new_clist(sizeof(decl))};
-    parse_aux(toks, &ret);
+    string_list included_files;
+    included_files.init();
+    parse_aux(toks, &ret, &included_files);
     ret.decls.reverse();
     return ret;
 }

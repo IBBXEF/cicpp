@@ -1,19 +1,8 @@
 
+#include "src/cicpp/clist.cicpp"
+#include "src/cicpp/anyptr.cicpp"
 #include "src/cicpp/lexer.cicpp"
 
-specialize clist<const char*> as string_list
-
-func int string_list_find(string_list l, const char* str) {
-    int i;
-    i = 0;
-    while i < l.len() {
-        if !strcmp(l.ith(i), str) {
-            return i;
-        }
-        i = i + 1;
-    }
-    return -1;
-}
 // if the string is in the list, the pointer is freed and the index returned. otherwise, it is added to the list and its idex is returned
 func int string_list_thingy(string_list* l, char* str) {
     int i;

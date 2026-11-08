@@ -103,3 +103,17 @@ type <dat_t> clist {
 
 specialize clist<void*> as clist_voidptr
 
+specialize clist<const char*> as string_list
+
+func int string_list_find(string_list l, const char* str) {
+    int i;
+    i = 0;
+    while i < l.len() {
+        if !strcmp(l.ith(i), str) {
+            return i;
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+

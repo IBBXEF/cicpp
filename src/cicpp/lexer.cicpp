@@ -80,7 +80,7 @@ type token {
     }
 }
 
-#include "src/cicpp/anyptr.cicpp"
+#include "src/cicpp/clist.cicpp"
 
 specialize clist<token> as toklist
 
