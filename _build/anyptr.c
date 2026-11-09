@@ -193,9 +193,11 @@ int string_list_find(string_list l, const char* str){
   }
   return -(1);
 }
+#include <climits>
 struct anyptr {
   void* ptr;
   void (*free_func)(void*);
+  int* n_refs;
   static
   void do_nothing(void* p){
     p = p;
@@ -203,10 +205,27 @@ struct anyptr {
   void init(void* _ptr, void (*_free_func)(void*)){
     ptr = _ptr;
     free_func = _free_func;
+    n_refs = (int*)malloc(4);
+    n_refs[0] = 1;
   }
   void init_view(void* _ptr){
     ptr = _ptr;
     free_func = do_nothing;
+    n_refs = (int*)malloc(4);
+    n_refs[0] = INT_MAX;
+  }
+  anyptr get_view(){
+    anyptr ret;
+    (ret).init_view(ptr);
+    return ret;
+  }
+  anyptr get_copy(){
+    anyptr ret;
+    ret = this[0];
+    if ((n_refs[0]) < (INT_MAX)) {
+      n_refs[0] = (n_refs[0]) + (1);
+    }
+    return ret;
   }
   void init_null(){
     init_view(nullptr);
@@ -215,8 +234,16 @@ struct anyptr {
     return ptr;
   }
   void del(){
-    free_func(ptr);
-    ptr = nullptr;
+    n_refs[0] = (n_refs[0]) - (1);
+    if (!(n_refs[0])) {
+      free_func(ptr);
+      free(n_refs);
+      ptr = nullptr;
+    } else
+    if ((n_refs[0]) < (0)) {
+      printf("error: a freed shared pointer has been dereferenced\n");
+      exit(-(1));
+    }
   }
 };
 #define dat_t anyptr
