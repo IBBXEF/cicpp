@@ -218,20 +218,20 @@ type gram_rule_t {
     }
 
     func void print(string_list nonterm_symbs) {
-        printf("rule: $%s %d -> ", nonterm_symbs.ith(result), priority);
+        printf("rule: $%s -> ", nonterm_symbs.ith(result));
         int i;
         i = 0;
         while i < (pattern.len()) {
             if i {
                 printf(" ");
             }
-            (pattern.ith((pattern.len()) - i - 1)).print(nonterm_symbs); // pattern is in reverse order
+            (pattern.ith((pattern.len()) - (i + 1))).print(nonterm_symbs); // pattern is in reverse order
             i = i + 1;
         }
         printf("\n");
     }
 
-    static func bool parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs) {
+    static func anyptr parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs) {
         if ((stop_symbol.kind) as int) == 2 { // 2 = Nonterminal
             printf("invalid stop symbol: it is Nonterminal\n");
             exit(-1);
@@ -274,10 +274,42 @@ type gram_rule_t {
                 parsed_ast* ast_loc;
                 ast_loc = ((stacktop.dat).NonTerm_dat).ast_loc;
 
-                ast_loc->kind = Node;
-                ast_loc->childrens.init();
-                ast_loc->joining_function = rule->result_function;
-                // TODO: apply rule
+                ast_loc->init_node(rule->result_function);
+                // we apply the rule
+                parsed_ast* first_child;
+                first_child = (malloc(sizeof(parsed_ast))) as parsed_ast*;
+                first_child->init_leaf(inptop);
+                int i;
+                i = ((rule->pattern).len()) - 2;
+                while i >= 0 {
+                    gram_symbol_t sym;
+                    sym = (rule->pattern).ith(i);
+                    symbol_dat sym_dat;
+                    if ((sym.kind) as int) == 2 { // NonTerm
+                        parsed_ast* child_ast;
+                        child_ast = (malloc(sizeof(parsed_ast))) as parsed_ast*;
+                        child_ast->init_unknown();
+                        ast_loc->add_child(child_ast);
+                        sym_dat.init_nonterm(((sym.dat).NonTerm_dat).symb, child_ast);
+                    } else { // Term or Exact
+                        token tok;
+                        if ((sym.kind) as int) == 1 { // Exact
+                            tok = ((sym.dat).Exact_dat).tok;
+                        } else { // Term
+                            tok = ((sym.dat).Term_dat).tok;
+                        }
+                        sym_dat.init_tok(tok);
+                        parsed_ast* child_ast;
+                        child_ast = (malloc(sizeof(parsed_ast))) as parsed_ast*;
+                        child_ast->init_leaf(tok);
+                        ast_loc->add_child(child_ast);
+                    }
+                    stack.push(sym_dat);
+                    i = i - 1;
+                }
+                ast_loc->add_child(first_child);
+                // the children are in reverse order
+                (((ast_loc->dat).Node_dat).childrens).reverse();
             }
         }
 
