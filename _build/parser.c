@@ -1,54 +1,4 @@
 #pragma once
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-struct binop {
-  enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt, Arrow } kind;
-};
-struct unop {
-  enum { Lnot, Neg, Addr } kind;
-};
-struct token {
-  enum { TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident } kind;
-  union {
-    struct {
-      binop op;
-    } Binop_dat;
-    struct {
-      unop op;
-    } Unop_dat;
-    struct {
-      int dat;
-    } VInt_dat;
-    struct {
-      const char* str;
-    } VString_dat;
-    struct {
-      const char* str;
-    } Ident_dat;
-   } dat;
-  bool eq(token b){
-    if ((kind) != ((b).kind)) {
-      return false;
-    }
-    if ((kind) == (Binop)) {
-      return ((((dat).Binop_dat).op).kind) == (((((b).dat).Binop_dat).op).kind);
-    } else
-    if ((kind) == (Unop)) {
-      return ((((dat).Unop_dat).op).kind) == (((((b).dat).Unop_dat).op).kind);
-    } else
-    if ((kind) == (VInt)) {
-      return (((dat).VInt_dat).dat) == ((((b).dat).VInt_dat).dat);
-    } else
-    if ((kind) == (VString)) {
-      return !(strcmp(((dat).VString_dat).str, (((b).dat).VString_dat).str));
-    } else
-    if ((kind) == (Ident)) {
-      return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
-    }
-    return true;
-  }
-};
 #include <stdlib.h>
 #define dat_t void*
 #define clist clist_voidptr
@@ -365,6 +315,56 @@ void clist_anyptr_free(clist_anyptr l){
     ((l).pop()).del();
   }
 }
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+struct binop {
+  enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt, Arrow } kind;
+};
+struct unop {
+  enum { Lnot, Neg, Addr } kind;
+};
+struct token {
+  enum { TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident } kind;
+  union {
+    struct {
+      binop op;
+    } Binop_dat;
+    struct {
+      unop op;
+    } Unop_dat;
+    struct {
+      int dat;
+    } VInt_dat;
+    struct {
+      const char* str;
+    } VString_dat;
+    struct {
+      const char* str;
+    } Ident_dat;
+   } dat;
+  bool eq(token b){
+    if ((kind) != ((b).kind)) {
+      return false;
+    }
+    if ((kind) == (Binop)) {
+      return ((((dat).Binop_dat).op).kind) == (((((b).dat).Binop_dat).op).kind);
+    } else
+    if ((kind) == (Unop)) {
+      return ((((dat).Unop_dat).op).kind) == (((((b).dat).Unop_dat).op).kind);
+    } else
+    if ((kind) == (VInt)) {
+      return (((dat).VInt_dat).dat) == ((((b).dat).VInt_dat).dat);
+    } else
+    if ((kind) == (VString)) {
+      return !(strcmp(((dat).VString_dat).str, (((b).dat).VString_dat).str));
+    } else
+    if ((kind) == (Ident)) {
+      return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
+    }
+    return true;
+  }
+};
 #define dat_t token
 #define clist toklist
 struct clist {
