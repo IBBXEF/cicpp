@@ -69,7 +69,6 @@ void pop_token_stack(int* cou, toklist* l, char* str) {
     *cou = 0;
 }
 
-
 // details of the state machine used to do the lexing
 struct lexing_state { enum T {
     LEXING_IDENT_OR_INT,

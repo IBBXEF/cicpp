@@ -1,21 +1,41 @@
 
 #include "src/cicpp/clist.cicpp"
+#include_C "climits"
 
 type anyptr {
     void* ptr;
-
     void* -> void free_func;
+    int* n_refs;
 
     static func void do_nothing(void* p) { p = p; }
 
     func void init(void* _ptr, void* -> void _free_func) {
         ptr = _ptr;
         free_func = _free_func;
+        n_refs = ((malloc(4)) as int*); // 4 = sizeof(int)
+        *n_refs = 1;
     }
 
     func void init_view(void* _ptr) {
         ptr = _ptr;
         free_func = do_nothing;
+        n_refs = (malloc(4)) as int*; // 4 = sizeof(int)
+        *n_refs = INT_MAX;
+    }
+
+    func anyptr get_view() {
+        anyptr ret;
+        ret.init_view(ptr);
+        return ret;
+    }
+
+    func anyptr get_copy() {
+        anyptr ret;
+        ret = *this;
+        if (*n_refs) < INT_MAX {
+            *n_refs = (*n_refs) + 1;
+        }
+        return ret;
     }
 
     func void init_null() {
@@ -27,8 +47,15 @@ type anyptr {
     }
 
     func void del() {
-        free_func(ptr);
-        ptr = nullptr;
+        *n_refs = (*n_refs) - 1;
+        if !(*n_refs) {
+            free_func(ptr);
+            free(n_refs);
+            ptr = nullptr;
+        } elif ((*n_refs) < 0) {
+            printf("error: a freed shared pointer has been dereferenced\n");
+            exit(-1);
+        }
     }
 }
 
