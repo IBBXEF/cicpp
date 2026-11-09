@@ -60,6 +60,12 @@ type token {
 
     Ident {const char* str;};
 
+    EndOfInput;
+
+    func void init_EOI() {
+        kind = EndOfInput;
+    }
+
 
     func bool eq(token b) {
         if (kind) != (b.kind) {

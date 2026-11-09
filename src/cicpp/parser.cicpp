@@ -1,6 +1,7 @@
 
 #include "src/cicpp/clist.cicpp"
 #include "src/cicpp/anyptr.cicpp"
+#include "src/cicpp/set.cicpp"
 #include "src/cicpp/lexer.cicpp"
 #include_C "climits"
 
@@ -117,7 +118,7 @@ type gram_rule_t {
             }
             _n_nonterms = n_nonterms;
         }
-        func bool add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r) {
+        func void add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r) {
             if ((s.kind) as int) == 2 { // 2 = Nonterminal
                 printf("invalid gram symbol for rule table: it is Nonterminal\n");
                 exit(-1);
@@ -156,10 +157,6 @@ type gram_rule_t {
                 }
             }
             return nullptr;
-        }
-        func void init_build(gram_rules rules, string_list nonterm_symbs) {
-            init_empty(nonterm_symbs.len());
-            // TODO: build the table
         }
         func void del() {
             int i;
@@ -240,7 +237,7 @@ type gram_rule_t {
         }
         func void init(gram_symbol_t symb, parsed_ast* ast) {
             sym = symb;
-            ast_loc = ast_loc;
+            ast_loc = ast;
         }
     }
 
@@ -289,6 +286,195 @@ type gram_rule_t {
         printf("\n");
     }
 
+    specialize comparable_ptr<gram_symbol_t> as term_ptr
+    specialize set<term_ptr> as term_set
+
+    static func parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm) {
+        // create an initialize Fi
+        term_set* Fi;
+        Fi = (malloc(sizeof(term_set)*(nonterm_symbs.len()))) as term_set*;
+        term_set* FiRules;
+        FiRules = (malloc(sizeof(term_set)*(rules.len()))) as term_set*;
+        term_ptr tmp_ptr;
+        term_ptr epsilon;
+        tmp_ptr.init_null();
+        epsilon.init_null();
+        int i;
+        i = 0;
+        while i < (nonterm_symbs.len()) {
+            Fi[i].init();
+            i = i + 1;
+        }
+        i = 0;
+        while i < (rules.len()) {
+            FiRules[i].init();
+            i = i + 1;
+        }
+
+        // populate Fi
+        bool not_finished;
+        not_finished = true;
+        while not_finished {
+            not_finished = false;
+            i = 0;
+            while i < (rules.len()) {
+                gram_rule_t* rule;
+                rule = rules.ith(i);
+                term_set* cFi;
+                cFi = Fi + rule->result; // current Fi
+
+                term_set addFi;
+                addFi.init();
+                int j;
+                j = 0;
+                while j < ((rule->pattern).len()) {
+                    gram_symbol_t* sy;
+                    sy = (rule->pattern).ith_ref(j);
+                    if ((sy->kind) as int) != 2 { // terminal or exact
+                        tmp_ptr.init_ptr(sy);
+                        addFi.add(tmp_ptr);
+                        j = INT_MAX-1; // we break the loop
+                    } else { // nonterminal
+                        term_set* oFi;
+                        oFi = Fi + (((sy->dat).NonTerm_dat).symb); // other Fi
+                        if oFi->contains(epsilon) {
+                            tmp_ptr.init_null();
+                            oFi->remove(epsilon);
+                            addFi.union_with(*oFi);
+                            oFi->add(epsilon);
+                        } else {
+                            addFi.union_with(*oFi);
+                            j = INT_MAX-1; // we break out of the loop
+                        }
+                    }
+                    j = j + 1;
+                }
+                if j == ((rule->pattern).len()) {
+                    addFi.add(epsilon); // we add epsilon
+                }
+                FiRules[i].del();
+                FiRules[i] = addFi;
+                not_finished = not_finished || (cFi->union_with(addFi));
+                i = i + 1;
+            }
+        }
+
+        // create an initialize Fo
+        term_set* Fo;
+        Fo = (malloc(sizeof(term_set)*(nonterm_symbs.len()))) as term_set*;
+        i = 0;
+        while i < (nonterm_symbs.len()) {
+            Fo[i].init();
+            i = i + 1;
+        }
+        token t;
+        t.init_EOI();
+        gram_symbol_t* eoi_symb;
+        eoi_symb = (malloc(sizeof(gram_symbol_t))) as gram_symbol_t*;        
+        eoi_symb->set_exact(t);
+        tmp_ptr.init_ptr(eoi_symb);
+        Fo[goal_nonterm].add(tmp_ptr);
+
+        // populate Fo
+        not_finished = true;
+        while not_finished {
+            not_finished = false;
+            i = 0;
+            while i < (rules.len()) {
+                gram_rule_t* rule;
+                rule = rules.ith(i);
+                term_set* cFo;
+                cFo = Fo + rule->result; // current Fi
+
+                term_set wFi;
+                wFi.init();
+                wFi.add(epsilon);
+                int j;
+                j = ((rule->pattern).len()) - 1; // we iterate the pattern in reverse order
+                while 0 <= j {
+                    gram_symbol_t* sy;
+                    sy = (rule->pattern).ith_ref(j);
+                    if ((sy->kind) as int) != 2 { // terminal or exact
+                        wFi.del();
+                        wFi.init();
+                        tmp_ptr.init_ptr(sy);
+                        wFi.add(tmp_ptr);
+                    } else { // nonterminal
+                        term_set* oFo;
+                        oFo = Fo + (((sy->dat).NonTerm_dat).symb); // other Fi
+                        if wFi.contains(epsilon) {
+                            not_finished = not_finished || (cFo->union_with(*oFo));
+                        }
+                        not_finished = not_finished || (oFo->union_with(wFi)); // this may add epsilon to the set, but we'll clean it later
+
+                        term_set* oFi;
+                        oFi = Fi + (((sy->dat).NonTerm_dat).symb); // other Fi
+                        if oFi->contains(epsilon) {
+                            oFi->remove(epsilon);
+                            wFi.union_with(*oFi);
+                            oFi->add(epsilon);
+                        } else {
+                            wFi.del();
+                            wFi.init();
+                            wFi.union_with(*oFi);
+                        }
+                    }
+                    j = j - 1;
+                }
+                i = i + 1;
+            }
+        }
+
+        parsing_table ret;
+        ret.init_empty(nonterm_symbs.len());
+
+        i = 0;
+        while i < (nonterm_symbs.len()) {
+            term_set cFo;
+            cFo = Fo[i];
+            cFo.remove(epsilon); // we remove the epsilons that we may have added before
+            int j;
+            j = 0;
+            while j < (rules.len()) {
+                term_set cFi;
+                cFi = FiRules[j];
+
+                term_set tmp;
+                tmp.init();
+
+                tmp.union_with(cFi);
+                tmp.remove(epsilon);
+
+                if cFi.contains(epsilon) {
+                    tmp.union_with(cFo);
+                }
+
+                int k;
+                k = 0;
+                while k < (tmp.elts).len() {
+                    gram_symbol_t* s;
+                    s = ((tmp.elts).ith(k)).ptr;
+                    ret.add_entry(*s, i, rules.ith(j));
+                    k = k + 1;
+                }
+
+                j = j + 1;
+            }
+            cFo.del();
+            Fi[i].del();
+            i = i + 1;
+        }
+        i = 0;
+        while i < (rules.len()) {
+            FiRules[i].del();
+            i = i + 1;
+        }
+        free(Fi);
+        free(FiRules);
+        free(Fo);
+        return ret;
+    }
+
     static func anyptr parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs) {
         if ((stop_symbol.kind) as int) == 2 { // 2 = Nonterminal
             printf("invalid stop symbol: it is Nonterminal\n");
@@ -306,7 +492,7 @@ type gram_rule_t {
         stack.push(sym_dat_tmp);
 
         parsing_table table;
-        table.init_build(rules, nonterm_symbs); // we rebuild the table each time, it is wasteful but for now it's okay
+        table = make_parsing_table(rules, nonterm_symbs, goal_nonterm); // we rebuild the table each time, it is wasteful but for now it's okay
 
         while (l->len()) && !(stop_symbol.match_tok(l->ith(0))) {
             symbol_dat stacktop;
