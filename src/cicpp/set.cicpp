@@ -1,0 +1,55 @@
+
+#include "src/cicpp/clist.cicpp"
+
+type <dat_t> set {
+    specialize clist<dat_t> as datlist
+    datlist elts;
+    bool has_eps;
+
+    func void init() {
+        elts.init();
+    }
+    func void del() {
+        elts.del();
+    }
+    func bool contains(dat_t s) {
+        int i;
+        i = 0;
+        while i < (elts.len()) {
+            if s.eq(elts.ith(i)) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+    func void add(dat_t s) {
+        if !contains(s) {
+            elts.push(s);
+        }
+    }
+    func void union_with(set other) {
+        int i;
+        i = 0;
+        while i < ((other.elts).len()) {
+            add((other.elts).ith(i));
+            i = i + 1;
+        }
+    }
+}
+
+type <dat_t> comparable_ptr {
+    dat_t* ptr;
+    func void init_null() {
+        ptr = nullptr;
+    }
+    func void init_vlue(dat_t* p) {
+        ptr = p;
+    }
+    func bool eq(comparable_ptr p2) {
+        if ptr == nullptr {
+            return (p2.ptr) == nullptr;
+        }
+        return ptr->eq(*(p2.ptr));
+    }
+}

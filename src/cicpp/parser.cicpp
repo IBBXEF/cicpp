@@ -65,6 +65,28 @@ type gram_rule_t {
                 return false;
             }
         }
+        func bool includes(gram_symbol_t s) {
+            if (kind == NonTerm) || ((s.kind) == NonTerm) {
+                printf("invalid inclusion test of gram_symbol_t\n");
+                exit(-1);
+            }
+            if ((s.kind) == Exact) || (kind == Term) {
+                return match_tok(((s.dat).Exact_dat).tok);
+            }
+            return false;
+        }
+        func bool eq(gram_symbol_t b) {
+            if kind != (b.kind) {
+                return false;
+            }
+            if kind == NonTerm { // NonTerm
+                return ((dat.NonTerm_dat).symb) == (((b.dat).NonTerm_dat).symb);
+            } elif kind == Exact {
+                return ((dat.Exact_dat).tok).eq(((b.dat).Exact_dat).tok);
+            } else {
+                return (((dat.Term_dat).tok).kind) == ((((b.dat).Term_dat).tok).kind);
+            }
+        }
 
         func void print(string_list nonterm_symbs) {
             if kind == Term {
@@ -91,6 +113,7 @@ type gram_rule_t {
             i = 0;
             while i < n_nonterms {
                 tables[i].init();
+                i = i + 1;
             }
             _n_nonterms = n_nonterms;
         }
@@ -99,7 +122,24 @@ type gram_rule_t {
                 printf("invalid gram symbol for rule table: it is Nonterminal\n");
                 exit(-1);
             }
-            // TODO: check if an overlapping entry aldready exists
+            int i;
+            i = 0;
+            while i < _n_nonterms {
+                pairlist table;
+                table = tables[i];
+                int j;
+                j = 0;
+                while j < (table.len()) {
+                    gram_symbol_t s2;
+                    s2 = (table.ith(j)).s;
+                    if ((s2.includes(s)) || (s.includes(s2))) {
+                        printf("conflicting entry in the parsing table\n");
+                        exit(-1);
+                    }
+                    j = j + 1;
+                }
+                i = i + 1;
+            }
             sym_rule_pair pair;
             pair.s = s;
             pair.r = r;
@@ -158,31 +198,49 @@ type gram_rule_t {
         func void add_child(parsed_ast* child) {
             ((dat.Node_dat).childrens).append(child);
         }
+
+        func anyptr evaluate_ast() {
+            anyptr ret;
+            if kind == Leaf {
+                ret.init_view(&((dat.Leaf_dat).t));
+                return ret;
+            } elif kind == Node { // Node
+                clist_anyptr args;
+                args.init();
+                int i;
+                i = 0;
+                clist_voidptr kids;
+                kids = (dat.Node_dat).childrens;
+                while i < kids.len() {
+                    parsed_ast* child;
+                    child = (kids.ith(i)) as parsed_ast*;
+                    args.append(child->evaluate_ast());
+                    i = i + 1;
+                }
+                anyptr res;
+                res = ((dat.Node_dat).joining_function)(args);
+                args.del();
+                return res;
+            } else { // Unknown
+                printf("tried to evaluate unknown ast node\n");
+                exit(-1);
+            }
+        }
     }
 
     type symbol_dat {
 
         specialize clist<symbol_dat*> as symdatptrlist
 
-        NonTerm { int symb; parsed_ast* ast_loc; };
-        Tok { token t; };
+        parsed_ast* ast_loc;
+        gram_symbol_t sym;
 
-
-        func bool matches_symbol(gram_symbol_t s) {
-            if kind == Tok {
-                return s.match_tok((dat.Tok_dat).t);
-            } else { // kind == NonTerm
-                return ((dat.NonTerm_dat).symb) == (((s.dat).NonTerm_dat).symb);
-            }
+        func void update_tok_ast(token t) {
+            ast_loc->init_leaf(t);
         }
-        func void init_tok(token t) {
-            kind = Tok;
-            (dat.Tok_dat).t = t;
-        }
-        func void init_nonterm(int nt, parsed_ast* ast_loc) {
-            kind = NonTerm;
-            (dat.NonTerm_dat).symb = nt;
-            (dat.NonTerm_dat).ast_loc = ast_loc;
+        func void init(gram_symbol_t symb, parsed_ast* ast) {
+            sym = symb;
+            ast_loc = ast_loc;
         }
     }
 
@@ -241,12 +299,14 @@ type gram_rule_t {
         stack.init();
         ast.init_unknown();
 
+        gram_symbol_t sym_tmp;
+        sym_tmp.set_nonterm(goal_nonterm);
         symbol_dat sym_dat_tmp;
-        sym_dat_tmp.init_nonterm(goal_nonterm, &ast);
+        sym_dat_tmp.init(sym_tmp, &ast);
         stack.push(sym_dat_tmp);
 
         parsing_table table;
-        table.init_build(rules, nonterm_symbs);
+        table.init_build(rules, nonterm_symbs); // we rebuild the table each time, it is wasteful but for now it's okay
 
         while (l->len()) && !(stop_symbol.match_tok(l->ith(0))) {
             symbol_dat stacktop;
@@ -256,66 +316,54 @@ type gram_rule_t {
             inptop = l->ith(0);
             *l = l->tail();
 
-            if ((stacktop.kind) as int) == 1 { // the top element of our stack is a token
-                if !(inptop.eq(((stacktop.dat).Tok_dat).t)) {
-                    printf("failed to parse: expected token id %d, got %d\n", (inptop.kind) as int, ((((stacktop.dat).Tok_dat).t).kind) as int);
+            if (((stacktop.sym).kind) as int) != 2 { // the top element of our stack is a token
+                if !(stacktop.sym).match_tok(inptop) {
+                    printf("failed to parse: got token id %d\n", (inptop.kind) as int);
                     exit(-1);
                 }
+                stacktop.update_tok_ast(inptop);
             } else { // the element at the top of our stack is a nonterminal
                 int nt;
-                nt = ((stacktop.dat).NonTerm_dat).symb; // current nonterminal
+                nt = (((stacktop.sym).dat).NonTerm_dat).symb; // current nonterminal
                 gram_rule_t* rule;
                 rule = table.lookup(inptop, nt);
                 if rule == nullptr {
-                    printf("failed to parse: no rule found for nonterminal %d with token kind %d\n", nt, (inptop.kind) as int);
+                    printf("failed to parse: no rule found for nonterminal %s with token kind %d\n", (nonterm_symbs.ith(nt)), (inptop.kind) as int);
                     exit(-1);
                 }
                 
                 parsed_ast* ast_loc;
-                ast_loc = ((stacktop.dat).NonTerm_dat).ast_loc;
+                ast_loc = stacktop.ast_loc;
 
                 ast_loc->init_node(rule->result_function);
                 // we apply the rule
                 parsed_ast* first_child;
                 first_child = (malloc(sizeof(parsed_ast))) as parsed_ast*;
-                first_child->init_leaf(inptop);
+                first_child->init_leaf(inptop); // we keep the first child for later
                 int i;
                 i = ((rule->pattern).len()) - 2;
                 while i >= 0 {
-                    gram_symbol_t sym;
-                    sym = (rule->pattern).ith(i);
+                    parsed_ast* child_ast;
+                    child_ast = (malloc(sizeof(parsed_ast))) as parsed_ast*;
+                    child_ast->init_unknown();
+                    ast_loc->add_child(child_ast);
+
                     symbol_dat sym_dat;
-                    if ((sym.kind) as int) == 2 { // NonTerm
-                        parsed_ast* child_ast;
-                        child_ast = (malloc(sizeof(parsed_ast))) as parsed_ast*;
-                        child_ast->init_unknown();
-                        ast_loc->add_child(child_ast);
-                        sym_dat.init_nonterm(((sym.dat).NonTerm_dat).symb, child_ast);
-                    } else { // Term or Exact
-                        token tok;
-                        if ((sym.kind) as int) == 1 { // Exact
-                            tok = ((sym.dat).Exact_dat).tok;
-                        } else { // Term
-                            tok = ((sym.dat).Term_dat).tok;
-                        }
-                        sym_dat.init_tok(tok);
-                        parsed_ast* child_ast;
-                        child_ast = (malloc(sizeof(parsed_ast))) as parsed_ast*;
-                        child_ast->init_leaf(tok);
-                        ast_loc->add_child(child_ast);
-                    }
+                    sym_dat.init((rule->pattern).ith(i), child_ast);
                     stack.push(sym_dat);
                     i = i - 1;
                 }
                 ast_loc->add_child(first_child);
-                // the children are in reverse order
+                // the children are in reverse order, so the first one goes in last
                 (((ast_loc->dat).Node_dat).childrens).reverse();
             }
         }
 
         table.del();
 
-        //  TODO: compute the return value based on the ast
+        anyptr final_res;
+        final_res = ast.evaluate_ast();
+        return final_res;
     }
 
 }

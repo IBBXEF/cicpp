@@ -640,6 +640,28 @@ struct gram_rule_t {
       } else
       return false;
     }
+    bool includes(gram_symbol_t s){
+      if (((kind) == (NonTerm)) || (((s).kind) == (NonTerm))) {
+        printf("invalid inclusion test of gram_symbol_t\n");
+        exit(-(1));
+      }
+      if ((((s).kind) == (Exact)) || ((kind) == (Term))) {
+        return match_tok((((s).dat).Exact_dat).tok);
+      }
+      return false;
+    }
+    bool eq(gram_symbol_t b){
+      if ((kind) != ((b).kind)) {
+        return false;
+      }
+      if ((kind) == (NonTerm)) {
+        return (((dat).NonTerm_dat).symb) == ((((b).dat).NonTerm_dat).symb);
+      } else
+      if ((kind) == (Exact)) {
+        return (((dat).Exact_dat).tok).eq((((b).dat).Exact_dat).tok);
+      } else
+      return ((((dat).Term_dat).tok).kind) == (((((b).dat).Term_dat).tok).kind);
+    }
     void print(string_list nonterm_symbs){
       if ((kind) == (Term)) {
         printf("Term (id %d)", (int)(((dat).Term_dat).tok).kind);
@@ -845,6 +867,7 @@ struct gram_rule_t {
       i = 0;
       while ((i) < (n_nonterms)) {
         (tables[i]).init();
+        i = (i) + (1);
       }
       _n_nonterms = n_nonterms;
     }
@@ -852,6 +875,24 @@ struct gram_rule_t {
       if (((int)(s).kind) == (2)) {
         printf("invalid gram symbol for rule table: it is Nonterminal\n");
         exit(-(1));
+      }
+      int i;
+      i = 0;
+      while ((i) < (_n_nonterms)) {
+        pairlist table;
+        table = tables[i];
+        int j;
+        j = 0;
+        while ((j) < ((table).len())) {
+          gram_symbol_t s2;
+          s2 = ((table).ith(j)).s;
+          if (((s2).includes(s)) || ((s).includes(s2))) {
+            printf("conflicting entry in the parsing table\n");
+            exit(-(1));
+          }
+          j = (j) + (1);
+        }
+        i = (i) + (1);
       }
       sym_rule_pair pair;
       (pair).s = s;
@@ -910,18 +951,36 @@ struct gram_rule_t {
     void add_child(parsed_ast* child){
       (((dat).Node_dat).childrens).append(child);
     }
+    anyptr evaluate_ast(){
+      anyptr ret;
+      if ((kind) == (Leaf)) {
+        (ret).init_view(&(((dat).Leaf_dat).t));
+        return ret;
+      } else
+      if ((kind) == (Node)) {
+        clist_anyptr args;
+        (args).init();
+        int i;
+        i = 0;
+        clist_voidptr kids;
+        kids = ((dat).Node_dat).childrens;
+        while ((i) < ((kids).len())) {
+          parsed_ast* child;
+          child = (parsed_ast*)(kids).ith(i);
+          (args).append((child)->evaluate_ast());
+          i = (i) + (1);
+        }
+        anyptr res;
+        res = ((dat).Node_dat).joining_function(args);
+        (args).del();
+        return res;
+      } else {
+        printf("tried to evaluate unknown ast node\n");
+        exit(-(1));
+      }
+    }
   };
   struct symbol_dat {
-    enum { NonTerm, Tok } kind;
-    union {
-      struct {
-        int symb;
-        parsed_ast* ast_loc;
-      } NonTerm_dat;
-      struct {
-        token t;
-      } Tok_dat;
-     } dat;
     #define dat_t symbol_dat*
     #define clist symdatptrlist
     struct clist {
@@ -1013,20 +1072,14 @@ struct gram_rule_t {
     };
     #undef dat_t
     #undef clist
-    bool matches_symbol(gram_symbol_t s){
-      if ((kind) == (Tok)) {
-        return (s).match_tok(((dat).Tok_dat).t);
-      } else
-      return (((dat).NonTerm_dat).symb) == ((((s).dat).NonTerm_dat).symb);
+    parsed_ast* ast_loc;
+    gram_symbol_t sym;
+    void update_tok_ast(token t){
+      (ast_loc)->init_leaf(t);
     }
-    void init_tok(token t){
-      kind = Tok;
-      ((dat).Tok_dat).t = t;
-    }
-    void init_nonterm(int nt, parsed_ast* ast_loc){
-      kind = NonTerm;
-      ((dat).NonTerm_dat).symb = nt;
-      ((dat).NonTerm_dat).ast_loc = ast_loc;
+    void init(gram_symbol_t symb, parsed_ast* ast){
+      sym = symb;
+      ast_loc = ast_loc;
     }
   };
   #define dat_t symbol_dat
@@ -1149,14 +1202,14 @@ struct gram_rule_t {
     }
   }
   void print(string_list nonterm_symbs){
-    printf("rule: $%s %d -> ", (nonterm_symbs).ith(result), priority);
+    printf("rule: $%s -> ", (nonterm_symbs).ith(result));
     int i;
     i = 0;
     while ((i) < ((pattern).len())) {
       if (i) {
         printf(" ");
       }
-      ((pattern).ith(((pattern).len()) - ((i) - (1)))).print(nonterm_symbs);
+      ((pattern).ith(((pattern).len()) - ((i) + (1)))).print(nonterm_symbs);
       i = (i) + (1);
     }
     printf("\n");
@@ -1171,8 +1224,10 @@ struct gram_rule_t {
     parsed_ast ast;
     (stack).init();
     (ast).init_unknown();
+    gram_symbol_t sym_tmp;
+    (sym_tmp).set_nonterm(goal_nonterm);
     symbol_dat sym_dat_tmp;
-    (sym_dat_tmp).init_nonterm(goal_nonterm, &(ast));
+    (sym_dat_tmp).init(sym_tmp, &(ast));
     (stack).push(sym_dat_tmp);
     parsing_table table;
     (table).init_build(rules, nonterm_symbs);
@@ -1182,58 +1237,47 @@ struct gram_rule_t {
       token inptop;
       inptop = (l)->ith(0);
       l[0] = (l)->tail();
-      if (((int)(stacktop).kind) == (1)) {
-        if (!((inptop).eq((((stacktop).dat).Tok_dat).t))) {
-          printf("failed to parse: expected token id %d, got %d\n", (int)(inptop).kind, (int)((((stacktop).dat).Tok_dat).t).kind);
+      if (((int)((stacktop).sym).kind) != (2)) {
+        if (!(((stacktop).sym).match_tok(inptop))) {
+          printf("failed to parse: got token id %d\n", (int)(inptop).kind);
           exit(-(1));
         }
+        (stacktop).update_tok_ast(inptop);
       } else {
         int nt;
-        nt = (((stacktop).dat).NonTerm_dat).symb;
+        nt = ((((stacktop).sym).dat).NonTerm_dat).symb;
         gram_rule_t* rule;
         rule = (table).lookup(inptop, nt);
         if ((rule) == (nullptr)) {
-          printf("failed to parse: no rule found for nonterminal %d with token kind %d\n", nt, (int)(inptop).kind);
+          printf("failed to parse: no rule found for nonterminal %s with token kind %d\n", (nonterm_symbs).ith(nt), (int)(inptop).kind);
           exit(-(1));
         }
         parsed_ast* ast_loc;
-        ast_loc = (((stacktop).dat).NonTerm_dat).ast_loc;
+        ast_loc = (stacktop).ast_loc;
         (ast_loc)->init_node((rule)->result_function);
-        int i;
-        i = ((rule)->(pattern).len()) - (2);
-        while ((i) >= (0)) {
-          gram_symbol_t sym;
-          sym = (rule)->(pattern).ith(i);
-          symbol_dat sym_dat;
-          if (((int)(sym).kind) == (2)) {
-            parsed_ast* child_ast;
-            child_ast = (parsed_ast*)malloc(sizeof(parsed_ast));
-            (child_ast)->init_unknown();
-            (ast_loc)->add_child(child_ast);
-            (sym_dat).init_nonterm((((sym).dat).NonTerm_dat).symb, child_ast);
-          } else {
-            token tok;
-            if (((int)(sym).kind) == (1)) {
-              tok = (((sym).dat).Exact_dat).tok;
-            } else
-            tok = (((sym).dat).Term_dat).tok;
-            (sym_dat).init_tok(tok);
-            parsed_ast* child_ast;
-            child_ast = (parsed_ast*)malloc(sizeof(parsed_ast));
-            (first_child)->init_leaf(tok);
-            (ast_loc)->add_child(first_child);
-          }
-          (stack).push(sym_dat);
-          i = (i) - (1);
-        }
         parsed_ast* first_child;
         first_child = (parsed_ast*)malloc(sizeof(parsed_ast));
         (first_child)->init_leaf(inptop);
+        int i;
+        i = (((rule)->pattern).len()) - (2);
+        while ((i) >= (0)) {
+          parsed_ast* child_ast;
+          child_ast = (parsed_ast*)malloc(sizeof(parsed_ast));
+          (child_ast)->init_unknown();
+          (ast_loc)->add_child(child_ast);
+          symbol_dat sym_dat;
+          (sym_dat).init(((rule)->pattern).ith(i), child_ast);
+          (stack).push(sym_dat);
+          i = (i) - (1);
+        }
         (ast_loc)->add_child(first_child);
         ((((ast_loc)->dat).Node_dat).childrens).reverse();
       }
     }
     (table).del();
+    anyptr final_res;
+    final_res = (ast).evaluate_ast();
+    return final_res;
   }
 };
 gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_anyptr), string_list* nonterm_symbs){
