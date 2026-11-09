@@ -42,91 +42,11 @@ type gram_rule_t {
     type gram_symbol_t {
         Term { token tok; };
         Exact { token tok; };
-        NonTerm { int symb; token* last_failure; int last_failure_depth; };
-
-        func anyptr match_symb(toklist* l, int max_depth, gram_rules rules, gram_symbol_t* next_tok) {
-            anyptr ret;
-            ret.init_null();
-            if (max_depth < 0) || (((*l).len()) == 0) {
-                return ret;
-            }
-            if kind == Term {
-                if (((*l).ith(0)).kind) != (((dat.Term_dat).tok).kind) {
-                    return ret;
-                }
-                ret.init_view((*l).ith_ref(0));
-                *l = (*l).tail();
-                return ret;
-            } elif kind == Exact {
-                if !((*l).ith(0)).eq((dat.Exact_dat).tok) {
-                    return ret;
-                }
-                ret.init_view((*l).ith_ref(0));
-                *l = (*l).tail();
-                return ret;
-            } else { // kind == NonTerm
-                if (((dat.NonTerm_dat).last_failure) == (l->ith_ref(0))) && (((dat.NonTerm_dat).last_failure_depth) >= max_depth) {
-                    return ret; // our last failure was in the same situation
-                }
-                int i;
-                int chosen_len;
-                chosen_len = l->len();
-                i = 0;
-                toklist base;
-                toklist chosen_end;
-                base = *l;
-                chosen_end = *l;
-                while i < (rules.len()) {
-                    gram_rule_t rule;
-                    rule = *(rules.ith(i));
-                    if ((rule.result) == ((dat.NonTerm_dat).symb)) {
-                        anyptr tmp;
-                        tmp = rule.parse(l, max_depth, rules);
-                        if tmp.ptr {
-                            int curlen;
-                            curlen = l->len();
-                            if next_tok && ((next_tok->kind) != NonTerm) { // we do not check nonterminals for speed reasons
-                                // we check that the next token corresponds
-                                anyptr tmp2;
-                                toklist tlist;
-                                tlist = *l;
-                                tmp2 = next_tok->match_symb(l, 1, rules, nullptr);
-                                *l = tlist;
-                                if !(tmp2.ptr) {
-                                    curlen = INT_MAX; // invalid match
-                                }
-                                tmp2.del();
-                            }
-
-                            if curlen < chosen_len { // we select for the longest match, i.e. the one leaving the fewest tokens
-                                chosen_len = curlen;
-                                ret.del();
-                                ret = tmp;
-                                chosen_end = *l;
-                            } else {
-                                tmp.del();
-                            }
-                        }
-                        *l = base;
-                    }
-                    i = i + 1;
-                }
-                *l = chosen_end;
-
-                if (!(ret.ptr)) {
-                    (dat.NonTerm_dat).last_failure = l->ith_ref(0); // we cache the last failure to improve performance
-                    (dat.NonTerm_dat).last_failure_depth = max_depth;
-                }
-
-                return ret;
-            }
-        }
+        NonTerm { int symb; };
 
         func void set_nonterm(int i) {
             kind = NonTerm;
             (dat.NonTerm_dat).symb = i;
-            (dat.NonTerm_dat).last_failure = nullptr;
-            (dat.NonTerm_dat).last_failure_depth = -2;
         }
         func void set_term(token t) {
             kind = Term;
@@ -135,7 +55,16 @@ type gram_rule_t {
         func void set_exact(token t) {
             kind = Exact;
             (dat.Term_dat).tok = t;
-        }        
+        }
+        func bool match_tok(token t) {
+            if kind == Exact {
+                return t.eq((dat.Exact_dat).tok);
+            } elif kind == Term {
+                return (((dat.Exact_dat).tok).kind) == (t.kind);
+            } else {
+                return false;
+            }
+        }
 
         func void print(string_list nonterm_symbs) {
             if kind == Term {
@@ -148,94 +77,215 @@ type gram_rule_t {
             }
         }
     }
-
+    
     specialize clist<gram_symbol_t> as symlist
+
+    type parsing_table {
+        type sym_rule_pair { gram_symbol_t s; gram_rule_t* r; }
+        specialize clist<sym_rule_pair> as pairlist
+        pairlist* tables;
+        int _n_nonterms;
+        func void init_empty(int n_nonterms) {
+            tables = malloc(sizeof(pairlist)*n_nonterms) as pairlist*;
+            int i;
+            i = 0;
+            while i < n_nonterms {
+                tables[i].init();
+            }
+            _n_nonterms = n_nonterms;
+        }
+        func bool add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r) {
+            if ((s.kind) as int) == 2 { // 2 = Nonterminal
+                printf("invalid gram symbol for rule table: it is Nonterminal\n");
+                exit(-1);
+            }
+            // TODO: check if an overlapping entry aldready exists
+            sym_rule_pair pair;
+            pair.s = s;
+            pair.r = r;
+            tables[nonterm].push(pair);
+        }
+        func gram_rule_t* lookup(token t, int nonterm) {
+            int i;
+            i = 0;
+            pairlist tab;
+            tab = tables[nonterm];
+            while i < tab.len() {
+                if ((tab.ith(i)).s).match_tok(t) {
+                    return (tab.ith(i)).r;
+                }
+            }
+            return nullptr;
+        }
+        func void init_build(gram_rules rules, string_list nonterm_symbs) {
+            init_empty(nonterm_symbs.len());
+            // TODO: build the table
+        }
+        func void del() {
+            int i;
+            i = 0;
+            while i < _n_nonterms {
+                tables[i].del(); // the list's elements don't allocate memory
+            }
+        }
+    }
+
 
     symlist pattern; // a nonempty list of symbols
     int result;
 
     // user-defined "result function" that will turn the matched pattern into the result.
+    // the input pointers's ownership belongs to the function, but not the list itself
     clist_anyptr -> anyptr result_function;
 
+    type parsed_ast {
+        Leaf { token t; };
+        Node { clist_voidptr childrens; clist_anyptr -> anyptr joining_function; };
+        Unknown;
 
-    func anyptr parse(toklist* l, int max_depth, gram_rules rules) {
-        int i;
-        i = 0;
-        clist_anyptr vlues;
-        vlues.init();
-        toklist base;
-        base = *l;
-        anyptr ret;
-        while (i < pattern.len()) {
-            gram_symbol_t sym;
-            gram_symbol_t* next;
-            sym = pattern.ith(i);
-            next = nullptr;
-            if (i+1) < pattern.len() {
-                next = pattern.ith_ref(i+1);
-            }
-            anyptr vals;
-            vals = sym.match_symb(l, max_depth-1, rules, next);
-            if (!(vals.ptr)) {
-                *l = base;
-                clist_anyptr_free(vlues);
-                ret.init_null();
-                return ret;
-            }
-            vlues.append(vals);
-            i = i + 1;
+        func void init_unknown() {
+            kind = Unknown;
         }
-        ret = result_function(vlues);
-        vlues.del(); // this is not a memory leak, the function is responsible for the elements of the list
-        // printf("applied rule at depth %d, parsing %d symbols\n", max_depth, pattern.len());
-        return ret;
+        func void init_node(clist_anyptr -> anyptr joining_function) {
+            kind = Node;
+            (dat.Node_dat).joining_function = joining_function;
+            ((dat.Node_dat).childrens).init();
+        }
+        func void init_leaf(token t) {
+            kind = Leaf;
+            (dat.Leaf_dat).t = t;
+        }
+        func void add_child(parsed_ast* child) {
+            ((dat.Node_dat).childrens).append(child);
+        }
     }
+
+    type symbol_dat {
+
+        specialize clist<symbol_dat*> as symdatptrlist
+
+        NonTerm { int symb; parsed_ast* ast_loc; };
+        Tok { token t; };
+
+
+        func bool matches_symbol(gram_symbol_t s) {
+            if kind == Tok {
+                return s.match_tok((dat.Tok_dat).t);
+            } else { // kind == NonTerm
+                return ((dat.NonTerm_dat).symb) == (((s.dat).NonTerm_dat).symb);
+            }
+        }
+        func void init_tok(token t) {
+            kind = Tok;
+            (dat.Tok_dat).t = t;
+        }
+        func void init_nonterm(int nt, parsed_ast* ast_loc) {
+            kind = NonTerm;
+            (dat.NonTerm_dat).symb = nt;
+            (dat.NonTerm_dat).ast_loc = ast_loc;
+        }
+    }
+
+    specialize clist<symbol_dat> as symdatlist
 
     func void init(int rule_result, clist_anyptr -> anyptr rule_result_function) {
         result = rule_result;
         result_function = rule_result_function;
         pattern.init();
     }
-
     func void add_nonterm(int nt) {
         gram_symbol_t sym;
         sym.set_nonterm(nt);
-        pattern.append(sym);
+        pattern.push(sym); // pattern is in reverse order
     }
-
     func void add_term(const char* str) {
         toklist l;
         l = lex_string(str);
         while (l.len()) {
             gram_symbol_t sym;
             sym.set_term(l.pop());
-            pattern.append(sym);
+            pattern.push(sym); // pattern is in reverse order
         }
     }
-
     func void add_exact(const char* str) {
         toklist l;
         l = lex_string(str);
         while (l.len()) {
             gram_symbol_t sym;
             sym.set_exact(l.pop());
-            pattern.append(sym);
+            pattern.push(sym); // pattern is in reverse order
         }
     }
 
     func void print(string_list nonterm_symbs) {
-        printf("rule: $%s -> ", nonterm_symbs.ith(result));
+        printf("rule: $%s %d -> ", nonterm_symbs.ith(result), priority);
         int i;
         i = 0;
         while i < (pattern.len()) {
             if i {
                 printf(" ");
             }
-            (pattern.ith(i)).print(nonterm_symbs);
+            (pattern.ith((pattern.len()) - i - 1)).print(nonterm_symbs); // pattern is in reverse order
             i = i + 1;
         }
         printf("\n");
     }
+
+    static func bool parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs) {
+        if ((stop_symbol.kind) as int) == 2 { // 2 = Nonterminal
+            printf("invalid stop symbol: it is Nonterminal\n");
+            exit(-1);
+        }
+        symdatlist stack;
+        parsed_ast ast;
+        stack.init();
+        ast.init_unknown();
+
+        symbol_dat sym_dat_tmp;
+        sym_dat_tmp.init_nonterm(goal_nonterm, &ast);
+        stack.push(sym_dat_tmp);
+
+        parsing_table table;
+        table.init_build(rules, nonterm_symbs);
+
+        while (l->len()) && !(stop_symbol.match_tok(l->ith(0))) {
+            symbol_dat stacktop;
+            stacktop = stack.pop();
+
+            token inptop;
+            inptop = l->ith(0);
+            *l = l->tail();
+
+            if ((stacktop.kind) as int) == 1 { // the top element of our stack is a token
+                if !(inptop.eq(((stacktop.dat).Tok_dat).t)) {
+                    printf("failed to parse: expected token id %d, got %d\n", (inptop.kind) as int, ((((stacktop.dat).Tok_dat).t).kind) as int);
+                    exit(-1);
+                }
+            } else { // the element at the top of our stack is a nonterminal
+                int nt;
+                nt = ((stacktop.dat).NonTerm_dat).symb; // current nonterminal
+                gram_rule_t* rule;
+                rule = table.lookup(inptop, nt);
+                if rule == nullptr {
+                    printf("failed to parse: no rule found for nonterminal %d with token kind %d\n", nt, (inptop.kind) as int);
+                    exit(-1);
+                }
+                
+                parsed_ast* ast_loc;
+                ast_loc = ((stacktop.dat).NonTerm_dat).ast_loc;
+
+                ast_loc->kind = Node;
+                ast_loc->childrens.init();
+                ast_loc->joining_function = rule->result_function;
+                // TODO: apply rule
+            }
+        }
+
+        table.del();
+
+        //  TODO: compute the return value based on the ast
+    }
+
 }
 
 
