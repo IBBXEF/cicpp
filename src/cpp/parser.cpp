@@ -284,230 +284,32 @@ gram_rule_t::gram_rules make_rules() {
 gram_rule_t::gram_rules parsing_rules = make_rules();
 
 rval* parse_rval(toklist* toks, token* end_token) {
-    gram_rule_t::gram_symbol_t sym = {.kind=gram_rule_t::gram_symbol_t::NonTerm};
-    gram_rule_t::gram_symbol_t* endptr = nullptr;
-    gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
-    if (end_token) {
-        end.dat.Exact_dat.tok = *end_token;
-        endptr = &end;
+    if (!end_token) {
+        printf("end token needed\n");
+        exit(-1);
     }
-    sym.dat.NonTerm_dat.symb = string_list_find(nonterm_symbs, "Rval");
-    void* ret = sym.match_symb(toks, 20, parsing_rules).ptr;
-    if (!ret) {
+    int goal = string_list_find(nonterm_symbs, "Rval");
+    gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
+    end.dat.Exact_dat.tok = *end_token;
+    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs);
+    if (!ret.ptr) {
         printf("failed to parse an rvalue\n");
         exit(-1);
     }
-    return (rval*)ret;
+    free(ret.n_refs);
+    return (rval*)ret.ptr;
 }
 lval* parse_lval(toklist* toks) {
-    gram_rule_t::gram_symbol_t sym = {.kind=gram_rule_t::gram_symbol_t::NonTerm};
     gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::Set;
-    sym.dat.NonTerm_dat.symb = string_list_find(nonterm_symbs, "Lval");
-    void* ret = sym.match_symb(toks, 20, parsing_rules).ptr;
-    if (!ret) {
+    int goal = string_list_find(nonterm_symbs, "Lval");
+    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs);
+    if (!ret.ptr) {
         printf("failed to parse an lvalue\n");
         exit(-1);
     }
-    return (lval*)ret;
-}
-
-rval* parse_rval_old(toklist* toks, bool can_fallback = true) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    token n = toks->ith(0);
-
-    if (n.kind == token::VInt) {
-        *toks = toks->tail();
-        ret->kind = rval::Int;
-        ret->dat.int_dat = n.dat.VInt_dat.dat;
-    } else if (n.kind == token::VString) {
-        *toks = toks->tail();
-        ret->kind = rval::String;
-        ret->dat.string_dat = n.dat.VString_dat.str;
-    } else if (n.kind == token::Unop) {
-        *toks = toks->tail();
-        ret->kind = rval::Unop;
-        ret->dat.unop_dat.op = n.dat.Unop_dat.op;
-        ret->dat.unop_dat.v = parse_rval_old(toks);
-    } else if (n.kind == token::LPAREN) {
-        *toks = toks->tail();
-        free(ret);
-        ret = parse_rval_old(toks);
-        n = toks->ith(0);
-        if (n.kind != token::RPAREN) {
-            printf("unmatched '(' (expected ')' at end of rvalue, got token id %d)\n", (int)n.kind);
-            exit(-1);
-        }
-        *toks = toks->tail();
-    } else if (n.kind == token::Binop && n.dat.Binop_dat.op.kind == binop::Sub) { // the token for '-' is not a binop, we have to treat it separately
-        *toks = toks->tail();
-        ret->kind = rval::Unop;
-        ret->dat.unop_dat.op.kind = unop::Neg;
-        ret->dat.unop_dat.v = parse_rval_old(toks);
-    } else if (n.kind == token::Binop && n.dat.Binop_dat.op.kind == binop::Band) { // the token for '&' is not a binop, we have to treat it separately
-        *toks = toks->tail();
-        ret->kind = rval::Unop;
-        ret->dat.unop_dat.op.kind = unop::Addr;
-        ret->dat.unop_dat.v = parse_rval_old(toks); // yes it should be an lval but the parser will hopefully be replaced soon anyway
-    } else if (can_fallback) { // we fallback to parsing an lvalue
-        ret->kind = rval::Lval;
-        ret->dat.lval_dat = parse_lval_old(toks);
-    } else {
-        printf("invalid rvalue (got token id %d)\n", (int)n.kind);
-        exit(-1);
-    }
-    n = toks->ith(0);
-    if (n.kind == token::LPAREN) {
-        rval* fcal = (rval*)malloc(sizeof(rval));
-        fcal->kind = rval::Fcall;
-        fcal->dat.fcall_dat.func = ret;
-        fcal->dat.fcall_dat.args = (clist_voidptr*)malloc(sizeof(clist_voidptr));
-        fcal->dat.fcall_dat.args->init();
-        *toks = toks->tail();
-        n = toks->ith(0);
-        while (n.kind != token::RPAREN) {
-            if (n.kind == token::Comma) {
-                *toks = toks->tail(); // this will sometimes parse nonsense but it's okay
-            } else {
-                rval* arg = parse_rval_old(toks);
-                fcal->dat.fcall_dat.args->append(arg);
-            }
-            n = toks->ith(0);
-        }
-        *toks = toks->tail();
-        ret = fcal;
-    }
-    n = toks->ith(0);
-    if (n.kind == token::Binop) {
-        *toks = toks->tail();
-        rval* opret = (rval*)malloc(sizeof(rval));
-        opret->kind = rval::Binop;
-        opret->dat.binop_dat.op = n.dat.Binop_dat.op;
-        opret->dat.binop_dat.v1 = ret;
-        opret->dat.binop_dat.v2 = parse_rval_old(toks);
-        ret = opret;
-    }
-    n = toks->ith(0);
-    if (n.kind == token::As) {
-        *toks = toks->tail();
-        rval* opret = (rval*)malloc(sizeof(rval));
-        opret->kind = rval::Typecast;
-        opret->dat.typecast_dat.v = ret;
-        opret->dat.typecast_dat.t = parse_typ(toks);
-        ret = opret;
-    }
-    n = toks->ith(0);
-    if (n.kind == token::Dot && can_fallback) { // our expression if a structure field access
-        *toks = toks->tail();
-        lval* lv = (lval*)malloc(sizeof(lval));
-        lv->kind = lval::Field;
-        lv->dat.field_dat.stru = ret;
-        ret = (rval*)malloc(sizeof(rval));
-        ret->kind = rval::Lval;
-        n = toks->ith(0);
-        if (n.kind != token::Ident) {
-            printf("expected identifier for struct field name\n");
-            exit(-1);
-        }
-        *toks = toks->tail();
-        lv->dat.field_dat.field = n.dat.Ident_dat.str;
-        ret->dat.lval_dat = lv;
-    }
-    
-    n = toks->ith(0);
-    if (n.kind == token::LPAREN) {
-        rval* fcal = (rval*)malloc(sizeof(rval));
-        fcal->kind = rval::Fcall;
-        fcal->dat.fcall_dat.func = ret;
-        fcal->dat.fcall_dat.args = (clist_voidptr*)malloc(sizeof(clist_voidptr));
-        fcal->dat.fcall_dat.args->init();
-        *toks = toks->tail();
-        n = toks->ith(0);
-        while (n.kind != token::RPAREN) {
-            if (n.kind == token::Comma) {
-                *toks = toks->tail(); // this will sometimes parse nonsense but it's okay
-            } else {
-                rval* arg = parse_rval_old(toks);
-                fcal->dat.fcall_dat.args->append(arg);
-            }
-            n = toks->ith(0);
-        }
-        *toks = toks->tail();
-        ret = fcal;
-    }
-
-    ret->print_to_file(fopen("/dev/null", "w"));
-    
-    return ret;
-}
-
-lval* parse_lval_old(toklist* toks) {
-    lval* ret = (lval*)malloc(sizeof(lval));
-    token n = toks->ith(0);
-
-    if (n.kind == token::Ident) {
-        *toks = toks->tail();
-        ret->kind = lval::Var;
-        ret->dat.var_dat = n.dat.Ident_dat.str;
-        n = toks->ith(0);
-        if (n.kind == token::LSQUAR) { // we are parsing an array set
-            *toks = toks->tail();
-            rval* arr = (rval*)malloc(sizeof(rval));
-            arr->kind = rval::Lval;
-            arr->dat.lval_dat = ret;
-            ret = (lval*)malloc(sizeof(lval));
-            ret->kind = lval::Index;
-            ret->dat.ind_dat.arr = arr;
-            ret->dat.ind_dat.ind = parse_rval_old(toks);
-            n = toks->ith(0);
-            if (n.kind != token::RSQUAR) {
-                printf("expected ']' for array index lvalue");
-                exit(-1);
-            }
-            *toks = toks->tail();
-        }
-        return ret;
-    } else if (n.kind == token::Binop && n.dat.Binop_dat.op.kind == binop::Mul) { // we are parsing a pointer dereference
-        *toks = toks->tail();
-        ret->kind = lval::Index;
-        ret->dat.ind_dat.ind = (rval*)malloc(sizeof(rval));
-        ret->dat.ind_dat.ind->kind = rval::Int;
-        ret->dat.ind_dat.ind->dat.int_dat = 0; // we parse *p as p[0]
-        ret->dat.ind_dat.arr = parse_rval_old(toks);
-        return ret;
-    }
-    // we try to parse an array index / a struct field access
-    rval* mai = parse_rval_old(toks, false);
-    n = toks->ith(0);
-    if (n.kind == token::Dot) {
-        *toks = toks->tail();
-        ret->kind = lval::Field;
-        ret->dat.field_dat.stru = mai;
-        n = toks->ith(0);
-        if (n.kind != token::Ident) {
-            printf("expected identifier for struct field name\n");
-            exit(-1);
-        }
-        *toks = toks->tail();
-        ret->dat.field_dat.field = n.dat.Ident_dat.str;
-        printf("parsed access of field %s\n", n.dat.Ident_dat.str);
-        return ret;
-    }
-    if (n.kind != token::LSQUAR) {
-        printf("expected '[' for array index lvalue\n");
-        exit(-1);
-    }
-    ret->kind = lval::Index;
-    ret->dat.ind_dat.arr = mai;
-    *toks = toks->tail();
-    ret->dat.ind_dat.ind = parse_rval_old(toks);
-    n = toks->ith(0);
-    if (n.kind != token::RSQUAR) {
-        printf("expected ']' for array index lvalue");
-        exit(-1);
-    }
-    *toks = toks->tail();
-    return ret;
+    free(ret.n_refs);
+    return (lval*)ret.ptr;
 }
 
 typ* parse_typ(toklist* toks) {
@@ -540,7 +342,8 @@ typ* parse_typ(toklist* toks) {
             exit(-1);
         }
         *toks = toks->tail();
-        t->dat.typeof_dat = parse_rval_old(toks);
+        token tmp = {.kind=token::RPAREN};
+        t->dat.typeof_dat = parse_rval(toks, &tmp);
         n = toks->ith(0);
         if (n.kind != token::RPAREN) {
             printf("expected ')' after typeof\n");
@@ -592,7 +395,8 @@ decl* parse_var_decl(toklist* toks, bool check_semicolon) {
     n = toks->ith(0);
     if (n.kind == token::Set) {
         *toks = toks->tail();
-        ret->dat.var_dat.v = parse_rval(toks);
+        token tmp = {.kind=token::Semicol};
+        ret->dat.var_dat.v = parse_rval(toks, check_semicolon ? &tmp : nullptr);
     } else {
         ret->dat.var_dat.v = nullptr;
     }
@@ -646,7 +450,8 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::Return;
-        ret->dat.ret_dat.v = parse_rval_old(toks);
+        token tmp = {.kind=token::Semicol};
+        ret->dat.ret_dat.v = parse_rval(toks, &tmp);
         n = toks->ith(0);
         if (n.kind != token::Semicol) {
             printf("expected ';' after return instruction; got token %i\n", (int)n.kind);
@@ -658,7 +463,8 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::If;
-        ret->dat.if_dat.b = parse_rval_old(toks);
+        token tmp = {.kind=token::LBRACK};
+        ret->dat.if_dat.b = parse_rval(toks, &tmp);
         ret->dat.if_dat.truebrc = parse_instr_block(toks);
         ret->dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
         instr* curr = ret;
@@ -667,7 +473,8 @@ instr* parse_instr(toklist* toks) {
             *toks = toks->tail();
             instr cif;
             cif.kind = instr::If;
-            cif.dat.if_dat.b = parse_rval_old(toks);
+            token tmp = {.kind=token::LBRACK};
+            cif.dat.if_dat.b = parse_rval(toks, &tmp);
             cif.dat.if_dat.truebrc = parse_instr_block(toks);
             cif.dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
             curr->dat.if_dat.falsebrc.push(&cif);
@@ -685,7 +492,8 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::While;
-        ret->dat.while_dat.b = parse_rval_old(toks);
+        token tmp = {.kind=token::LBRACK};
+        ret->dat.while_dat.b = parse_rval(toks, &tmp);
         ret->dat.while_dat.instrs = parse_instr_block(toks);
         return ret;
     }
@@ -703,7 +511,8 @@ instr* parse_instr(toklist* toks) {
                 // we parse function calls as an rvalue
                 instr* ist = (instr*)malloc(sizeof(instr));
                 ist->kind = instr::Fcall;
-                ist->dat.fcall_dat.call = parse_rval_old(toks);
+                token tmp = {.kind=token::Semicol};
+                ist->dat.fcall_dat.call = parse_rval(toks, &tmp);
                 n = toks->ith(0);
                 if (n.kind != token::Semicol) {
                     printf("expected ';' after instruction; got token %i\n", (int)n.kind);
@@ -727,7 +536,8 @@ instr* parse_instr(toklist* toks) {
                 exit(-1);
             }
             *toks = toks->tail();
-            ist->dat.set_dat.r = parse_rval_old(toks);
+            token tmp = {.kind=token::Semicol};
+            ist->dat.set_dat.r = parse_rval(toks, &tmp);
             n = toks->ith(0);
             if (n.kind != token::Semicol) {
                 printf("expected ';' after instruction; got token %i\n", (int)n.kind);

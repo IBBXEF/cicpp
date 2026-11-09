@@ -44,21 +44,23 @@ type <dat_t> clist {
         return ret;
     }
 
-    func dat_t* ith_ref(int i) {
+    func dat_t* ith_ref(int ind) {
         _clist* t;
         t = l;
+        int i;
+        i = ind;
         while (i > 0)
         {
             if (!t) {
-                printf("out of range in list: index %d while len is %d\n", i, len());
-                exit(0);
+                printf("out of range in list: index %d while len is %d\n", ind, len());
+                exit(-1);
             }
             t = t->next;
             i = i - 1;
         }
         if (!t) {
-            printf("out of range in list: index %d while len is %d\n", i, len());
-            exit(0);
+            printf("out of range in list: index %d while len is %d\n", ind, len());
+            exit(-1);
         }
         dat_t* ret;
         ret = &(t->dat);
@@ -93,6 +95,20 @@ type <dat_t> clist {
             tmp = tail();
             tmp.append(dat);
             (*l).next = tmp.l;
+        }
+    }
+
+    
+    func dat_t remove(int i) {
+        if i == 0 {
+            return pop();
+        } else { // temporary
+            clist tmp;
+            tmp = tail();
+            dat_t ret;
+            ret = tmp.remove(i-1);
+            (*l).next = tmp.l;
+            return ret;
         }
     }
 

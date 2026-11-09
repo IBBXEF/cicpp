@@ -1,10 +1,9 @@
 
 #include "src/cicpp/clist.cicpp"
 
-type <dat_t> set {
-    specialize clist<dat_t> as datlist
+type <set_dat_t> set {
+    specialize clist<set_dat_t> as datlist
     datlist elts;
-    bool has_eps;
 
     func void init() {
         elts.init();
@@ -12,7 +11,7 @@ type <dat_t> set {
     func void del() {
         elts.del();
     }
-    func bool contains(dat_t s) {
+    func bool contains(set_dat_t s) {
         int i;
         i = 0;
         while i < (elts.len()) {
@@ -23,18 +22,35 @@ type <dat_t> set {
         }
         return false;
     }
-    func void add(dat_t s) {
+    func bool remove(set_dat_t s) {
+        int i;
+        i = 0;
+        while i < (elts.len()) {
+            if s.eq(elts.ith(i)) {
+                elts.remove(i);
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+    func bool add(set_dat_t s) {
         if !contains(s) {
             elts.push(s);
+            return true;
         }
+        return false;
     }
-    func void union_with(set other) {
+    func bool union_with(set other) {
+        bool ret;
+        ret = false;
         int i;
         i = 0;
         while i < ((other.elts).len()) {
-            add((other.elts).ith(i));
+            ret = ret || add((other.elts).ith(i));
             i = i + 1;
         }
+        return ret;
     }
 }
 
@@ -43,12 +59,12 @@ type <dat_t> comparable_ptr {
     func void init_null() {
         ptr = nullptr;
     }
-    func void init_vlue(dat_t* p) {
+    func void init_ptr(dat_t* p) {
         ptr = p;
     }
     func bool eq(comparable_ptr p2) {
-        if ptr == nullptr {
-            return (p2.ptr) == nullptr;
+        if (!ptr) || (!(p2.ptr)) {
+            return ptr == (p2.ptr);
         }
         return ptr->eq(*(p2.ptr));
     }
