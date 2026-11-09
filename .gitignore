@@ -13,4 +13,5 @@ _build/**
 !_build/clist.c
 !_build/parser.c
 !_build/anyptr.c
+!_build/set.c
 
