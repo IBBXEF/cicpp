@@ -1,5 +1,6 @@
 
 #include_C "stdlib.h"
+#include_C "stdio.h"
 
 type <dat_t> clist {
     type _clist {
@@ -120,6 +121,8 @@ type <dat_t> clist {
 specialize clist<void*> as clist_voidptr
 
 specialize clist<const char*> as string_list
+
+#include_C "string.h"
 
 func int string_list_find(string_list l, const char* str) {
     int i;

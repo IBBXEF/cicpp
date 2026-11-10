@@ -1,5 +1,6 @@
 #pragma once
 #include <stdlib.h>
+#include <stdio.h>
 #define dat_t void*
 #define clist clist_voidptr
 struct clist {
@@ -40,20 +41,22 @@ struct clist {
     }
     return ret;
   }
-  dat_t* ith_ref(int i){
+  dat_t* ith_ref(int ind){
     _clist* t;
     t = l;
+    int i;
+    i = ind;
     while ((i) > (0)) {
       if (!(t)) {
-        printf("out of range in list: index %d while len is %d\n", i, len());
-        exit(0);
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
       }
       t = (t)->next;
       i = (i) - (1);
     }
     if (!(t)) {
-      printf("out of range in list: index %d while len is %d\n", i, len());
-      exit(0);
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
     }
     dat_t* ret;
     ret = &((t)->dat);
@@ -83,6 +86,18 @@ struct clist {
       tmp = tail();
       (tmp).append(dat);
       (l[0]).next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp;
+      tmp = tail();
+      dat_t ret;
+      ret = (tmp).remove((i) - (1));
+      (l[0]).next = (tmp).l;
+      return ret;
     }
   }
   void init(){
@@ -131,20 +146,22 @@ struct clist {
     }
     return ret;
   }
-  dat_t* ith_ref(int i){
+  dat_t* ith_ref(int ind){
     _clist* t;
     t = l;
+    int i;
+    i = ind;
     while ((i) > (0)) {
       if (!(t)) {
-        printf("out of range in list: index %d while len is %d\n", i, len());
-        exit(0);
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
       }
       t = (t)->next;
       i = (i) - (1);
     }
     if (!(t)) {
-      printf("out of range in list: index %d while len is %d\n", i, len());
-      exit(0);
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
     }
     dat_t* ret;
     ret = &((t)->dat);
@@ -176,12 +193,25 @@ struct clist {
       (l[0]).next = (tmp).l;
     }
   }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp;
+      tmp = tail();
+      dat_t ret;
+      ret = (tmp).remove((i) - (1));
+      (l[0]).next = (tmp).l;
+      return ret;
+    }
+  }
   void init(){
     l = nullptr;
   }
 };
 #undef dat_t
 #undef clist
+#include <string.h>
 int string_list_find(string_list l, const char* str){
   int i;
   i = 0;
@@ -286,20 +316,22 @@ struct clist {
     }
     return ret;
   }
-  dat_t* ith_ref(int i){
+  dat_t* ith_ref(int ind){
     _clist* t;
     t = l;
+    int i;
+    i = ind;
     while ((i) > (0)) {
       if (!(t)) {
-        printf("out of range in list: index %d while len is %d\n", i, len());
-        exit(0);
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
       }
       t = (t)->next;
       i = (i) - (1);
     }
     if (!(t)) {
-      printf("out of range in list: index %d while len is %d\n", i, len());
-      exit(0);
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
     }
     dat_t* ret;
     ret = &((t)->dat);
@@ -331,6 +363,18 @@ struct clist {
       (l[0]).next = (tmp).l;
     }
   }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp;
+      tmp = tail();
+      dat_t ret;
+      ret = (tmp).remove((i) - (1));
+      (l[0]).next = (tmp).l;
+      return ret;
+    }
+  }
   void init(){
     l = nullptr;
   }
@@ -352,7 +396,7 @@ struct unop {
   enum { Lnot, Neg, Addr } kind;
 };
 struct token {
-  enum { TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident } kind;
+  enum { TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident, EndOfInput } kind;
   union {
     struct {
       binop op;
@@ -370,6 +414,9 @@ struct token {
       const char* str;
     } Ident_dat;
    } dat;
+  void init_EOI(){
+    kind = EndOfInput;
+  }
   bool eq(token b){
     if ((kind) != ((b).kind)) {
       return false;
@@ -432,20 +479,22 @@ struct clist {
     }
     return ret;
   }
-  dat_t* ith_ref(int i){
+  dat_t* ith_ref(int ind){
     _clist* t;
     t = l;
+    int i;
+    i = ind;
     while ((i) > (0)) {
       if (!(t)) {
-        printf("out of range in list: index %d while len is %d\n", i, len());
-        exit(0);
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
       }
       t = (t)->next;
       i = (i) - (1);
     }
     if (!(t)) {
-      printf("out of range in list: index %d while len is %d\n", i, len());
-      exit(0);
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
     }
     dat_t* ret;
     ret = &((t)->dat);
@@ -477,6 +526,18 @@ struct clist {
       (l[0]).next = (tmp).l;
     }
   }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp;
+      tmp = tail();
+      dat_t ret;
+      ret = (tmp).remove((i) - (1));
+      (l[0]).next = (tmp).l;
+      return ret;
+    }
+  }
   void init(){
     l = nullptr;
   }
@@ -484,7 +545,9 @@ struct clist {
 #undef dat_t
 #undef clist
 toklist lex_string(const char* str);
-#include <climits>
+#include <limits.h>
+#include <stdio.h>
+#include <string.h>
 int string_list_thingy(string_list* l, char* str){
   int i;
   i = string_list_find(l[0], str);
@@ -555,20 +618,22 @@ struct gram_rule_t {
       }
       return ret;
     }
-    dat_t* ith_ref(int i){
+    dat_t* ith_ref(int ind){
       _clist* t;
       t = l;
+      int i;
+      i = ind;
       while ((i) > (0)) {
         if (!(t)) {
-          printf("out of range in list: index %d while len is %d\n", i, len());
-          exit(0);
+          printf("out of range in list: index %d while len is %d\n", ind, len());
+          exit(-(1));
         }
         t = (t)->next;
         i = (i) - (1);
       }
       if (!(t)) {
-        printf("out of range in list: index %d while len is %d\n", i, len());
-        exit(0);
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
       }
       dat_t* ret;
       ret = &((t)->dat);
@@ -598,6 +663,18 @@ struct gram_rule_t {
         tmp = tail();
         (tmp).append(dat);
         (l[0]).next = (tmp).l;
+      }
+    }
+    dat_t remove(int i){
+      if ((i) == (0)) {
+        return pop();
+      } else {
+        clist tmp;
+        tmp = tail();
+        dat_t ret;
+        ret = (tmp).remove((i) - (1));
+        (l[0]).next = (tmp).l;
+        return ret;
       }
     }
     void init(){
@@ -643,7 +720,7 @@ struct gram_rule_t {
     bool includes(gram_symbol_t s){
       if (((kind) == (NonTerm)) || (((s).kind) == (NonTerm))) {
         printf("invalid inclusion test of gram_symbol_t\n");
-        exit(-(1));
+        exit(EXIT_FAILURE);
       }
       if ((((s).kind) == (Exact)) || ((kind) == (Term))) {
         return match_tok((((s).dat).Exact_dat).tok);
@@ -712,20 +789,22 @@ struct gram_rule_t {
       }
       return ret;
     }
-    dat_t* ith_ref(int i){
+    dat_t* ith_ref(int ind){
       _clist* t;
       t = l;
+      int i;
+      i = ind;
       while ((i) > (0)) {
         if (!(t)) {
-          printf("out of range in list: index %d while len is %d\n", i, len());
-          exit(0);
+          printf("out of range in list: index %d while len is %d\n", ind, len());
+          exit(-(1));
         }
         t = (t)->next;
         i = (i) - (1);
       }
       if (!(t)) {
-        printf("out of range in list: index %d while len is %d\n", i, len());
-        exit(0);
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
       }
       dat_t* ret;
       ret = &((t)->dat);
@@ -755,6 +834,18 @@ struct gram_rule_t {
         tmp = tail();
         (tmp).append(dat);
         (l[0]).next = (tmp).l;
+      }
+    }
+    dat_t remove(int i){
+      if ((i) == (0)) {
+        return pop();
+      } else {
+        clist tmp;
+        tmp = tail();
+        dat_t ret;
+        ret = (tmp).remove((i) - (1));
+        (l[0]).next = (tmp).l;
+        return ret;
       }
     }
     void init(){
@@ -808,20 +899,22 @@ struct gram_rule_t {
         }
         return ret;
       }
-      dat_t* ith_ref(int i){
+      dat_t* ith_ref(int ind){
         _clist* t;
         t = l;
+        int i;
+        i = ind;
         while ((i) > (0)) {
           if (!(t)) {
-            printf("out of range in list: index %d while len is %d\n", i, len());
-            exit(0);
+            printf("out of range in list: index %d while len is %d\n", ind, len());
+            exit(-(1));
           }
           t = (t)->next;
           i = (i) - (1);
         }
         if (!(t)) {
-          printf("out of range in list: index %d while len is %d\n", i, len());
-          exit(0);
+          printf("out of range in list: index %d while len is %d\n", ind, len());
+          exit(-(1));
         }
         dat_t* ret;
         ret = &((t)->dat);
@@ -853,6 +946,18 @@ struct gram_rule_t {
           (l[0]).next = (tmp).l;
         }
       }
+      dat_t remove(int i){
+        if ((i) == (0)) {
+          return pop();
+        } else {
+          clist tmp;
+          tmp = tail();
+          dat_t ret;
+          ret = (tmp).remove((i) - (1));
+          (l[0]).next = (tmp).l;
+          return ret;
+        }
+      }
       void init(){
         l = nullptr;
       }
@@ -871,26 +976,25 @@ struct gram_rule_t {
       }
       _n_nonterms = n_nonterms;
     }
-    bool add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r){
+    void add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r){
       if (((int)(s).kind) == (2)) {
         printf("invalid gram symbol for rule table: it is Nonterminal\n");
-        exit(-(1));
+        exit(EXIT_FAILURE);
+      }
+      if (((nonterm) < (0)) || ((nonterm) >= (_n_nonterms))) {
+        printf("invalid nonterminal index %d in parsing table\n", nonterm);
+        exit(EXIT_FAILURE);
       }
       int i;
       i = 0;
-      while ((i) < (_n_nonterms)) {
-        pairlist table;
-        table = tables[i];
-        int j;
-        j = 0;
-        while ((j) < ((table).len())) {
-          gram_symbol_t s2;
-          s2 = ((table).ith(j)).s;
-          if (((s2).includes(s)) || ((s).includes(s2))) {
-            printf("conflicting entry in the parsing table\n");
-            exit(-(1));
-          }
-          j = (j) + (1);
+      pairlist table;
+      table = tables[nonterm];
+      while ((i) < ((table).len())) {
+        gram_symbol_t s2;
+        s2 = ((table).ith(i)).s;
+        if (((s2).includes(s)) || ((s).includes(s2))) {
+          printf("conflicting entry in the parsing table\n");
+          exit(EXIT_FAILURE);
         }
         i = (i) + (1);
       }
@@ -900,6 +1004,10 @@ struct gram_rule_t {
       (tables[nonterm]).push(pair);
     }
     gram_rule_t* lookup(token t, int nonterm){
+      if (((nonterm) < (0)) || ((nonterm) >= (_n_nonterms))) {
+        printf("invalid nonterminal index %d in parsing table\n", nonterm);
+        exit(EXIT_FAILURE);
+      }
       int i;
       i = 0;
       pairlist tab;
@@ -908,17 +1016,16 @@ struct gram_rule_t {
         if ((((tab).ith(i)).s).match_tok(t)) {
           return ((tab).ith(i)).r;
         }
+        i = (i) + (1);
       }
       return nullptr;
-    }
-    void init_build(gram_rules rules, string_list nonterm_symbs){
-      init_empty((nonterm_symbs).len());
     }
     void del(){
       int i;
       i = 0;
       while ((i) < (_n_nonterms)) {
         (tables[i]).del();
+        i = (i) + (1);
       }
     }
   };
@@ -948,7 +1055,10 @@ struct gram_rule_t {
       kind = Leaf;
       ((dat).Leaf_dat).t = t;
     }
-    void add_child(parsed_ast* child){
+    void push_child(parsed_ast* child){
+      (((dat).Node_dat).childrens).push(child);
+    }
+    void append_child(parsed_ast* child){
       (((dat).Node_dat).childrens).append(child);
     }
     anyptr evaluate_ast(){
@@ -976,7 +1086,7 @@ struct gram_rule_t {
         return res;
       } else {
         printf("tried to evaluate unknown ast node\n");
-        exit(-(1));
+        exit(EXIT_FAILURE);
       }
     }
   };
@@ -1021,20 +1131,22 @@ struct gram_rule_t {
         }
         return ret;
       }
-      dat_t* ith_ref(int i){
+      dat_t* ith_ref(int ind){
         _clist* t;
         t = l;
+        int i;
+        i = ind;
         while ((i) > (0)) {
           if (!(t)) {
-            printf("out of range in list: index %d while len is %d\n", i, len());
-            exit(0);
+            printf("out of range in list: index %d while len is %d\n", ind, len());
+            exit(-(1));
           }
           t = (t)->next;
           i = (i) - (1);
         }
         if (!(t)) {
-          printf("out of range in list: index %d while len is %d\n", i, len());
-          exit(0);
+          printf("out of range in list: index %d while len is %d\n", ind, len());
+          exit(-(1));
         }
         dat_t* ret;
         ret = &((t)->dat);
@@ -1066,6 +1178,18 @@ struct gram_rule_t {
           (l[0]).next = (tmp).l;
         }
       }
+      dat_t remove(int i){
+        if ((i) == (0)) {
+          return pop();
+        } else {
+          clist tmp;
+          tmp = tail();
+          dat_t ret;
+          ret = (tmp).remove((i) - (1));
+          (l[0]).next = (tmp).l;
+          return ret;
+        }
+      }
       void init(){
         l = nullptr;
       }
@@ -1079,7 +1203,7 @@ struct gram_rule_t {
     }
     void init(gram_symbol_t symb, parsed_ast* ast){
       sym = symb;
-      ast_loc = ast_loc;
+      ast_loc = ast;
     }
   };
   #define dat_t symbol_dat
@@ -1122,20 +1246,22 @@ struct gram_rule_t {
       }
       return ret;
     }
-    dat_t* ith_ref(int i){
+    dat_t* ith_ref(int ind){
       _clist* t;
       t = l;
+      int i;
+      i = ind;
       while ((i) > (0)) {
         if (!(t)) {
-          printf("out of range in list: index %d while len is %d\n", i, len());
-          exit(0);
+          printf("out of range in list: index %d while len is %d\n", ind, len());
+          exit(-(1));
         }
         t = (t)->next;
         i = (i) - (1);
       }
       if (!(t)) {
-        printf("out of range in list: index %d while len is %d\n", i, len());
-        exit(0);
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
       }
       dat_t* ret;
       ret = &((t)->dat);
@@ -1165,6 +1291,18 @@ struct gram_rule_t {
         tmp = tail();
         (tmp).append(dat);
         (l[0]).next = (tmp).l;
+      }
+    }
+    dat_t remove(int i){
+      if ((i) == (0)) {
+        return pop();
+      } else {
+        clist tmp;
+        tmp = tail();
+        dat_t ret;
+        ret = (tmp).remove((i) - (1));
+        (l[0]).next = (tmp).l;
+        return ret;
       }
     }
     void init(){
@@ -1214,11 +1352,355 @@ struct gram_rule_t {
     }
     printf("\n");
   }
+  #define dat_t gram_symbol_t
+  #define comparable_ptr term_ptr
+  struct comparable_ptr {
+    dat_t* ptr;
+    void init_null(){
+      ptr = nullptr;
+    }
+    void init_ptr(dat_t* p){
+      ptr = p;
+    }
+    bool eq(comparable_ptr p2){
+      if ((!(ptr)) || (!((p2).ptr))) {
+        return (ptr) == ((p2).ptr);
+      }
+      return (ptr)->eq((p2).ptr[0]);
+    }
+  };
+  #undef dat_t
+  #undef comparable_ptr
+  #define set_dat_t term_ptr
+  #define set term_set
+  struct set {
+    #define dat_t set_dat_t
+    #define clist datlist
+    struct clist {
+      struct _clist {
+        dat_t dat;
+        _clist* next;
+      };
+      _clist* l;
+      void push(dat_t dat){
+        _clist* n;
+        n = (_clist*)malloc(sizeof(_clist));
+        (n[0]).dat = dat;
+        (n[0]).next = l;
+        l = n;
+      }
+      dat_t pop(){
+        dat_t ret;
+        ret = (l)->dat;
+        _clist* tmp;
+        tmp = (l)->next;
+        free(l);
+        l = tmp;
+        return ret;
+      }
+      void del(){
+        while (l) {
+          pop();
+        }
+      }
+      int len(){
+        int ret;
+        ret = 0;
+        _clist* t;
+        t = l;
+        while (t) {
+          ret = (ret) + (1);
+          t = (t)->next;
+        }
+        return ret;
+      }
+      dat_t* ith_ref(int ind){
+        _clist* t;
+        t = l;
+        int i;
+        i = ind;
+        while ((i) > (0)) {
+          if (!(t)) {
+            printf("out of range in list: index %d while len is %d\n", ind, len());
+            exit(-(1));
+          }
+          t = (t)->next;
+          i = (i) - (1);
+        }
+        if (!(t)) {
+          printf("out of range in list: index %d while len is %d\n", ind, len());
+          exit(-(1));
+        }
+        dat_t* ret;
+        ret = &((t)->dat);
+        return ret;
+      }
+      dat_t ith(int i){
+        return ith_ref(i)[0];
+      }
+      void reverse(){
+        clist rev;
+        (rev).init();
+        while (l) {
+          (rev).push(pop());
+        }
+        l = (rev).l;
+      }
+      clist tail(){
+        clist ret;
+        (ret).l = (l)->next;
+        return ret;
+      }
+      void append(dat_t dat){
+        if ((l) == (nullptr)) {
+          push(dat);
+        } else {
+          clist tmp;
+          tmp = tail();
+          (tmp).append(dat);
+          (l[0]).next = (tmp).l;
+        }
+      }
+      dat_t remove(int i){
+        if ((i) == (0)) {
+          return pop();
+        } else {
+          clist tmp;
+          tmp = tail();
+          dat_t ret;
+          ret = (tmp).remove((i) - (1));
+          (l[0]).next = (tmp).l;
+          return ret;
+        }
+      }
+      void init(){
+        l = nullptr;
+      }
+    };
+    #undef dat_t
+    #undef clist
+    datlist elts;
+    void init(){
+      (elts).init();
+    }
+    void del(){
+      (elts).del();
+    }
+    bool contains(set_dat_t s){
+      int i;
+      i = 0;
+      while ((i) < ((elts).len())) {
+        if ((s).eq((elts).ith(i))) {
+          return true;
+        }
+        i = (i) + (1);
+      }
+      return false;
+    }
+    bool remove(set_dat_t s){
+      int i;
+      i = 0;
+      while ((i) < ((elts).len())) {
+        if ((s).eq((elts).ith(i))) {
+          (elts).remove(i);
+          return true;
+        }
+        i = (i) + (1);
+      }
+      return false;
+    }
+    bool add(set_dat_t s){
+      if (!(contains(s))) {
+        (elts).push(s);
+        return true;
+      }
+      return false;
+    }
+    bool union_with(set other){
+      bool ret;
+      ret = false;
+      int i;
+      i = 0;
+      while ((i) < (((other).elts).len())) {
+        ret = (add(((other).elts).ith(i))) || (ret);
+        i = (i) + (1);
+      }
+      return ret;
+    }
+  };
+  #undef set_dat_t
+  #undef set
+  static
+  parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm, gram_symbol_t* stop_symbol){
+    term_set* Fi;
+    Fi = (term_set*)malloc((sizeof(term_set)) * ((nonterm_symbs).len()));
+    term_set* FiRules;
+    FiRules = (term_set*)malloc((sizeof(term_set)) * ((rules).len()));
+    term_ptr tmp_ptr;
+    term_ptr epsilon;
+    (tmp_ptr).init_null();
+    (epsilon).init_null();
+    int i;
+    i = 0;
+    while ((i) < ((nonterm_symbs).len())) {
+      (Fi[i]).init();
+      i = (i) + (1);
+    }
+    i = 0;
+    while ((i) < ((rules).len())) {
+      (FiRules[i]).init();
+      i = (i) + (1);
+    }
+    bool not_finished;
+    not_finished = true;
+    while (not_finished) {
+      not_finished = false;
+      i = 0;
+      while ((i) < ((rules).len())) {
+        gram_rule_t* rule;
+        rule = (rules).ith(i);
+        term_set* cFi;
+        cFi = (Fi) + ((rule)->result);
+        term_set addFi;
+        (addFi).init();
+        int j;
+        j = (((rule)->pattern).len()) - (1);
+        while ((0) <= (j)) {
+          gram_symbol_t* sy;
+          sy = ((rule)->pattern).ith_ref(j);
+          if (((int)(sy)->kind) != (2)) {
+            (tmp_ptr).init_ptr(sy);
+            (addFi).add(tmp_ptr);
+            j = -(1);
+          } else {
+            term_set* oFi;
+            oFi = (Fi) + ((((sy)->dat).NonTerm_dat).symb);
+            if ((oFi)->contains(epsilon)) {
+              (tmp_ptr).init_null();
+              (oFi)->remove(epsilon);
+              (addFi).union_with(oFi[0]);
+              (oFi)->add(epsilon);
+            } else {
+              (addFi).union_with(oFi[0]);
+              j = -(1);
+            }
+          }
+          j = (j) - (1);
+        }
+        if ((j) == (((rule)->pattern).len())) {
+          (addFi).add(epsilon);
+        }
+        (FiRules[i]).del();
+        FiRules[i] = addFi;
+        not_finished = ((cFi)->union_with(addFi)) || (not_finished);
+        i = (i) + (1);
+      }
+    }
+    term_set* Fo;
+    Fo = (term_set*)malloc((sizeof(term_set)) * ((nonterm_symbs).len()));
+    i = 0;
+    while ((i) < ((nonterm_symbs).len())) {
+      (Fo[i]).init();
+      i = (i) + (1);
+    }
+    (tmp_ptr).init_ptr(stop_symbol);
+    (Fo[goal_nonterm]).add(tmp_ptr);
+    not_finished = true;
+    while (not_finished) {
+      not_finished = false;
+      i = 0;
+      while ((i) < ((rules).len())) {
+        gram_rule_t* rule;
+        rule = (rules).ith(i);
+        term_set* cFo;
+        cFo = (Fo) + ((rule)->result);
+        term_set wFi;
+        (wFi).init();
+        (wFi).add(epsilon);
+        int j;
+        j = 0;
+        while ((j) < (((rule)->pattern).len())) {
+          gram_symbol_t* sy;
+          sy = ((rule)->pattern).ith_ref(j);
+          if (((int)(sy)->kind) != (2)) {
+            (wFi).del();
+            (wFi).init();
+            (tmp_ptr).init_ptr(sy);
+            (wFi).add(tmp_ptr);
+          } else {
+            term_set* oFo;
+            oFo = (Fo) + ((((sy)->dat).NonTerm_dat).symb);
+            if ((wFi).contains(epsilon)) {
+              not_finished = ((cFo)->union_with(oFo[0])) || (not_finished);
+            }
+            not_finished = ((oFo)->union_with(wFi)) || (not_finished);
+            term_set* oFi;
+            oFi = (Fi) + ((((sy)->dat).NonTerm_dat).symb);
+            if ((oFi)->contains(epsilon)) {
+              (oFi)->remove(epsilon);
+              (wFi).union_with(oFi[0]);
+              (oFi)->add(epsilon);
+            } else {
+              (wFi).del();
+              (wFi).init();
+              (wFi).union_with(oFi[0]);
+            }
+          }
+          j = (j) + (1);
+        }
+        i = (i) + (1);
+      }
+    }
+    parsing_table ret;
+    (ret).init_empty((nonterm_symbs).len());
+    i = 0;
+    while ((i) < ((nonterm_symbs).len())) {
+      term_set cFo;
+      cFo = Fo[i];
+      (cFo).remove(epsilon);
+      int j;
+      j = 0;
+      while ((j) < ((rules).len())) {
+        if ((((rules).ith(j))->result) == (i)) {
+          term_set cFi;
+          cFi = FiRules[j];
+          term_set tmp;
+          (tmp).init();
+          (tmp).union_with(cFi);
+          (tmp).remove(epsilon);
+          if ((cFi).contains(epsilon)) {
+            (tmp).union_with(cFo);
+          }
+          int k;
+          k = 0;
+          while ((k) < (((tmp).elts).len())) {
+            gram_symbol_t* s;
+            s = (((tmp).elts).ith(k)).ptr;
+            (ret).add_entry(s[0], i, (rules).ith(j));
+            k = (k) + (1);
+          }
+        }
+        j = (j) + (1);
+      }
+      (cFo).del();
+      (Fi[i]).del();
+      i = (i) + (1);
+    }
+    i = 0;
+    while ((i) < ((rules).len())) {
+      (FiRules[i]).del();
+      i = (i) + (1);
+    }
+    free(Fi);
+    free(FiRules);
+    free(Fo);
+    return ret;
+  }
   static
   anyptr parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs){
     if (((int)(stop_symbol).kind) == (2)) {
       printf("invalid stop symbol: it is Nonterminal\n");
-      exit(-(1));
+      exit(EXIT_FAILURE);
     }
     symdatlist stack;
     parsed_ast ast;
@@ -1229,20 +1711,29 @@ struct gram_rule_t {
     symbol_dat sym_dat_tmp;
     (sym_dat_tmp).init(sym_tmp, &(ast));
     (stack).push(sym_dat_tmp);
+    token stop_token;
+    if (((int)(stop_symbol).kind) == (1)) {
+      stop_token = (((stop_symbol).dat).Exact_dat).tok;
+    } else
+    stop_token = (((stop_symbol).dat).Term_dat).tok;
     parsing_table table;
-    (table).init_build(rules, nonterm_symbs);
-    while (((l)->len()) && (!((stop_symbol).match_tok((l)->ith(0))))) {
+    table = make_parsing_table(rules, nonterm_symbs, goal_nonterm, &(stop_symbol));
+    while (((stack).len()) > (0)) {
       symbol_dat stacktop;
       stacktop = (stack).pop();
       token inptop;
-      inptop = (l)->ith(0);
-      l[0] = (l)->tail();
+      if (((l)->len()) && (!((stop_symbol).match_tok((l)->ith(0))))) {
+        inptop = (l)->ith(0);
+        l[0] = (l)->tail();
+      } else
+      inptop = stop_token;
       if (((int)((stacktop).sym).kind) != (2)) {
         if (!(((stacktop).sym).match_tok(inptop))) {
           printf("failed to parse: got token id %d\n", (int)(inptop).kind);
-          exit(-(1));
+          exit(EXIT_FAILURE);
         }
         (stacktop).update_tok_ast(inptop);
+        printf("parse tok ok\n");
       } else {
         int nt;
         nt = ((((stacktop).sym).dat).NonTerm_dat).symb;
@@ -1250,7 +1741,7 @@ struct gram_rule_t {
         rule = (table).lookup(inptop, nt);
         if ((rule) == (nullptr)) {
           printf("failed to parse: no rule found for nonterminal %s with token kind %d\n", (nonterm_symbs).ith(nt), (int)(inptop).kind);
-          exit(-(1));
+          exit(EXIT_FAILURE);
         }
         parsed_ast* ast_loc;
         ast_loc = (stacktop).ast_loc;
@@ -1259,19 +1750,19 @@ struct gram_rule_t {
         first_child = (parsed_ast*)malloc(sizeof(parsed_ast));
         (first_child)->init_leaf(inptop);
         int i;
-        i = (((rule)->pattern).len()) - (2);
-        while ((i) >= (0)) {
+        i = 0;
+        while ((i) < ((((rule)->pattern).len()) - (1))) {
           parsed_ast* child_ast;
           child_ast = (parsed_ast*)malloc(sizeof(parsed_ast));
           (child_ast)->init_unknown();
-          (ast_loc)->add_child(child_ast);
+          (ast_loc)->push_child(child_ast);
           symbol_dat sym_dat;
           (sym_dat).init(((rule)->pattern).ith(i), child_ast);
           (stack).push(sym_dat);
-          i = (i) - (1);
+          i = (i) + (1);
         }
-        (ast_loc)->add_child(first_child);
-        ((((ast_loc)->dat).Node_dat).childrens).reverse();
+        (ast_loc)->push_child(first_child);
+        printf("parse nt ok\n");
       }
     }
     (table).del();
@@ -1284,7 +1775,7 @@ gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_any
   char* tmp;
   if (((str[0]) != (36)) || ((str[1]) == (36))) {
     printf("rule initial symbol must be a nonterminal\n");
-    exit(-(1));
+    exit(EXIT_FAILURE);
   }
   str = (str) + (1);
   gram_rule_t ret;
@@ -1294,7 +1785,7 @@ gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_any
   }
   if (((str[0]) != (45)) || ((str[1]) != (62))) {
     printf("expected \"->\" after initial symbol of rule\n");
-    exit(-(1));
+    exit(EXIT_FAILURE);
   }
   str = (str) + (2);
   while (str[0]) {

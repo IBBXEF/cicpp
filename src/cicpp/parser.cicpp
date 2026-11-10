@@ -3,7 +3,10 @@
 #include "src/cicpp/anyptr.cicpp"
 #include "src/cicpp/set.cicpp"
 #include "src/cicpp/lexer.cicpp"
-#include_C "climits"
+#include_C "limits.h"
+#include_C "stdio.h"
+#include_C "string.h"
+
 
 // if the string is in the list, the pointer is freed and the index returned. otherwise, it is added to the list and its idex is returned
 func int string_list_thingy(string_list* l, char* str) {
@@ -69,7 +72,7 @@ type gram_rule_t {
         func bool includes(gram_symbol_t s) {
             if (kind == NonTerm) || ((s.kind) == NonTerm) {
                 printf("invalid inclusion test of gram_symbol_t\n");
-                exit(-1);
+                exit(EXIT_FAILURE);
             }
             if ((s.kind) == Exact) || (kind == Term) {
                 return match_tok(((s.dat).Exact_dat).tok);
@@ -121,23 +124,22 @@ type gram_rule_t {
         func void add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r) {
             if ((s.kind) as int) == 2 { // 2 = Nonterminal
                 printf("invalid gram symbol for rule table: it is Nonterminal\n");
-                exit(-1);
+                exit(EXIT_FAILURE);
+            }
+            if ((nonterm < 0) || (nonterm >= _n_nonterms)) {
+                printf("invalid nonterminal index %d in parsing table\n", nonterm);
+                exit(EXIT_FAILURE);
             }
             int i;
             i = 0;
-            while i < _n_nonterms {
-                pairlist table;
-                table = tables[i];
-                int j;
-                j = 0;
-                while j < (table.len()) {
-                    gram_symbol_t s2;
-                    s2 = (table.ith(j)).s;
-                    if ((s2.includes(s)) || (s.includes(s2))) {
-                        printf("conflicting entry in the parsing table\n");
-                        exit(-1);
-                    }
-                    j = j + 1;
+            pairlist table;
+            table = tables[nonterm];
+            while i < (table.len()) {
+                gram_symbol_t s2;
+                s2 = (table.ith(i)).s;
+                if ((s2.includes(s)) || (s.includes(s2))) {
+                    printf("conflicting entry in the parsing table\n");
+                    exit(EXIT_FAILURE);
                 }
                 i = i + 1;
             }
@@ -147,14 +149,19 @@ type gram_rule_t {
             tables[nonterm].push(pair);
         }
         func gram_rule_t* lookup(token t, int nonterm) {
+            if ((nonterm < 0) || (nonterm >= _n_nonterms)) {
+                printf("invalid nonterminal index %d in parsing table\n", nonterm);
+                exit(EXIT_FAILURE);
+            }
             int i;
             i = 0;
             pairlist tab;
             tab = tables[nonterm];
-            while i < tab.len() {
+            while i < (tab.len()) {
                 if ((tab.ith(i)).s).match_tok(t) {
                     return (tab.ith(i)).r;
                 }
+                i = i + 1;
             }
             return nullptr;
         }
@@ -163,6 +170,7 @@ type gram_rule_t {
             i = 0;
             while i < _n_nonterms {
                 tables[i].del(); // the list's elements don't allocate memory
+                i = i + 1;
             }
         }
     }
@@ -192,7 +200,10 @@ type gram_rule_t {
             kind = Leaf;
             (dat.Leaf_dat).t = t;
         }
-        func void add_child(parsed_ast* child) {
+        func void push_child(parsed_ast* child) {
+            ((dat.Node_dat).childrens).push(child);
+        }
+        func void append_child(parsed_ast* child) {
             ((dat.Node_dat).childrens).append(child);
         }
 
@@ -220,7 +231,7 @@ type gram_rule_t {
                 return res;
             } else { // Unknown
                 printf("tried to evaluate unknown ast node\n");
-                exit(-1);
+                exit(EXIT_FAILURE);
             }
         }
     }
@@ -289,7 +300,7 @@ type gram_rule_t {
     specialize comparable_ptr<gram_symbol_t> as term_ptr
     specialize set<term_ptr> as term_set
 
-    static func parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm) {
+    static func parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm, gram_symbol_t* stop_symbol) {
         // create an initialize Fi
         term_set* Fi;
         Fi = (malloc(sizeof(term_set)*(nonterm_symbs.len()))) as term_set*;
@@ -326,14 +337,14 @@ type gram_rule_t {
                 term_set addFi;
                 addFi.init();
                 int j;
-                j = 0;
-                while j < ((rule->pattern).len()) {
+                j = ((rule->pattern).len())-1; // pattern is stored in reverse order
+                while 0 <= j {
                     gram_symbol_t* sy;
                     sy = (rule->pattern).ith_ref(j);
                     if ((sy->kind) as int) != 2 { // terminal or exact
                         tmp_ptr.init_ptr(sy);
                         addFi.add(tmp_ptr);
-                        j = INT_MAX-1; // we break the loop
+                        j = -1; // we break the loop
                     } else { // nonterminal
                         term_set* oFi;
                         oFi = Fi + (((sy->dat).NonTerm_dat).symb); // other Fi
@@ -344,17 +355,17 @@ type gram_rule_t {
                             oFi->add(epsilon);
                         } else {
                             addFi.union_with(*oFi);
-                            j = INT_MAX-1; // we break out of the loop
+                            j = -1; // we break out of the loop
                         }
                     }
-                    j = j + 1;
+                    j = j - 1;
                 }
                 if j == ((rule->pattern).len()) {
                     addFi.add(epsilon); // we add epsilon
                 }
                 FiRules[i].del();
                 FiRules[i] = addFi;
-                not_finished = not_finished || (cFi->union_with(addFi));
+                not_finished = (cFi->union_with(addFi)) || not_finished;
                 i = i + 1;
             }
         }
@@ -367,12 +378,7 @@ type gram_rule_t {
             Fo[i].init();
             i = i + 1;
         }
-        token t;
-        t.init_EOI();
-        gram_symbol_t* eoi_symb;
-        eoi_symb = (malloc(sizeof(gram_symbol_t))) as gram_symbol_t*;        
-        eoi_symb->set_exact(t);
-        tmp_ptr.init_ptr(eoi_symb);
+        tmp_ptr.init_ptr(stop_symbol);
         Fo[goal_nonterm].add(tmp_ptr);
 
         // populate Fo
@@ -390,8 +396,8 @@ type gram_rule_t {
                 wFi.init();
                 wFi.add(epsilon);
                 int j;
-                j = ((rule->pattern).len()) - 1; // we iterate the pattern in reverse order
-                while 0 <= j {
+                j = 0; // we iterate the pattern in reverse order
+                while j < ((rule->pattern).len()) {
                     gram_symbol_t* sy;
                     sy = (rule->pattern).ith_ref(j);
                     if ((sy->kind) as int) != 2 { // terminal or exact
@@ -403,9 +409,9 @@ type gram_rule_t {
                         term_set* oFo;
                         oFo = Fo + (((sy->dat).NonTerm_dat).symb); // other Fi
                         if wFi.contains(epsilon) {
-                            not_finished = not_finished || (cFo->union_with(*oFo));
+                            not_finished = (cFo->union_with(*oFo)) || not_finished;
                         }
-                        not_finished = not_finished || (oFo->union_with(wFi)); // this may add epsilon to the set, but we'll clean it later
+                        not_finished = (oFo->union_with(wFi)) || not_finished; // this may add epsilon to the set, but we'll clean it later
 
                         term_set* oFi;
                         oFi = Fi + (((sy->dat).NonTerm_dat).symb); // other Fi
@@ -419,7 +425,7 @@ type gram_rule_t {
                             wFi.union_with(*oFi);
                         }
                     }
-                    j = j - 1;
+                    j = j + 1;
                 }
                 i = i + 1;
             }
@@ -436,28 +442,29 @@ type gram_rule_t {
             int j;
             j = 0;
             while j < (rules.len()) {
-                term_set cFi;
-                cFi = FiRules[j];
+                if ((((rules).ith(j))->result) == i) {
+                    term_set cFi;
+                    cFi = FiRules[j];
 
-                term_set tmp;
-                tmp.init();
+                    term_set tmp;
+                    tmp.init();
 
-                tmp.union_with(cFi);
-                tmp.remove(epsilon);
+                    tmp.union_with(cFi);
+                    tmp.remove(epsilon);
 
-                if cFi.contains(epsilon) {
-                    tmp.union_with(cFo);
+                    if cFi.contains(epsilon) {
+                        tmp.union_with(cFo);
+                    }
+
+                    int k;
+                    k = 0;
+                    while k < (tmp.elts).len() {
+                        gram_symbol_t* s;
+                        s = ((tmp.elts).ith(k)).ptr;
+                        ret.add_entry(*s, i, rules.ith(j));
+                        k = k + 1;
+                    }
                 }
-
-                int k;
-                k = 0;
-                while k < (tmp.elts).len() {
-                    gram_symbol_t* s;
-                    s = ((tmp.elts).ith(k)).ptr;
-                    ret.add_entry(*s, i, rules.ith(j));
-                    k = k + 1;
-                }
-
                 j = j + 1;
             }
             cFo.del();
@@ -478,7 +485,7 @@ type gram_rule_t {
     static func anyptr parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs) {
         if ((stop_symbol.kind) as int) == 2 { // 2 = Nonterminal
             printf("invalid stop symbol: it is Nonterminal\n");
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         symdatlist stack;
         parsed_ast ast;
@@ -491,23 +498,34 @@ type gram_rule_t {
         sym_dat_tmp.init(sym_tmp, &ast);
         stack.push(sym_dat_tmp);
 
-        parsing_table table;
-        table = make_parsing_table(rules, nonterm_symbs, goal_nonterm); // we rebuild the table each time, it is wasteful but for now it's okay
+        token stop_token;
+        if (((stop_symbol.kind) as int) == 1) { // Exact
+            stop_token = ((stop_symbol.dat).Exact_dat).tok;
+        } else {
+            stop_token = ((stop_symbol.dat).Term_dat).tok;
+        }
 
-        while (l->len()) && !(stop_symbol.match_tok(l->ith(0))) {
+        parsing_table table;
+        table = make_parsing_table(rules, nonterm_symbs, goal_nonterm, &stop_symbol); // we rebuild the table each time, it is wasteful but for now it's okay
+
+        while (stack.len()) > 0 {
             symbol_dat stacktop;
             stacktop = stack.pop();
-
             token inptop;
-            inptop = l->ith(0);
-            *l = l->tail();
+            if (l->len()) && !(stop_symbol.match_tok(l->ith(0))) {
+                inptop = l->ith(0);
+                *l = l->tail();
+            } else {
+                inptop = stop_token;
+            }
 
             if (((stacktop.sym).kind) as int) != 2 { // the top element of our stack is a token
                 if !(stacktop.sym).match_tok(inptop) {
                     printf("failed to parse: got token id %d\n", (inptop.kind) as int);
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
                 stacktop.update_tok_ast(inptop);
+                printf("parse tok ok\n");
             } else { // the element at the top of our stack is a nonterminal
                 int nt;
                 nt = (((stacktop.sym).dat).NonTerm_dat).symb; // current nonterminal
@@ -515,7 +533,7 @@ type gram_rule_t {
                 rule = table.lookup(inptop, nt);
                 if rule == nullptr {
                     printf("failed to parse: no rule found for nonterminal %s with token kind %d\n", (nonterm_symbs.ith(nt)), (inptop.kind) as int);
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
                 
                 parsed_ast* ast_loc;
@@ -525,23 +543,22 @@ type gram_rule_t {
                 // we apply the rule
                 parsed_ast* first_child;
                 first_child = (malloc(sizeof(parsed_ast))) as parsed_ast*;
-                first_child->init_leaf(inptop); // we keep the first child for later
+                first_child->init_leaf(inptop);
                 int i;
-                i = ((rule->pattern).len()) - 2;
-                while i >= 0 {
+                i = 0;
+                while i < (((rule->pattern).len()) - 1) {
                     parsed_ast* child_ast;
                     child_ast = (malloc(sizeof(parsed_ast))) as parsed_ast*;
                     child_ast->init_unknown();
-                    ast_loc->add_child(child_ast);
+                    ast_loc->push_child(child_ast);
 
                     symbol_dat sym_dat;
                     sym_dat.init((rule->pattern).ith(i), child_ast);
                     stack.push(sym_dat);
-                    i = i - 1;
+                    i = i + 1;
                 }
-                ast_loc->add_child(first_child);
-                // the children are in reverse order, so the first one goes in last
-                (((ast_loc->dat).Node_dat).childrens).reverse();
+                ast_loc->push_child(first_child);
+                printf("parse nt ok\n");
             }
         }
 
@@ -560,7 +577,7 @@ func gram_rule_t* make_rule(const char* str, clist_anyptr -> anyptr rule_result_
     char* tmp;
     if (str[0] != '$') || (str[1] == '$') {
         printf("rule initial symbol must be a nonterminal\n");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     str = str + 1;
@@ -573,7 +590,7 @@ func gram_rule_t* make_rule(const char* str, clist_anyptr -> anyptr rule_result_
     while (*str) && ((*str) == ' ') { str = str + 1; }
     if (str[0] != '-') || (str[1] != '>') {          // testing we have a "->" after first symbol
         printf("expected \"->\" after initial symbol of rule\n");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     str = str + 2;
 

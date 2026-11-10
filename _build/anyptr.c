@@ -1,5 +1,6 @@
 #pragma once
 #include <stdlib.h>
+#include <stdio.h>
 #define dat_t void*
 #define clist clist_voidptr
 struct clist {
@@ -40,20 +41,22 @@ struct clist {
     }
     return ret;
   }
-  dat_t* ith_ref(int i){
+  dat_t* ith_ref(int ind){
     _clist* t;
     t = l;
+    int i;
+    i = ind;
     while ((i) > (0)) {
       if (!(t)) {
-        printf("out of range in list: index %d while len is %d\n", i, len());
-        exit(0);
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
       }
       t = (t)->next;
       i = (i) - (1);
     }
     if (!(t)) {
-      printf("out of range in list: index %d while len is %d\n", i, len());
-      exit(0);
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
     }
     dat_t* ret;
     ret = &((t)->dat);
@@ -83,6 +86,18 @@ struct clist {
       tmp = tail();
       (tmp).append(dat);
       (l[0]).next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp;
+      tmp = tail();
+      dat_t ret;
+      ret = (tmp).remove((i) - (1));
+      (l[0]).next = (tmp).l;
+      return ret;
     }
   }
   void init(){
@@ -131,20 +146,22 @@ struct clist {
     }
     return ret;
   }
-  dat_t* ith_ref(int i){
+  dat_t* ith_ref(int ind){
     _clist* t;
     t = l;
+    int i;
+    i = ind;
     while ((i) > (0)) {
       if (!(t)) {
-        printf("out of range in list: index %d while len is %d\n", i, len());
-        exit(0);
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
       }
       t = (t)->next;
       i = (i) - (1);
     }
     if (!(t)) {
-      printf("out of range in list: index %d while len is %d\n", i, len());
-      exit(0);
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
     }
     dat_t* ret;
     ret = &((t)->dat);
@@ -176,12 +193,25 @@ struct clist {
       (l[0]).next = (tmp).l;
     }
   }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp;
+      tmp = tail();
+      dat_t ret;
+      ret = (tmp).remove((i) - (1));
+      (l[0]).next = (tmp).l;
+      return ret;
+    }
+  }
   void init(){
     l = nullptr;
   }
 };
 #undef dat_t
 #undef clist
+#include <string.h>
 int string_list_find(string_list l, const char* str){
   int i;
   i = 0;
@@ -286,20 +316,22 @@ struct clist {
     }
     return ret;
   }
-  dat_t* ith_ref(int i){
+  dat_t* ith_ref(int ind){
     _clist* t;
     t = l;
+    int i;
+    i = ind;
     while ((i) > (0)) {
       if (!(t)) {
-        printf("out of range in list: index %d while len is %d\n", i, len());
-        exit(0);
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
       }
       t = (t)->next;
       i = (i) - (1);
     }
     if (!(t)) {
-      printf("out of range in list: index %d while len is %d\n", i, len());
-      exit(0);
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
     }
     dat_t* ret;
     ret = &((t)->dat);
@@ -329,6 +361,18 @@ struct clist {
       tmp = tail();
       (tmp).append(dat);
       (l[0]).next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp;
+      tmp = tail();
+      dat_t ret;
+      ret = (tmp).remove((i) - (1));
+      (l[0]).next = (tmp).l;
+      return ret;
     }
   }
   void init(){

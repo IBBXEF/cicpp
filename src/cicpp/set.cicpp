@@ -47,7 +47,7 @@ type <set_dat_t> set {
         int i;
         i = 0;
         while i < ((other.elts).len()) {
-            ret = ret || add((other.elts).ith(i));
+            ret = add((other.elts).ith(i)) || ret;
             i = i + 1;
         }
         return ret;
