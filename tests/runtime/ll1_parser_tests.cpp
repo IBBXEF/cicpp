@@ -727,6 +727,267 @@ void test_category_terminal() {
     cleanup_rules(rules, names);
 }
 
+// ---------- Helpers for left-recursion AST tests ----------
+
+struct LeftRecAst {
+  enum Kind { Number, Add, Multiply } kind;
+  int value;
+  LeftRecAst* left;
+  LeftRecAst* right;
+};
+
+LeftRecAst* lr_number(int value) {
+  LeftRecAst* node = static_cast<LeftRecAst*>(std::malloc(sizeof(LeftRecAst)));
+  if (!node) std::abort();
+  node->kind = LeftRecAst::Number;
+  node->value = value;
+  node->left = nullptr;
+  node->right = nullptr;
+  return node;
+}
+
+LeftRecAst* lr_binary(LeftRecAst::Kind kind,
+                      LeftRecAst* left, LeftRecAst* right) {
+  LeftRecAst* node = static_cast<LeftRecAst*>(std::malloc(sizeof(LeftRecAst)));
+  if (!node) std::abort();
+  node->kind = kind;
+  node->value = 0;
+  node->left = left;
+  node->right = right;
+  return node;
+}
+
+LeftRecAst* lr_clone(const LeftRecAst* node) {
+  if (!node) return nullptr;
+  if (node->kind == LeftRecAst::Number)
+    return lr_number(node->value);
+  return lr_binary(node->kind, lr_clone(node->left), lr_clone(node->right));
+}
+
+void lr_free(void* ptr) {
+  LeftRecAst* node = static_cast<LeftRecAst*>(ptr);
+  if (!node) return;
+  lr_free(node->left);
+  lr_free(node->right);
+  std::free(node);
+}
+
+anyptr lr_return(LeftRecAst* node) {
+  anyptr result;
+  result.init(node, lr_free);
+  return result;
+}
+
+LeftRecAst* lr_ast_arg(clist_anyptr args, int index) {
+  anyptr value = args.ith(index);
+  return static_cast<LeftRecAst*>(value.get());
+}
+
+token lr_op_token(bool addition) {
+  token t{};
+  t.kind = token::Binop;
+  t.dat.Binop_dat.op.kind = addition ? binop::Add : binop::Mul;
+  return t;
+}
+
+anyptr lr_identifier(clist_anyptr args) {
+  token* t = token_arg(args, 0);
+  return lr_return(lr_number(std::atoi(t->dat.Ident_dat.str)));
+}
+
+anyptr lr_passthrough(clist_anyptr args) {
+  return lr_return(lr_clone(lr_ast_arg(args, 0)));
+}
+
+anyptr lr_add(clist_anyptr args) {
+  return lr_return(lr_binary(
+      LeftRecAst::Add,
+      lr_clone(lr_ast_arg(args, 0)),
+      lr_clone(lr_ast_arg(args, 2))));
+}
+
+anyptr lr_multiply(clist_anyptr args) {
+  return lr_return(lr_binary(
+      LeftRecAst::Multiply,
+      lr_clone(lr_ast_arg(args, 0)),
+      lr_clone(lr_ast_arg(args, 2))));
+}
+
+anyptr lr_parenthesized(clist_anyptr args) {
+  return lr_return(lr_clone(lr_ast_arg(args, 1)));
+}
+
+std::string lr_ast_string(const LeftRecAst* node) {
+  if (!node) return "<null>";
+  if (node->kind == LeftRecAst::Number)
+    return std::to_string(node->value);
+
+  const char* op = node->kind == LeftRecAst::Add ? "+" : "*";
+  return "(" + std::string(op) + " " +
+         lr_ast_string(node->left) + " " +
+         lr_ast_string(node->right) + ")";
+}
+
+std::string lr_parse_ast(RuleList rules, string_list names,
+                         std::initializer_list<token> source_order) {
+  toklist input = make_input(source_order);
+
+  gram_rule_t::gram_symbol_t stop =
+      exact_stop(punctuation(token::EndOfInput));
+
+  anyptr result = gram_rule_t::parse_with_rules(
+      &input, 0, stop, rules, names);
+
+  CHECK(input.len() == 0);
+
+  std::string rendered =
+      lr_ast_string(static_cast<LeftRecAst*>(result.get()));
+
+  result.del();
+  input.del();
+  return rendered;
+}
+
+bool lr_has_direct_recursion(RuleList& rules, int nonterminal) {
+  for (int i = 0; i < rules.len(); ++i) {
+    gram_rule_t* rule = rules.ith(i);
+
+    if (rule->result != nonterminal || rule->pattern.len() == 0)
+      continue;
+
+    // The RHS is stored in reverse source order.
+    gram_rule_t::gram_symbol_t first =
+        rule->pattern.ith(rule->pattern.len() - 1);
+
+    if (first.kind == gram_rule_t::gram_symbol_t::NonTerm &&
+        first.dat.NonTerm_dat.symb == nonterminal)
+      return true;
+  }
+  return false;
+}
+
+void lr_add_expression_rules(RuleList& rules, string_list& names,
+                             bool include_multiply,
+                             bool include_parenthesized) {
+  add_rule(rules, names, "$Expr -> $Expr + $Term", lr_add);
+
+  if (include_multiply)
+    add_rule(rules, names, "$Expr -> $Expr * $Term", lr_multiply);
+
+  if (include_parenthesized)
+    add_rule(rules, names, "$Expr -> ( $Expr )", lr_parenthesized);
+
+  add_rule(rules, names, "$Expr -> $Term", lr_passthrough);
+  add_rule(rules, names, "$Term -> @ident", lr_identifier);
+}
+
+// ---------- Tests ----------
+
+void test_direct_left_recursion_preserves_left_associative_ast() {
+  RuleList rules = make_rule_list();
+  string_list names;
+  names.init();
+
+  lr_add_expression_rules(rules, names, false, false);
+
+  const int expr = string_list_find(names, "Expr");
+  CHECK(expr == 0);
+
+  for (int i = 0; i < rules.len(); i++)
+  {
+    rules.ith(i)->print(names);
+  }
+
+  gram_rule_t::remove_left_recursion(&rules, &names);
+  printf("after lrec removed:\n");
+
+  CHECK(!lr_has_direct_recursion(rules, expr));
+
+  for (int i = 0; i < rules.len(); i++)
+  {
+    rules.ith(i)->print(names);
+  }
+  
+
+  CHECK(lr_parse_ast(rules, names, {
+      ident("1"), lr_op_token(true),
+      ident("2"), lr_op_token(true), ident("3")
+  }) == "(+ (+ 1 2) 3)");
+
+  CHECK(lr_parse_ast(rules, names, {ident("7")}) == "7");
+
+  cleanup_rules(rules, names);
+}
+
+void test_multiple_left_recursive_alternatives_preserve_ast_order() {
+  RuleList rules = make_rule_list();
+  string_list names;
+  names.init();
+
+  lr_add_expression_rules(rules, names, true, false);
+
+  const int expr = string_list_find(names, "Expr");
+  gram_rule_t::remove_left_recursion(&rules, &names);
+
+  CHECK(!lr_has_direct_recursion(rules, expr));
+
+  CHECK(lr_parse_ast(rules, names, {
+      ident("1"), lr_op_token(true),
+      ident("2"), lr_op_token(false), ident("3")
+  }) == "(* (+ 1 2) 3)");
+
+  CHECK(lr_parse_ast(rules, names, {
+      ident("1"), lr_op_token(false),
+      ident("2"), lr_op_token(true), ident("3")
+  }) == "(+ (* 1 2) 3)");
+
+  cleanup_rules(rules, names);
+}
+
+void test_left_recursion_preserves_other_base_alternatives() {
+  RuleList rules = make_rule_list();
+  string_list names;
+  names.init();
+
+  lr_add_expression_rules(rules, names, false, true);
+
+  const int expr = string_list_find(names, "Expr");
+  gram_rule_t::remove_left_recursion(&rules, &names);
+
+  CHECK(!lr_has_direct_recursion(rules, expr));
+
+  CHECK(lr_parse_ast(rules, names, {
+      punctuation(token::LPAREN), ident("4"),
+      lr_op_token(true), ident("5"),
+      punctuation(token::RPAREN)
+  }) == "(+ 4 5)");
+
+  CHECK(lr_parse_ast(rules, names, {
+      punctuation(token::LPAREN), ident("4"),
+      punctuation(token::RPAREN), lr_op_token(true), ident("5")
+  }) == "(+ 4 5)");
+
+  cleanup_rules(rules, names);
+}
+
+void test_remove_left_recursion_leaves_nonrecursive_rule_unchanged() {
+  RuleList rules = make_rule_list();
+  string_list names;
+  names.init();
+
+  add_rule(rules, names, "$Start -> @ident", return_one);
+
+  const int old_rule_count = rules.len();
+  const int old_nonterminal_count = names.len();
+
+  gram_rule_t::remove_left_recursion(&rules, &names);
+
+  CHECK(rules.len() == old_rule_count);
+  CHECK(names.len() == old_nonterminal_count);
+
+  cleanup_rules(rules, names);
+}
+
 } // namespace
 
 // ============================================================
@@ -753,6 +1014,11 @@ int main() {
     test_nonterminal_registration();
 
     test_category_terminal();
+
+    test_direct_left_recursion_preserves_left_associative_ast();
+    test_multiple_left_recursive_alternatives_preserve_ast_order();
+    test_left_recursion_preserves_other_base_alternatives();
+    test_remove_left_recursion_leaves_nonrecursive_rule_unchanged();
 
 #if LL1_HAS_POSIX_SUBPROCESS
 

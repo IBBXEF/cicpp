@@ -138,12 +138,14 @@ type gram_rule_t {
                 gram_symbol_t s2;
                 s2 = (table.ith(i)).s;
                 if ((s2.includes(s)) || (s.includes(s2))) {
-                    string_list empty;
-                    empty.init();
-                    printf("conflicting entry in the parsing table for nonterm %d and symbol ", nonterm);
-                    s.print(empty);
-                    printf("\n");
-                    exit(EXIT_FAILURE);
+                    if !(r->eq(*(table.ith(i)).r)) { // there is a real conflict
+                        string_list empty;
+                        empty.init();
+                        printf("conflicting entry in the parsing table for nonterm %d and symbol ", nonterm);
+                        s.print(empty);
+                        printf("\n");
+                        exit(EXIT_FAILURE);
+                    }
                 }
                 i = i + 1;
             }
@@ -186,7 +188,7 @@ type gram_rule_t {
     // user-defined "result function" that will turn the matched pattern into the result.
     // the input pointers's ownership belongs to the function, but not the list itself
     clist_anyptr -> anyptr result_function;
-    anyptr func_bonus_dat; // optionnal additionnal data that will be given to the function as the last element of the clist.
+    void* func_bonus_dat; // optionnal additionnal data that will be given to the function as the last element of the clist.
 
     type parsed_ast {
         Leaf { token t; };
@@ -230,7 +232,9 @@ type gram_rule_t {
                     args.append(child->evaluate_ast());
                     i = i + 1;
                 }
-                args.append(((dat.Node_dat).origin_rule)->func_bonus_dat);
+                anyptr tmp;
+                tmp.init_view(((dat.Node_dat).origin_rule)->func_bonus_dat);
+                args.append(tmp);
                 anyptr res;
                 res = (((dat.Node_dat).origin_rule)->result_function)(args);
                 args.del();
@@ -263,15 +267,49 @@ type gram_rule_t {
     func void init(int rule_result, clist_anyptr -> anyptr rule_result_function) {
         result = rule_result;
         result_function = rule_result_function;
-        func_bonus_dat.init_null();
+        func_bonus_dat = nullptr;
         pattern.init();
     }
-    func void init_bonus_func_data(int rule_result, clist_anyptr -> anyptr rule_result_function, anyptr result_func_bonus_dat) {
+    func void init_bonus_func_data(int rule_result, clist_anyptr -> anyptr rule_result_function, void* result_func_bonus_dat) {
         init(rule_result, rule_result_function);
         func_bonus_dat = result_func_bonus_dat;
     }
     func void del() {
         pattern.del(); // gram_symbol_t does not perform any allocations
+    }
+    func bool eq(gram_rule_t r) {
+        printf("test: ");
+        if result != (r.result) {
+            printf("f3\n");
+            return false;
+        }
+        if (pattern.len()) != ((r.pattern).len()) {
+            printf("f4\n");
+            return false;
+        }
+        int i;
+        i = 0;
+        while i < (pattern.len()) {
+            gram_symbol_t s1;
+            gram_symbol_t s2;
+            s1 = pattern.ith(i);
+            s2 = (r.pattern).ith(i);
+            if !((s1.includes(s2)) && (s2.includes(s1))) {
+                printf("f5\n");
+                return false;
+            }
+            i = i + 1;
+        }
+        if result_function != (r.result_function) {
+            printf("f1\n");
+            return false;
+        }
+        if func_bonus_dat != (r.func_bonus_dat) {
+            printf("f2\n");
+            return false;
+        }
+        printf("f0\n");
+        return true;
     }
     func void add_nonterm(int nt) {
         gram_symbol_t sym;
@@ -423,7 +461,7 @@ type gram_rule_t {
                         term_set* oFo;
                         oFo = Fo + (((sy->dat).NonTerm_dat).symb); // other Fi
                         if wFi.contains(epsilon) {
-                            not_finished = (cFo->union_with(*oFo)) || not_finished;
+                            not_finished = (oFo->union_with(*cFo)) || not_finished;
                         }
                         not_finished = (oFo->union_with(wFi)) || not_finished; // this may add epsilon to the set, but we'll clean it later
 
@@ -578,12 +616,55 @@ type gram_rule_t {
         return final_res;
     }
 
-    static func void remove_left_recursion(gram_rules* rules, string_list* nonterm_symbs) {
+    static func anyptr _gram_rule_ret_lrec_elim_notail(clist_anyptr l) { anyptr r; r.init_null(); return r; }
+    static func anyptr _gram_rule_ret_lrec_elim_lrec(clist_anyptr l) {
+        void** tmp;
+        void* old_bonus_dat;
+        clist_anyptr -> anyptr old_res_func;
+        void* tail_dat;
+        tmp = ((l.remove((l.len())-1)).ptr) as void**;
+        old_res_func = tmp[0] as typeof(old_res_func);
+        old_bonus_dat = tmp[1];
+        tail_dat = (l.remove((l.len())-1)).ptr;
+
+        anyptr tmp2;
+        tmp2.init_view(old_bonus_dat);
+        l.append(tmp2);
+        anyptr normal_output;
+        normal_output = old_res_func(l);
+        return _gram_rule_ret_lrec_elim_nlrec_closure(normal_output, tail_dat);
+    }
+    static func anyptr _gram_rule_ret_lrec_elim_nlrec_closure(anyptr prev_out, void* tail_dat) {
+        if !tail_dat {
+            return prev_out;
+        }
+
+    }
+    static func anyptr _gram_rule_ret_lrec_elim_nlrec(clist_anyptr l) {
+        void** tmp;
+        tmp = ((l.ith((l.len())-1)).ptr) as void**;
+        clist_anyptr -> anyptr old_res_func;
+        anyptr old_bonus_dat;
+        old_res_func = tmp[0] as typeof(old_res_func);
+        old_bonus_dat.init_view(tmp[1]);
+        clist_anyptr lcopy;
+        lcopy.init();
         int i;
         i = 0;
+        while i < (l.len()) {
+            lcopy.append(l.ith(i));
+        }
+        lcopy.append(old_bonus_dat);
+    }
+
+    static func void remove_left_recursion(gram_rules* rules, string_list* nonterm_symbs) {
+        int i;
+        int ntlen;
+        i = 0;
+        ntlen = nonterm_symbs->len();
         gram_rules new_rules;
         new_rules.init();
-        while i < (nonterm_symbs->len()) {
+        while i < ntlen {
             gram_rules lrec_rules; // left recursive rules
             gram_rules nlrec_rules; // non left recursive rules
             lrec_rules.init();
@@ -626,7 +707,15 @@ type gram_rule_t {
                 new_sym.set_nonterm(new_nonterm);
                 j = 0;
                 while j < (nlrec_rules.len()) {
-                    (nlrec_rules.ith(j))->add_nonterm(new_nonterm); // TODO: make a new function to fix our change
+                    gram_rule_t* rule;
+                    rule = nlrec_rules.ith(j);
+                    rule->add_nonterm(new_nonterm); // TODO: make a new function to fix our change
+                    void** tmp;
+                    tmp = (malloc(sizeof(*tmp))) as void**;
+                    tmp[0] = (rule->result_function) as void*;
+                    tmp[1] = rule->func_bonus_dat;
+                    rule->func_bonus_dat = tmp as void*;
+                    rule->result_function = _gram_rule_ret_lrec_elim_nlrec;
                     j = j + 1;
                 }
                 j = 0;
@@ -634,13 +723,19 @@ type gram_rule_t {
                     gram_rule_t* rule;
                     rule = lrec_rules.ith(j);
                     (rule->pattern).remove(((rule->pattern).len())-1);
-                    (lrec_rules.ith(j))->add_nonterm(new_nonterm); // TODO: make a new function to fix our change
+                    rule->add_nonterm(new_nonterm);
+                    void** tmp;
+                    tmp = (malloc(sizeof(*tmp))) as void**;
+                    tmp[0] = (rule->result_function) as void*;
+                    tmp[1] = rule->func_bonus_dat;
+                    rule->func_bonus_dat = tmp as void*;
                     rule->result = new_nonterm;
+                    rule->result_function = _gram_rule_ret_lrec_elim_lrec;
                     j = j + 1;
                 }
                 gram_rule_t* epsrule;
                 epsrule = (malloc(sizeof(gram_rule_t))) as gram_rule_t*;
-                epsrule->init(new_nonterm, nullptr); // TODO: put a function in here
+                epsrule->init(new_nonterm, _gram_rule_ret_lrec_elim_notail);
                 lrec_rules.append(epsrule);
             }
 
@@ -650,7 +745,6 @@ type gram_rule_t {
             while lrec_rules.len() {
                 new_rules.append(lrec_rules.pop());
             }
-
             i = i + 1;
         }
         rules->del();
