@@ -619,42 +619,70 @@ type gram_rule_t {
     static func anyptr _gram_rule_ret_lrec_elim_notail(clist_anyptr l) { anyptr r; r.init_null(); return r; }
     static func anyptr _gram_rule_ret_lrec_elim_lrec(clist_anyptr l) {
         void** tmp;
-        void* old_bonus_dat;
-        clist_anyptr -> anyptr old_res_func;
-        void* tail_dat;
+        anyptr old_bonus_dat;
+        anyptr old_res_func;
+        anyptr tail_dat;
         tmp = ((l.remove((l.len())-1)).ptr) as void**;
-        old_res_func = tmp[0] as typeof(old_res_func);
-        old_bonus_dat = tmp[1];
-        tail_dat = (l.remove((l.len())-1)).ptr;
+        old_res_func.init_view(tmp[0]);
+        old_bonus_dat.init_view(tmp[1]);
+        tail_dat = (l.remove((l.len())-1));
 
-        anyptr tmp2;
-        tmp2.init_view(old_bonus_dat);
-        l.append(tmp2);
-        anyptr normal_output;
-        normal_output = old_res_func(l);
-        return _gram_rule_ret_lrec_elim_nlrec_closure(normal_output, tail_dat);
+        clist_anyptr* lcopy;
+        lcopy = (malloc(sizeof(clist_anyptr))) as clist_anyptr*;
+        lcopy->init();
+        int i;
+        i = 0;
+        while i < (l.len()) {
+            lcopy->append(l.ith(i));
+            i = i + 1;
+        }
+        lcopy->append(old_bonus_dat);
+        lcopy->append(old_res_func);
+        lcopy->append(tail_dat);
+
+        anyptr ret;
+        ret.init_view(lcopy);
+        return ret;
     }
-    static func anyptr _gram_rule_ret_lrec_elim_nlrec_closure(anyptr prev_out, void* tail_dat) {
+    static func anyptr _gram_rule_ret_lrec_elim_nlrec_closure(anyptr prev_out, clist_anyptr* tail_dat) {
         if !tail_dat {
             return prev_out;
         }
+        anyptr other_tail_dat;
+        other_tail_dat = tail_dat->remove((tail_dat->len())-1);
+        clist_anyptr -> anyptr old_res_func;
+        old_res_func = ((tail_dat->remove((tail_dat->len())-1)).ptr) as typeof(old_res_func);
+        anyptr old_bonus_dat;
+        old_bonus_dat = tail_dat->remove((tail_dat->len())-1);
 
+        tail_dat->append(old_bonus_dat);
+        tail_dat->push(prev_out);
+        anyptr combined_out;
+        combined_out = old_res_func(*tail_dat);
+
+        anyptr ret;
+        ret = _gram_rule_ret_lrec_elim_nlrec_closure(combined_out, (other_tail_dat.ptr) as typeof(tail_dat));
+
+        tail_dat->del();
+        free(tail_dat);
+        return ret;
     }
     static func anyptr _gram_rule_ret_lrec_elim_nlrec(clist_anyptr l) {
         void** tmp;
-        tmp = ((l.ith((l.len())-1)).ptr) as void**;
+        tmp = ((l.remove((l.len())-1)).ptr) as void**;
+        clist_anyptr* tail_dat;
+        tail_dat = ((l.remove((l.len())-1)).ptr) as clist_anyptr*;
         clist_anyptr -> anyptr old_res_func;
         anyptr old_bonus_dat;
         old_res_func = tmp[0] as typeof(old_res_func);
         old_bonus_dat.init_view(tmp[1]);
-        clist_anyptr lcopy;
-        lcopy.init();
-        int i;
-        i = 0;
-        while i < (l.len()) {
-            lcopy.append(l.ith(i));
-        }
-        lcopy.append(old_bonus_dat);
+        l.append(old_bonus_dat);
+        anyptr normal_output;
+        normal_output = old_res_func(l);
+
+        anyptr ret;
+        ret =  _gram_rule_ret_lrec_elim_nlrec_closure(normal_output, tail_dat);
+        return ret;
     }
 
     static func void remove_left_recursion(gram_rules* rules, string_list* nonterm_symbs) {
