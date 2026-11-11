@@ -993,7 +993,11 @@ struct gram_rule_t {
         gram_symbol_t s2;
         s2 = ((table).ith(i)).s;
         if (((s2).includes(s)) || ((s).includes(s2))) {
-          printf("conflicting entry in the parsing table\n");
+          string_list empty;
+          (empty).init();
+          printf("conflicting entry in the parsing table for nonterm %d and symbol ", nonterm);
+          (s).print(empty);
+          printf("\n");
           exit(EXIT_FAILURE);
         }
         i = (i) + (1);
@@ -1032,6 +1036,7 @@ struct gram_rule_t {
   symlist pattern;
   int result;
   anyptr (*result_function)(clist_anyptr);
+  anyptr func_bonus_dat;
   struct parsed_ast {
     enum { Leaf, Node, Unknown } kind;
     union {
@@ -1040,15 +1045,15 @@ struct gram_rule_t {
       } Leaf_dat;
       struct {
         clist_voidptr childrens;
-        anyptr (*joining_function)(clist_anyptr);
+        gram_rule_t* origin_rule;
       } Node_dat;
      } dat;
     void init_unknown(){
       kind = Unknown;
     }
-    void init_node(anyptr (*joining_function)(clist_anyptr)){
+    void init_node(gram_rule_t* origin_rule){
       kind = Node;
-      ((dat).Node_dat).joining_function = joining_function;
+      ((dat).Node_dat).origin_rule = origin_rule;
       (((dat).Node_dat).childrens).init();
     }
     void init_leaf(token t){
@@ -1080,8 +1085,9 @@ struct gram_rule_t {
           (args).append((child)->evaluate_ast());
           i = (i) + (1);
         }
+        (args).append((((dat).Node_dat).origin_rule)->func_bonus_dat);
         anyptr res;
-        res = ((dat).Node_dat).joining_function(args);
+        res = (((dat).Node_dat).origin_rule)->result_function(args);
         (args).del();
         return res;
       } else {
@@ -1314,7 +1320,15 @@ struct gram_rule_t {
   void init(int rule_result, anyptr (*rule_result_function)(clist_anyptr)){
     result = rule_result;
     result_function = rule_result_function;
+    (func_bonus_dat).init_null();
     (pattern).init();
+  }
+  void init_bonus_func_data(int rule_result, anyptr (*rule_result_function)(clist_anyptr), anyptr result_func_bonus_dat){
+    init(rule_result, rule_result_function);
+    func_bonus_dat = result_func_bonus_dat;
+  }
+  void del(){
+    (pattern).del();
   }
   void add_nonterm(int nt){
     gram_symbol_t sym;
@@ -1745,7 +1759,7 @@ struct gram_rule_t {
         }
         parsed_ast* ast_loc;
         ast_loc = (stacktop).ast_loc;
-        (ast_loc)->init_node((rule)->result_function);
+        (ast_loc)->init_node(rule);
         int i;
         i = 0;
         while ((i) < (((rule)->pattern).len())) {
@@ -1765,6 +1779,77 @@ struct gram_rule_t {
     anyptr final_res;
     final_res = (ast).evaluate_ast();
     return final_res;
+  }
+  static
+  void remove_left_recursion(gram_rules* rules, string_list* nonterm_symbs){
+    int i;
+    i = 0;
+    gram_rules new_rules;
+    (new_rules).init();
+    while ((i) < ((nonterm_symbs)->len())) {
+      gram_rules lrec_rules;
+      gram_rules nlrec_rules;
+      (lrec_rules).init();
+      (nlrec_rules).init();
+      int j;
+      j = 0;
+      while ((j) < ((rules)->len())) {
+        gram_rule_t* rule;
+        rule = (rules)->ith(j);
+        if (((rule)->result) == (i)) {
+          if (((rule)->pattern).len()) {
+            gram_symbol_t first_sym;
+            first_sym = ((rule)->pattern).ith((((rule)->pattern).len()) - (1));
+            if ((((int)(first_sym).kind) == (2)) && (((((first_sym).dat).NonTerm_dat).symb) == ((rule)->result))) {
+              if ((((rule)->pattern).len()) == (1)) {
+                (rule)->del();
+                free(rule);
+              } else
+              (lrec_rules).append(rule);
+            } else
+            (nlrec_rules).append(rule);
+          } else
+          (nlrec_rules).append(rule);
+        }
+        j = (j) + (1);
+      }
+      if ((lrec_rules).len()) {
+        char* new_nonterm_str;
+        new_nonterm_str = (char*)malloc((strlen((nonterm_symbs)->ith(i))) + ((1) + (10)));
+        sprintf(new_nonterm_str, "lrec_elim_%s", (nonterm_symbs)->ith(i));
+        int new_nonterm;
+        new_nonterm = string_list_thingy(nonterm_symbs, new_nonterm_str);
+        gram_symbol_t new_sym;
+        (new_sym).set_nonterm(new_nonterm);
+        j = 0;
+        while ((j) < ((nlrec_rules).len())) {
+          ((nlrec_rules).ith(j))->add_nonterm(new_nonterm);
+          j = (j) + (1);
+        }
+        j = 0;
+        while ((j) < ((lrec_rules).len())) {
+          gram_rule_t* rule;
+          rule = (lrec_rules).ith(j);
+          ((rule)->pattern).remove((((rule)->pattern).len()) - (1));
+          ((lrec_rules).ith(j))->add_nonterm(new_nonterm);
+          (rule[0]).result = new_nonterm;
+          j = (j) + (1);
+        }
+        gram_rule_t* epsrule;
+        epsrule = (gram_rule_t*)malloc(sizeof(gram_rule_t));
+        (epsrule)->init(new_nonterm, nullptr);
+        (lrec_rules).append(epsrule);
+      }
+      while ((nlrec_rules).len()) {
+        (new_rules).append((nlrec_rules).pop());
+      }
+      while ((lrec_rules).len()) {
+        (new_rules).append((lrec_rules).pop());
+      }
+      i = (i) + (1);
+    }
+    (rules)->del();
+    rules[0] = new_rules;
   }
 };
 gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_anyptr), string_list* nonterm_symbs){
