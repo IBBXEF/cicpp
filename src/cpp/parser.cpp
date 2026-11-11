@@ -158,17 +158,6 @@ anyptr gram_rule_func(clist_anyptr l) {
     r.init(ret, rval::del_ptr);
     return r;
 }
-anyptr gram_rule_func_noarg(clist_anyptr l) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    ret->kind = rval::Fcall;
-    ret->dat.fcall_dat.func = (rval*)l.ith(0).ptr;
-    ret->dat.fcall_dat.args = (clist_voidptr*)malloc(sizeof(clist_voidptr));
-    ret->dat.fcall_dat.args->init();
-
-    anyptr r;
-    r.init(ret, rval::del_ptr);
-    return r;
-}
 anyptr gram_rule_arglist_push(clist_anyptr l) {
     clist_voidptr* ret = (clist_voidptr*)l.ith(2).ptr;
     ret->append(l.ith(0).ptr);
@@ -182,6 +171,13 @@ anyptr gram_rule_arglist_base(clist_anyptr l) {
     ret->init();
     ret->append(l.ith(0).ptr);
 
+    anyptr r;
+    r.init(ret, rval_free_clist_voidptr);
+    return r;
+}
+anyptr gram_rule_arglist_empty(clist_anyptr l) {
+    clist_voidptr* ret = (clist_voidptr*)malloc(sizeof(clist_voidptr));
+    ret->init();
     anyptr r;
     r.init(ret, rval_free_clist_voidptr);
     return r;
@@ -234,46 +230,56 @@ gram_rule_t::gram_rules make_rules() {
     gram_rule_t::gram_rules ret;
     ret.init();
 
-    ret.append( make_rule("$LvalAtom   -> @ident"                , gram_rule_var         , &nonterm_symbs) );
-    ret.append( make_rule("$LvalAtom   -> * $Rval"               , gram_rule_ptr_lval    , &nonterm_symbs) );
-    ret.append( make_rule("$LvalAtom   -> ( $Lval )"             , gram_rule_elt_n1      , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> $LvalAtom"             , gram_rule_elt_n0      , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> $RvalAtom [ $Rval ]"   , gram_rule_array       , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> $LvalAtom . @ident"    , gram_rule_lval_dot    , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> $RvalAtom -> @ident"   , gram_rule_arrow       , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> @ident"                , gram_rule_var         , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> * $RvalStru"           , gram_rule_ptr_lval    , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> ( $Lval )"             , gram_rule_elt_n1      , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> $RvalStru [ $Rval ]"   , gram_rule_array       , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> $Lval . @ident"        , gram_rule_lval_dot    , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> $RvalStru -> @ident"   , gram_rule_arrow       , &nonterm_symbs) );
 
 
     ret.append( make_rule("$RvalAtom   -> ( $Rval )"             , gram_rule_elt_n1        , &nonterm_symbs) );
     ret.append( make_rule("$RvalAtom   -> @0"                    , gram_rule_int           , &nonterm_symbs) );
     ret.append( make_rule("$RvalAtom   -> @\"string\""           , gram_rule_string        , &nonterm_symbs) );
-    ret.append( make_rule("$RvalAtom   -> @! $Rval"              , gram_rule_unop          , &nonterm_symbs) );
-    ret.append( make_rule("$RvalAtom   -> -  $Rval"              , gram_rule_neg           , &nonterm_symbs) );
     
-    ret.append( make_rule("$RvalNf     -> $Rvalop"               , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$Rvalop     -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$RvalAtom   -> $LvalAtom"             , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
-    ret.append( make_rule("$Rvalop     -> $RvalAtom @+ $Rvalop"  , gram_rule_binop         , &nonterm_symbs) );
-    ret.append( make_rule("$Rval       -> & $Lval"               , gram_rule_addr          , &nonterm_symbs) );
-    ret.append( make_rule("$RvalNf     -> $RvalAtom . @ident"    , gram_rule_rval_dot      , &nonterm_symbs) );
-    ret.append( make_rule("$RvalNf     -> $Lval"                 , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
-    ret.append( make_rule("$Rval       -> $RvalNf ( $arglist )"  , gram_rule_func          , &nonterm_symbs) );
-    ret.append( make_rule("$Rval       -> $RvalNf ( )"           , gram_rule_func_noarg    , &nonterm_symbs) );
-    ret.append( make_rule("$RvalNf     -> $RvalAtom as $Type"    , gram_rule_typecast      , &nonterm_symbs) );
-    ret.append( make_rule("$Rval       -> $RvalNf"               , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$RvalStru   -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$RvalStru   -> $RvalStru . @ident"    , gram_rule_rval_dot      , &nonterm_symbs) );
+    ret.append( make_rule("$RvalStru   -> $RvalStru ( $arglist )", gram_rule_func          , &nonterm_symbs) );
+    ret.append( make_rule("$RvalStru   -> $Lval"                 , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
+
+    ret.append( make_rule("$RvalUnary  -> $RvalStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$RvalUnary  -> @! $RvalUnary"         , gram_rule_unop          , &nonterm_symbs) );
+    ret.append( make_rule("$RvalUnary  -> -  $RvalUnary"         , gram_rule_neg           , &nonterm_symbs) );
+    ret.append( make_rule("$RvalUnary  -> & $Lval"               , gram_rule_addr          , &nonterm_symbs) );
+
+    ret.append( make_rule("$RvalMul    -> $RvalUnary"            , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$RvalMul    -> $RvalMul * $RvalUnary" , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$RvalMul    -> $RvalMul / $RvalUnary" , gram_rule_binop         , &nonterm_symbs) );
+
+    ret.append( make_rule("$RvalAdd    -> $RvalMul"              , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$RvalAdd    -> $RvalAdd + $RvalMul"   , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$RvalAdd    -> $RvalAdd - $RvalMul"   , gram_rule_binop         , &nonterm_symbs) );
+
+    ret.append( make_rule("$Rval       -> $RvalAdd"              , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$Rval       -> $RvalAtom as $Type"    , gram_rule_typecast      , &nonterm_symbs) );
+
+    ret.append( make_rule("$arglist    -> $Rval , $arglist"      , gram_rule_arglist_push  , &nonterm_symbs) );
+    ret.append( make_rule("$arglist    -> $Rval"                 , gram_rule_arglist_base  , &nonterm_symbs) );
+    ret.append( make_rule("$arglist    ->"                       , gram_rule_arglist_empty , &nonterm_symbs) );
 
 
-    ret.append( make_rule("$arglist    -> $Rval , $arglist"  , gram_rule_arglist_push  , &nonterm_symbs) );
-    ret.append( make_rule("$arglist    -> $Rval"             , gram_rule_arglist_base  , &nonterm_symbs) );
-
-
-    ret.append( make_rule("$TypeAtom   -> void"                  , gram_rule_typ_base      , &nonterm_symbs) );
-    ret.append( make_rule("$TypeAtom   -> char"                  , gram_rule_typ_base      , &nonterm_symbs) );
-    ret.append( make_rule("$TypeAtom   -> int"                   , gram_rule_typ_base      , &nonterm_symbs) );
-    ret.append( make_rule("$TypeAtom   -> @ident"                , gram_rule_typ_base      , &nonterm_symbs) );
+    ret.append( make_rule("$Type       -> void"                  , gram_rule_typ_base      , &nonterm_symbs) );
+    ret.append( make_rule("$Type       -> char"                  , gram_rule_typ_base      , &nonterm_symbs) );
+    ret.append( make_rule("$Type       -> int"                   , gram_rule_typ_base      , &nonterm_symbs) );
+    ret.append( make_rule("$Type       -> @ident"                , gram_rule_typ_base      , &nonterm_symbs) );
     ret.append( make_rule("$Type       -> $Type *"               , gram_rule_typ_ptr       , &nonterm_symbs) );
-    ret.append( make_rule("$Type       -> $TypeAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
+    // TODO: add a builtin bool type
 
-
+    for (int i = 0; i < ret.len(); i++) {
+        ret.ith(i)->print(nonterm_symbs);
+    }
+    gram_rule_t::remove_left_recursion(&ret, &nonterm_symbs);
+    printf("with left recursion eliminated:\n");
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
     }

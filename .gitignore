@@ -6,8 +6,8 @@ cicpp-syntax/**
 
 out.c
 
+tests/runtime/_build/**
 _build/**
-tests/runtime/_build
 
 !*/
 !_build/lexer.c
