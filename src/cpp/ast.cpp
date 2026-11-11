@@ -103,7 +103,7 @@ struct typ
             fprintf(fptr, "*");
         } else if (kind == Typeof) {
             print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "typeof(");
+            fprintf(fptr, "decltype(");
             dat.typeof_dat->print_to_file(fptr);
             fprintf(fptr, ")");
         } else if (kind == TIdent) {
