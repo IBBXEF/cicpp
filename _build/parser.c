@@ -1571,7 +1571,7 @@ struct gram_rule_t {
           if (((int)(sy)->kind) != (2)) {
             (tmp_ptr).init_ptr(sy);
             (addFi).add(tmp_ptr);
-            j = -(1);
+            j = -(2);
           } else {
             term_set* oFi;
             oFi = (Fi) + ((((sy)->dat).NonTerm_dat).symb);
@@ -1582,12 +1582,12 @@ struct gram_rule_t {
               (oFi)->add(epsilon);
             } else {
               (addFi).union_with(oFi[0]);
-              j = -(1);
+              j = -(2);
             }
           }
           j = (j) - (1);
         }
-        if ((j) == (((rule)->pattern).len())) {
+        if ((j) == (-(1))) {
           (addFi).add(epsilon);
         }
         (FiRules[i]).del();
@@ -1724,7 +1724,6 @@ struct gram_rule_t {
       token inptop;
       if (((l)->len()) && (!((stop_symbol).match_tok((l)->ith(0))))) {
         inptop = (l)->ith(0);
-        l[0] = (l)->tail();
       } else
       inptop = stop_token;
       if (((int)((stacktop).sym).kind) != (2)) {
@@ -1733,6 +1732,7 @@ struct gram_rule_t {
           exit(EXIT_FAILURE);
         }
         (stacktop).update_tok_ast(inptop);
+        l[0] = (l)->tail();
         printf("parse tok ok\n");
       } else {
         int nt;
@@ -1746,12 +1746,9 @@ struct gram_rule_t {
         parsed_ast* ast_loc;
         ast_loc = (stacktop).ast_loc;
         (ast_loc)->init_node((rule)->result_function);
-        parsed_ast* first_child;
-        first_child = (parsed_ast*)malloc(sizeof(parsed_ast));
-        (first_child)->init_leaf(inptop);
         int i;
         i = 0;
-        while ((i) < ((((rule)->pattern).len()) - (1))) {
+        while ((i) < (((rule)->pattern).len())) {
           parsed_ast* child_ast;
           child_ast = (parsed_ast*)malloc(sizeof(parsed_ast));
           (child_ast)->init_unknown();
@@ -1761,7 +1758,6 @@ struct gram_rule_t {
           (stack).push(sym_dat);
           i = (i) + (1);
         }
-        (ast_loc)->push_child(first_child);
         printf("parse nt ok\n");
       }
     }

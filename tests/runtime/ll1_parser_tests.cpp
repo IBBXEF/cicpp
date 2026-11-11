@@ -489,7 +489,7 @@ void test_stop_token_preserved() {
     add_rule(
         rules,
         names,
-        "$Start -> $item",
+        "$Start -> item",
         return_one
     );
 
@@ -539,7 +539,7 @@ void test_invalid_input_rejected() {
     add_rule(
         rules,
         names,
-        "$Start -> $expected",
+        "$Start -> expected",
         return_one
     );
 
@@ -599,7 +599,7 @@ void test_ambiguous_grammar_rejected() {
     add_rule(
         rules,
         names,
-        "$Start -> $name",
+        "$Start -> name",
         return_one
     );
 
@@ -675,7 +675,7 @@ void test_nonterminal_registration() {
     add_rule(
         rules,
         names,
-        "$Expression -> $value",
+        "$Expression -> value",
         return_two
     );
 
