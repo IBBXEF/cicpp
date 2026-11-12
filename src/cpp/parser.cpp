@@ -278,7 +278,8 @@ gram_rule_t::gram_rules make_rules() {
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
     }
-    gram_rule_t::remove_left_recursion(&ret, &nonterm_symbs);
+    // gram_rule_t::remove_direct_left_recursion(&ret, &nonterm_symbs);
+    gram_rule_t::remove_all_left_recursion(&ret, &nonterm_symbs);
     printf("with left recursion eliminated:\n");
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);

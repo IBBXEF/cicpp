@@ -1873,23 +1873,87 @@ struct gram_rule_t {
   }
   static
   anyptr _gram_rule_ret_lrec_elim_nlrec(clist_anyptr l){
+    clist_anyptr lcopy;
+    (lcopy).init();
+    int i;
+    i = 0;
+    while ((i) < ((l).len())) {
+      (lcopy).append((l).ith(i));
+      i = (i) + (1);
+    }
     void** tmp;
-    tmp = (void**)((l).remove(((l).len()) - (1))).ptr;
+    tmp = (void**)((lcopy).remove(((lcopy).len()) - (1))).ptr;
     clist_anyptr* tail_dat;
-    tail_dat = (clist_anyptr*)((l).remove(((l).len()) - (1))).ptr;
+    tail_dat = (clist_anyptr*)((lcopy).remove(((lcopy).len()) - (1))).ptr;
     anyptr (*old_res_func)(clist_anyptr);
     anyptr old_bonus_dat;
     old_res_func = (decltype(old_res_func))tmp[0];
     (old_bonus_dat).init_view(tmp[1]);
-    (l).append(old_bonus_dat);
+    (lcopy).append(old_bonus_dat);
     anyptr normal_output;
-    normal_output = old_res_func(l);
+    normal_output = old_res_func(lcopy);
+    (lcopy).del();
     anyptr ret;
     ret = _gram_rule_ret_lrec_elim_nlrec_closure(normal_output, tail_dat);
     return ret;
   }
   static
-  void remove_left_recursion(gram_rules* rules, string_list* nonterm_symbs){
+  anyptr _gram_rule_ret_lrec_any_uninline(clist_anyptr l){
+    void** tmp;
+    anyptr old_bonus_dat1;
+    anyptr (*old_res_func1)(clist_anyptr);
+    anyptr old_bonus_dat2;
+    anyptr (*old_res_func2)(clist_anyptr);
+    int* old1_len;
+    tmp = (void**)((l).remove(((l).len()) - (1))).ptr;
+    old_res_func1 = (decltype(old_res_func1))tmp[0];
+    (old_bonus_dat1).init_view(tmp[1]);
+    old_res_func2 = (decltype(old_res_func2))tmp[2];
+    (old_bonus_dat2).init_view(tmp[3]);
+    old1_len = (int*)tmp[4];
+    clist_anyptr lcopy1;
+    (lcopy1).init();
+    clist_anyptr lcopy2;
+    (lcopy2).init();
+    int i;
+    i = 0;
+    while ((i) < (old1_len[0])) {
+      (lcopy1).append((l).ith(i));
+      i = (i) + (1);
+    }
+    while ((i) < ((l).len())) {
+      (lcopy2).append((l).ith(i));
+      i = (i) + (1);
+    }
+    (lcopy1).append(old_bonus_dat1);
+    anyptr res1;
+    res1 = old_res_func1(lcopy1);
+    (lcopy1).del();
+    (lcopy2).push(res1);
+    printf("INDIRECT CALLBACK\n");
+    printf("list length: %d\n", (l).len());
+    printf("old1_len: %d\n", old1_len[0]);
+    printf("func1: %p\n", old_res_func1);
+    printf("bonus1: %p\n", (old_bonus_dat1).ptr);
+    printf("func2: %p\n", old_res_func2);
+    printf("bonus2: %p\n", (old_bonus_dat2).ptr);
+    i = 0;
+    while ((i) < ((l).len())) {
+      printf("old arg %d: %p\n", i, ((l).ith(i)).ptr);
+      i = (i) + (1);
+    }
+    i = 0;
+    while ((i) < ((lcopy2).len())) {
+      printf("new arg %d: %p\n", i, ((lcopy2).ith(i)).ptr);
+      i = (i) + (1);
+    }
+    (lcopy2).append(old_bonus_dat2);
+    res1 = old_res_func2(lcopy2);
+    (lcopy2).del();
+    return res1;
+  }
+  static
+  void remove_direct_left_recursion(gram_rules* rules, string_list* nonterm_symbs){
     int i;
     int ntlen;
     i = 0;
@@ -1937,7 +2001,7 @@ struct gram_rule_t {
           rule = (nlrec_rules).ith(j);
           (rule)->add_nonterm(new_nonterm);
           void** tmp;
-          tmp = (void**)malloc(sizeof(tmp[0]));
+          tmp = (void**)malloc((sizeof(tmp[0])) * (2));
           tmp[0] = (void*)(rule)->result_function;
           tmp[1] = (rule)->func_bonus_dat;
           (rule[0]).func_bonus_dat = (void*)tmp;
@@ -1951,7 +2015,7 @@ struct gram_rule_t {
           ((rule)->pattern).remove((((rule)->pattern).len()) - (1));
           (rule)->add_nonterm(new_nonterm);
           void** tmp;
-          tmp = (void**)malloc(sizeof(tmp[0]));
+          tmp = (void**)malloc((sizeof(tmp[0])) * (2));
           tmp[0] = (void*)(rule)->result_function;
           tmp[1] = (rule)->func_bonus_dat;
           (rule[0]).func_bonus_dat = (void*)tmp;
@@ -1975,6 +2039,68 @@ struct gram_rule_t {
     (rules)->del();
     rules[0] = new_rules;
   }
+  static
+  void remove_all_left_recursion(gram_rules* rules, string_list* nonterm_symbs){
+    bool has_changed;
+    has_changed = true;
+    while (has_changed) {
+      has_changed = false;
+      int i;
+      i = 0;
+      while ((i) < ((rules)->len())) {
+        gram_rule_t* rule;
+        rule = (rules)->ith(i);
+        if (((rule)->pattern).len()) {
+          gram_symbol_t first_sym;
+          first_sym = ((rule)->pattern).ith((((rule)->pattern).len()) - (1));
+          if ((((int)(first_sym).kind) == (2)) && (((((first_sym).dat).NonTerm_dat).symb) < ((rule)->result))) {
+            ((rule)->pattern).remove((((rule)->pattern).len()) - (1));
+            int j;
+            j = 0;
+            while ((j) < ((rules)->len())) {
+              gram_rule_t rule2;
+              rule2 = (rules)->ith(j)[0];
+              if (((rule2).result) == ((((first_sym).dat).NonTerm_dat).symb)) {
+                gram_rule_t* newrule;
+                newrule = (gram_rule_t*)malloc(sizeof(gram_rule_t));
+                void** tmp;
+                tmp = (void**)malloc((sizeof(tmp[0])) * (5));
+                tmp[0] = (void*)(rule2).result_function;
+                tmp[1] = (void*)(rule2).func_bonus_dat;
+                tmp[2] = (void*)(rule)->result_function;
+                tmp[3] = (void*)(rule)->func_bonus_dat;
+                int* tmpint;
+                tmpint = (int*)malloc(sizeof(tmpint[0]));
+                tmpint[0] = ((rule2).pattern).len();
+                tmp[4] = (void*)tmpint;
+                (newrule)->init_bonus_func_data((rule)->result, _gram_rule_ret_lrec_any_uninline, (void*)tmp);
+                int k;
+                k = 0;
+                while ((k) < (((rule)->pattern).len())) {
+                  ((newrule)->pattern).append(((rule)->pattern).ith(k));
+                  k = (k) + (1);
+                }
+                k = 0;
+                while ((k) < (((rule2).pattern).len())) {
+                  ((newrule)->pattern).append(((rule2).pattern).ith(k));
+                  k = (k) + (1);
+                }
+                (rules)->append(newrule);
+              }
+              j = (j) + (1);
+            }
+            (rule)->del();
+            free(rule);
+            (rules)->remove(i);
+            has_changed = true;
+            i = (i) - (1);
+          }
+        }
+        remove_direct_left_recursion(rules, nonterm_symbs);
+        i = (i) + (1);
+      }
+    }
+  }
 };
 gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_anyptr), string_list* nonterm_symbs){
   char* tmp;
@@ -1997,16 +2123,16 @@ gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_any
     while ((str[0]) && ((str[0]) == (32))) {
       str = (str) + (1);
     }
-    if ((str[0]) == ((36) && ((str[1]) == (123)))) {
+    if (((str[0]) == (36)) && ((str[1]) == (123))) {
       str = (str) + (2);
       tmp = copy_string_until_char(&(str), 125);
       (ret).add_exact(tmp);
       free(tmp);
       tmp = nullptr;
     } else
-    if ((str[0]) == ((36) && ((str[1]) == (123)))) {
+    if (((str[0]) == (36)) && ((str[1]) == (91))) {
       str = (str) + (2);
-      tmp = copy_string_until_char(&(str), 125);
+      tmp = copy_string_until_char(&(str), 93);
       (ret).add_term(tmp);
       free(tmp);
       tmp = nullptr;

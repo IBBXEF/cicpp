@@ -792,6 +792,7 @@ token lr_op_token(bool addition) {
 
 anyptr lr_identifier(clist_anyptr args) {
   token* t = token_arg(args, 0);
+  printf("identifier parse kind %d\n", t->kind);
   return lr_return(lr_number(std::atoi(t->dat.Ident_dat.str)));
 }
 
@@ -898,7 +899,7 @@ void test_direct_left_recursion_preserves_left_associative_ast() {
     rules.ith(i)->print(names);
   }
 
-  gram_rule_t::remove_left_recursion(&rules, &names);
+  gram_rule_t::remove_direct_left_recursion(&rules, &names);
   printf("after lrec removed:\n");
 
   CHECK(!lr_has_direct_recursion(rules, expr));
@@ -927,7 +928,7 @@ void test_multiple_left_recursive_alternatives_preserve_ast_order() {
   lr_add_expression_rules(rules, names, true, false);
 
   const int expr = string_list_find(names, "Expr");
-  gram_rule_t::remove_left_recursion(&rules, &names);
+  gram_rule_t::remove_direct_left_recursion(&rules, &names);
 
   CHECK(!lr_has_direct_recursion(rules, expr));
 
@@ -952,7 +953,7 @@ void test_left_recursion_preserves_other_base_alternatives() {
   lr_add_expression_rules(rules, names, false, true);
 
   const int expr = string_list_find(names, "Expr");
-  gram_rule_t::remove_left_recursion(&rules, &names);
+  gram_rule_t::remove_direct_left_recursion(&rules, &names);
 
   CHECK(!lr_has_direct_recursion(rules, expr));
 
@@ -970,7 +971,7 @@ void test_left_recursion_preserves_other_base_alternatives() {
   cleanup_rules(rules, names);
 }
 
-void test_remove_left_recursion_leaves_nonrecursive_rule_unchanged() {
+void test_remove_direct_left_recursion_leaves_nonrecursive_rule_unchanged() {
   RuleList rules = make_rule_list();
   string_list names;
   names.init();
@@ -980,10 +981,153 @@ void test_remove_left_recursion_leaves_nonrecursive_rule_unchanged() {
   const int old_rule_count = rules.len();
   const int old_nonterminal_count = names.len();
 
-  gram_rule_t::remove_left_recursion(&rules, &names);
+  gram_rule_t::remove_direct_left_recursion(&rules, &names);
 
   CHECK(rules.len() == old_rule_count);
   CHECK(names.len() == old_nonterminal_count);
+
+  cleanup_rules(rules, names);
+}
+
+// Checks that no production begins with its own LHS nonterminal.
+void check_no_direct_left_recursion(RuleList& rules, string_list& names) {
+  for (int i = 0; i < names.len(); ++i) {
+    CHECK(!lr_has_direct_recursion(rules, i));
+  }
+}
+
+// ---------- General left-recursion tests ----------
+
+// Expr -> Term
+// Term -> Expr + @ident | @ident
+//
+// This creates indirect left recursion:
+//
+// Expr => Term => Expr + @ident
+//
+// The resulting language is: ident (+ ident)*
+
+void test_general_left_recursion_two_nonterminals() {
+  RuleList rules = make_rule_list();
+  string_list names;
+  names.init();
+
+  add_rule(rules, names, "$Expr -> $Term", lr_passthrough);
+  add_rule(rules, names, "$Term -> $Expr + $Final", lr_add);
+  add_rule(rules, names, "$Term -> @ident", lr_identifier);
+  add_rule(rules, names, "$Final -> @ident", lr_identifier);
+
+  CHECK(string_list_find(names, "Expr") == 0);
+  CHECK(string_list_find(names, "Term") == 1);
+
+  for (int i = 0; i < rules.len(); i++)
+  {
+    rules.ith(i)->print(names);
+  }
+  gram_rule_t::remove_all_left_recursion(&rules, &names);
+  printf("after all left recursion removed:\n");
+  for (int i = 0; i < rules.len(); i++)
+  {
+    rules.ith(i)->print(names);
+  }
+
+  check_no_direct_left_recursion(rules, names);
+
+  // A single identifier must still work.
+  CHECK(lr_parse_ast(rules, names, {
+      ident("1")
+  }) == "1");
+
+  // The AST must remain left-associative.
+  CHECK(lr_parse_ast(rules, names, {
+      ident("1"), lr_op_token(true), ident("2")
+  }) == "(+ 1 2)");
+
+  CHECK(lr_parse_ast(rules, names, {
+      ident("1"), lr_op_token(true), ident("2"),
+      lr_op_token(true), ident("3")
+  }) == "(+ (+ 1 2) 3)");
+
+  CHECK(lr_parse_ast(rules, names, {
+      ident("1"), lr_op_token(true), ident("2"),
+      lr_op_token(true), ident("3"),
+      lr_op_token(true), ident("4")
+  }) == "(+ (+ (+ 1 2) 3) 4)");
+
+  cleanup_rules(rules, names);
+}
+
+
+// Expr -> Term
+// Term -> Factor
+// Factor -> Expr + @ident | @ident
+//
+// This creates an indirect recursion cycle involving three nonterminals:
+//
+// Expr => Term => Factor => Expr + @ident
+
+void test_general_left_recursion_three_nonterminals() {
+  RuleList rules = make_rule_list();
+  string_list names;
+  names.init();
+
+  add_rule(rules, names, "$Expr -> $Term", lr_passthrough);
+  add_rule(rules, names, "$Term -> $Factor", lr_passthrough);
+  add_rule(rules, names, "$Factor -> $Expr + $Final", lr_add);
+  add_rule(rules, names, "$Factor -> @ident", lr_identifier);
+  add_rule(rules, names, "$Final -> @ident", lr_identifier);
+
+  CHECK(string_list_find(names, "Expr") == 0);
+  CHECK(string_list_find(names, "Term") == 1);
+  CHECK(string_list_find(names, "Factor") == 2);
+
+  gram_rule_t::remove_all_left_recursion(&rules, &names);
+
+  check_no_direct_left_recursion(rules, names);
+
+  CHECK(lr_parse_ast(rules, names, {
+      ident("5")
+  }) == "5");
+
+  CHECK(lr_parse_ast(rules, names, {
+      ident("1"), lr_op_token(true), ident("2")
+  }) == "(+ 1 2)");
+
+  CHECK(lr_parse_ast(rules, names, {
+      ident("1"), lr_op_token(true), ident("2"),
+      lr_op_token(true), ident("3")
+  }) == "(+ (+ 1 2) 3)");
+
+  cleanup_rules(rules, names);
+}
+
+
+// A grammar without left recursion should remain usable.
+//
+// Start -> Expr
+// Expr -> @ident
+
+void test_general_left_recursion_no_recursion() {
+  RuleList rules = make_rule_list();
+  string_list names;
+  names.init();
+
+  add_rule(rules, names, "$Start -> $Expr", lr_passthrough);
+  add_rule(rules, names, "$Expr -> @ident", lr_identifier);
+
+  const int old_rule_count = rules.len();
+  const int old_nonterminal_count = names.len();
+
+  gram_rule_t::remove_all_left_recursion(&rules, &names);
+
+  CHECK(rules.len() == old_rule_count);
+  CHECK(names.len() == old_nonterminal_count);
+
+  check_no_direct_left_recursion(rules, names);
+
+  CHECK(lr_parse_ast(rules, names, {
+      ident("42")
+  }) == "42");
 
   cleanup_rules(rules, names);
 }
@@ -1018,7 +1162,11 @@ int main() {
     test_direct_left_recursion_preserves_left_associative_ast();
     test_multiple_left_recursive_alternatives_preserve_ast_order();
     test_left_recursion_preserves_other_base_alternatives();
-    test_remove_left_recursion_leaves_nonrecursive_rule_unchanged();
+    test_remove_direct_left_recursion_leaves_nonrecursive_rule_unchanged();
+
+    test_general_left_recursion_two_nonterminals();
+    test_general_left_recursion_three_nonterminals();
+    test_general_left_recursion_no_recursion();
 
 #if LL1_HAS_POSIX_SUBPROCESS
 
