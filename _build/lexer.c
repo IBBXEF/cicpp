@@ -4,9 +4,73 @@
 #include <stdlib.h>
 struct binop {
   enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt, Arrow } kind;
+  void fprint(FILE* fptr){
+    if ((kind) == (Eq)) {
+      fprintf(fptr, "==");
+    } else
+    if ((kind) == (Neq)) {
+      fprintf(fptr, "!=");
+    } else
+    if ((kind) == (Lt)) {
+      fprintf(fptr, "<");
+    } else
+    if ((kind) == (Leq)) {
+      fprintf(fptr, "<=");
+    } else
+    if ((kind) == (Land)) {
+      fprintf(fptr, "&&");
+    } else
+    if ((kind) == (Lor)) {
+      fprintf(fptr, "||");
+    } else
+    if ((kind) == (Band)) {
+      fprintf(fptr, "&");
+    } else
+    if ((kind) == (Bor)) {
+      fprintf(fptr, "|");
+    } else
+    if ((kind) == (Gt)) {
+      fprintf(fptr, ">");
+    } else
+    if ((kind) == (Geq)) {
+      fprintf(fptr, ">=");
+    } else
+    if ((kind) == (Div)) {
+      fprintf(fptr, "/");
+    } else
+    if ((kind) == (Mul)) {
+      fprintf(fptr, "*");
+    } else
+    if ((kind) == (Sub)) {
+      fprintf(fptr, "-");
+    } else
+    if ((kind) == (Add)) {
+      fprintf(fptr, "+");
+    } else
+    if ((kind) == (Arrow)) {
+      fprintf(fptr, "->");
+    }
+  }
+  void print(){
+    fprint(stdout);
+  }
 };
 struct unop {
   enum { Lnot, Neg, Addr } kind;
+  void fprint(FILE* fptr){
+    if ((kind) == (Lnot)) {
+      fprintf(fptr, "!");
+    } else
+    if ((kind) == (Neg)) {
+      fprintf(fptr, "-");
+    } else
+    if ((kind) == (Addr)) {
+      fprintf(fptr, "&");
+    }
+  }
+  void print(){
+    fprint(stdout);
+  }
 };
 struct token {
   enum { TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident, EndOfInput } kind;
@@ -50,6 +114,60 @@ struct token {
       return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
     }
     return true;
+  }
+  void print(){
+    if ((kind) == (LPAREN)) {
+      printf("(");
+    } else
+    if ((kind) == (RPAREN)) {
+      printf(")");
+    } else
+    if ((kind) == (LSQUAR)) {
+      printf("[");
+    } else
+    if ((kind) == (RSQUAR)) {
+      printf("]");
+    } else
+    if ((kind) == (TInt)) {
+      printf("int");
+    } else
+    if ((kind) == (TVoid)) {
+      printf("void");
+    } else
+    if ((kind) == (TChar)) {
+      printf("char");
+    } else
+    if ((kind) == (Const)) {
+      printf("const");
+    } else
+    if ((kind) == (As)) {
+      printf("as");
+    } else
+    if ((kind) == (Set)) {
+      printf("=");
+    } else
+    if ((kind) == (Dot)) {
+      printf(".");
+    } else
+    if ((kind) == (Comma)) {
+      printf(",");
+    } else
+    if ((kind) == (Ident)) {
+      printf("%s", ((dat).Ident_dat).str);
+    } else
+    if ((kind) == (VInt)) {
+      printf("%d", ((dat).VInt_dat).dat);
+    } else
+    if ((kind) == (VString)) {
+      printf("\"%s\"", ((dat).VString_dat).str);
+    } else
+    if ((kind) == (Binop)) {
+      (((dat).Binop_dat).op).print();
+    } else
+    if ((kind) == (Unop)) {
+      (((dat).Unop_dat).op).print();
+    } else
+    printf("kind:%d", (int)kind);
   }
 };
 #include <stdlib.h>

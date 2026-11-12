@@ -94,9 +94,10 @@ type gram_rule_t {
 
         func void print(string_list nonterm_symbs) {
             if kind == Term {
-                printf("Term (id %d)", ((((dat.Term_dat).tok).kind) as int));
+                printf("@");
+                ((dat.Term_dat).tok).print();
             } elif kind == Exact {
-                printf("Exact (id %d)", ((((dat.Term_dat).tok).kind) as int));
+                ((dat.Exact_dat).tok).print();
             } else {
                 printf("$%s",
                     ( nonterm_symbs.ith((dat.NonTerm_dat).symb)) );
@@ -121,9 +122,9 @@ type gram_rule_t {
             }
             _n_nonterms = n_nonterms;
         }
-        func void add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r) {
+        func void add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r, bool ignore_conflicts, const char* nonterm_name) {
             if ((s.kind) as int) == 2 { // 2 = Nonterminal
-                printf("invalid gram symbol for rule table: it is Nonterminal\n");
+                printf("invalid gram symbol for rule table: it is Nonterminal %s\n", nonterm_name);
                 exit(EXIT_FAILURE);
             }
             if ((nonterm < 0) || (nonterm >= _n_nonterms)) {
@@ -141,10 +142,15 @@ type gram_rule_t {
                     if !(r->eq(*(table.ith(i)).r)) { // there is a real conflict
                         string_list empty;
                         empty.init();
-                        printf("conflicting entry in the parsing table for nonterm %d and symbol ", nonterm);
+                        printf("conflicting entry in the parsing table for nonterm $%s and symbol ", nonterm_name);
                         s.print(empty);
                         printf("\n");
-                        exit(EXIT_FAILURE);
+                        if ignore_conflicts {
+                            printf("conflict ignored\n");
+                            // return; // TODO: allow return statements without values
+                        } else {
+                            exit(EXIT_FAILURE);
+                        }
                     }
                 }
                 i = i + 1;
@@ -294,7 +300,7 @@ type gram_rule_t {
             gram_symbol_t s2;
             s1 = pattern.ith(i);
             s2 = (r.pattern).ith(i);
-            if !((s1.includes(s2)) && (s2.includes(s1))) {
+            if !(s1.eq(s2)) {
                 printf("f5\n");
                 return false;
             }
@@ -352,7 +358,7 @@ type gram_rule_t {
     specialize comparable_ptr<gram_symbol_t> as term_ptr
     specialize set<term_ptr> as term_set
 
-    static func parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm, gram_symbol_t* stop_symbol) {
+    static func parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm, gram_symbol_t* stop_symbol, bool ignore_conflicts) {
         // create an initialize Fi
         term_set* Fi;
         Fi = (malloc(sizeof(term_set)*(nonterm_symbs.len()))) as term_set*;
@@ -513,7 +519,7 @@ type gram_rule_t {
                     while k < (tmp.elts).len() {
                         gram_symbol_t* s;
                         s = ((tmp.elts).ith(k)).ptr;
-                        ret.add_entry(*s, i, rules.ith(j));
+                        ret.add_entry(*s, i, rules.ith(j), ignore_conflicts, nonterm_symbs.ith(i));
                         k = k + 1;
                     }
                 }
@@ -534,7 +540,7 @@ type gram_rule_t {
         return ret;
     }
 
-    static func anyptr parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs) {
+    static func anyptr parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs, bool ignore_conflicts = false) {
         if ((stop_symbol.kind) as int) == 2 { // 2 = Nonterminal
             printf("invalid stop symbol: it is Nonterminal\n");
             exit(EXIT_FAILURE);
@@ -558,7 +564,7 @@ type gram_rule_t {
         }
 
         parsing_table table;
-        table = make_parsing_table(rules, nonterm_symbs, goal_nonterm, &stop_symbol); // we rebuild the table each time, it is wasteful but for now it's okay
+        table = make_parsing_table(rules, nonterm_symbs, goal_nonterm, &stop_symbol, ignore_conflicts); // we rebuild the table each time, it is wasteful but for now it's okay
 
         while (stack.len()) > 0 {
             symbol_dat stacktop;
@@ -572,7 +578,9 @@ type gram_rule_t {
 
             if (((stacktop.sym).kind) as int) != 2 { // the top element of our stack is a token
                 if !(stacktop.sym).match_tok(inptop) {
-                    printf("failed to parse: got token id %d\n", (inptop.kind) as int);
+                    printf("failed to parse: got token ");
+                    inptop.print();
+                    printf("\n");
                     exit(EXIT_FAILURE);
                 }
                 stacktop.update_tok_ast(inptop);
@@ -827,8 +835,7 @@ type gram_rule_t {
         rules->del();
         *rules = new_rules;
     }
-
-    // does not support potentialy epsilon nonterminals at the start of patterns
+    // does not support potentially epsilon nonterminals at the start of patterns
     static func void remove_all_left_recursion(gram_rules* rules, string_list* nonterm_symbs) {
         bool has_changed;
         has_changed = true;

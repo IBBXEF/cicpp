@@ -391,9 +391,73 @@ void clist_anyptr_free(clist_anyptr l){
 #include <stdlib.h>
 struct binop {
   enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt, Arrow } kind;
+  void fprint(FILE* fptr){
+    if ((kind) == (Eq)) {
+      fprintf(fptr, "==");
+    } else
+    if ((kind) == (Neq)) {
+      fprintf(fptr, "!=");
+    } else
+    if ((kind) == (Lt)) {
+      fprintf(fptr, "<");
+    } else
+    if ((kind) == (Leq)) {
+      fprintf(fptr, "<=");
+    } else
+    if ((kind) == (Land)) {
+      fprintf(fptr, "&&");
+    } else
+    if ((kind) == (Lor)) {
+      fprintf(fptr, "||");
+    } else
+    if ((kind) == (Band)) {
+      fprintf(fptr, "&");
+    } else
+    if ((kind) == (Bor)) {
+      fprintf(fptr, "|");
+    } else
+    if ((kind) == (Gt)) {
+      fprintf(fptr, ">");
+    } else
+    if ((kind) == (Geq)) {
+      fprintf(fptr, ">=");
+    } else
+    if ((kind) == (Div)) {
+      fprintf(fptr, "/");
+    } else
+    if ((kind) == (Mul)) {
+      fprintf(fptr, "*");
+    } else
+    if ((kind) == (Sub)) {
+      fprintf(fptr, "-");
+    } else
+    if ((kind) == (Add)) {
+      fprintf(fptr, "+");
+    } else
+    if ((kind) == (Arrow)) {
+      fprintf(fptr, "->");
+    }
+  }
+  void print(){
+    fprint(stdout);
+  }
 };
 struct unop {
   enum { Lnot, Neg, Addr } kind;
+  void fprint(FILE* fptr){
+    if ((kind) == (Lnot)) {
+      fprintf(fptr, "!");
+    } else
+    if ((kind) == (Neg)) {
+      fprintf(fptr, "-");
+    } else
+    if ((kind) == (Addr)) {
+      fprintf(fptr, "&");
+    }
+  }
+  void print(){
+    fprint(stdout);
+  }
 };
 struct token {
   enum { TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident, EndOfInput } kind;
@@ -437,6 +501,60 @@ struct token {
       return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
     }
     return true;
+  }
+  void print(){
+    if ((kind) == (LPAREN)) {
+      printf("(");
+    } else
+    if ((kind) == (RPAREN)) {
+      printf(")");
+    } else
+    if ((kind) == (LSQUAR)) {
+      printf("[");
+    } else
+    if ((kind) == (RSQUAR)) {
+      printf("]");
+    } else
+    if ((kind) == (TInt)) {
+      printf("int");
+    } else
+    if ((kind) == (TVoid)) {
+      printf("void");
+    } else
+    if ((kind) == (TChar)) {
+      printf("char");
+    } else
+    if ((kind) == (Const)) {
+      printf("const");
+    } else
+    if ((kind) == (As)) {
+      printf("as");
+    } else
+    if ((kind) == (Set)) {
+      printf("=");
+    } else
+    if ((kind) == (Dot)) {
+      printf(".");
+    } else
+    if ((kind) == (Comma)) {
+      printf(",");
+    } else
+    if ((kind) == (Ident)) {
+      printf("%s", ((dat).Ident_dat).str);
+    } else
+    if ((kind) == (VInt)) {
+      printf("%d", ((dat).VInt_dat).dat);
+    } else
+    if ((kind) == (VString)) {
+      printf("\"%s\"", ((dat).VString_dat).str);
+    } else
+    if ((kind) == (Binop)) {
+      (((dat).Binop_dat).op).print();
+    } else
+    if ((kind) == (Unop)) {
+      (((dat).Unop_dat).op).print();
+    } else
+    printf("kind:%d", (int)kind);
   }
 };
 #define dat_t token
@@ -741,10 +859,11 @@ struct gram_rule_t {
     }
     void print(string_list nonterm_symbs){
       if ((kind) == (Term)) {
-        printf("Term (id %d)", (int)(((dat).Term_dat).tok).kind);
+        printf("@");
+        (((dat).Term_dat).tok).print();
       } else
       if ((kind) == (Exact)) {
-        printf("Exact (id %d)", (int)(((dat).Term_dat).tok).kind);
+        (((dat).Exact_dat).tok).print();
       } else
       printf("$%s", (nonterm_symbs).ith(((dat).NonTerm_dat).symb));
     }
@@ -976,7 +1095,7 @@ struct gram_rule_t {
       }
       _n_nonterms = n_nonterms;
     }
-    void add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r){
+    void add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r, bool ignore_conflicts){
       if (((int)(s).kind) == (2)) {
         printf("invalid gram symbol for rule table: it is Nonterminal\n");
         exit(EXIT_FAILURE);
@@ -999,6 +1118,9 @@ struct gram_rule_t {
             printf("conflicting entry in the parsing table for nonterm %d and symbol ", nonterm);
             (s).print(empty);
             printf("\n");
+            if (ignore_conflicts) {
+              printf("conflict ignored\n");
+            } else
             exit(EXIT_FAILURE);
           }
         }
@@ -1351,7 +1473,7 @@ struct gram_rule_t {
       gram_symbol_t s2;
       s1 = (pattern).ith(i);
       s2 = ((r).pattern).ith(i);
-      if (!(((s1).includes(s2)) && ((s2).includes(s1)))) {
+      if (!((s1).eq(s2))) {
         printf("f5\n");
         return false;
       }
@@ -1583,7 +1705,7 @@ struct gram_rule_t {
   #undef set_dat_t
   #undef set
   static
-  parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm, gram_symbol_t* stop_symbol){
+  parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm, gram_symbol_t* stop_symbol, bool ignore_conflicts){
     term_set* Fi;
     Fi = (term_set*)malloc((sizeof(term_set)) * ((nonterm_symbs).len()));
     term_set* FiRules;
@@ -1728,7 +1850,7 @@ struct gram_rule_t {
           while ((k) < (((tmp).elts).len())) {
             gram_symbol_t* s;
             s = (((tmp).elts).ith(k)).ptr;
-            (ret).add_entry(s[0], i, (rules).ith(j));
+            (ret).add_entry(s[0], i, (rules).ith(j), ignore_conflicts);
             k = (k) + (1);
           }
         }
@@ -1749,7 +1871,7 @@ struct gram_rule_t {
     return ret;
   }
   static
-  anyptr parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs){
+  anyptr parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs, bool ignore_conflicts = false){
     if (((int)(stop_symbol).kind) == (2)) {
       printf("invalid stop symbol: it is Nonterminal\n");
       exit(EXIT_FAILURE);
@@ -1769,7 +1891,7 @@ struct gram_rule_t {
     } else
     stop_token = (((stop_symbol).dat).Term_dat).tok;
     parsing_table table;
-    table = make_parsing_table(rules, nonterm_symbs, goal_nonterm, &(stop_symbol));
+    table = make_parsing_table(rules, nonterm_symbs, goal_nonterm, &(stop_symbol), ignore_conflicts);
     while (((stack).len()) > (0)) {
       symbol_dat stacktop;
       stacktop = (stack).pop();
@@ -1780,7 +1902,9 @@ struct gram_rule_t {
       inptop = stop_token;
       if (((int)((stacktop).sym).kind) != (2)) {
         if (!(((stacktop).sym).match_tok(inptop))) {
-          printf("failed to parse: got token id %d\n", (int)(inptop).kind);
+          printf("failed to parse: got token ");
+          (inptop).print();
+          printf("\n");
           exit(EXIT_FAILURE);
         }
         (stacktop).update_tok_ast(inptop);
@@ -1930,23 +2054,6 @@ struct gram_rule_t {
     res1 = old_res_func1(lcopy1);
     (lcopy1).del();
     (lcopy2).push(res1);
-    printf("INDIRECT CALLBACK\n");
-    printf("list length: %d\n", (l).len());
-    printf("old1_len: %d\n", old1_len[0]);
-    printf("func1: %p\n", old_res_func1);
-    printf("bonus1: %p\n", (old_bonus_dat1).ptr);
-    printf("func2: %p\n", old_res_func2);
-    printf("bonus2: %p\n", (old_bonus_dat2).ptr);
-    i = 0;
-    while ((i) < ((l).len())) {
-      printf("old arg %d: %p\n", i, ((l).ith(i)).ptr);
-      i = (i) + (1);
-    }
-    i = 0;
-    while ((i) < ((lcopy2).len())) {
-      printf("new arg %d: %p\n", i, ((lcopy2).ith(i)).ptr);
-      i = (i) + (1);
-    }
     (lcopy2).append(old_bonus_dat2);
     res1 = old_res_func2(lcopy2);
     (lcopy2).del();

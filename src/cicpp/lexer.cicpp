@@ -6,12 +6,61 @@
 
 type binop {
     Add; Mul; Sub; Div; Band; Bor; Land; Lor; Eq; Leq; Lt; Neq; Geq; Gt; Arrow;
+
+    func void fprint(FILE* fptr) {
+        if (kind == Eq) {
+            fprintf(fptr, "==");
+        } elif (kind == Neq) {
+            fprintf(fptr, "!=");
+        } elif (kind == Lt) {
+            fprintf(fptr, "<");
+        } elif (kind == Leq) {
+            fprintf(fptr, "<=");
+        } elif (kind == Land) {
+            fprintf(fptr, "&&");
+        } elif (kind == Lor) {
+            fprintf(fptr, "||");
+        } elif (kind == Band) {
+            fprintf(fptr, "&");
+        } elif (kind == Bor) {
+            fprintf(fptr, "|");
+        } elif (kind == Gt) {
+            fprintf(fptr, ">");
+        } elif (kind == Geq) {
+            fprintf(fptr, ">=");
+        } elif (kind == Div) {
+            fprintf(fptr, "/");
+        } elif (kind == Mul) {
+            fprintf(fptr, "*");
+        } elif (kind == Sub) {
+            fprintf(fptr, "-");
+        } elif (kind == Add) {
+            fprintf(fptr, "+");
+        } elif (kind == Arrow) {
+            fprintf(fptr, "->");
+        }
+    }
+    func void print() {
+        fprint(stdout);
+    }
 }
 
 type unop {
     Lnot;
     Neg;
     Addr;
+    func void fprint(FILE* fptr) {
+        if (kind == Lnot) {
+            fprintf(fptr, "!");
+        } elif (kind == Neg) {
+            fprintf(fptr, "-");
+        } elif (kind == Addr) {
+            fprintf(fptr, "&");
+        }
+    }
+    func void print() {
+        fprint(stdout);
+    }
 }
 
 type token {
@@ -83,6 +132,46 @@ type token {
             return (!strcmp((dat.Ident_dat).str, ((b.dat).Ident_dat).str));
         }
         return true;
+    }
+
+    func void print() {
+        if kind == LPAREN {
+            printf("(");
+        } elif kind == RPAREN {
+            printf(")");
+        } elif kind == LSQUAR {
+            printf("[");
+        } elif kind == RSQUAR {
+            printf("]");
+        } elif kind == TInt {
+            printf("int");
+        } elif kind == TVoid {
+            printf("void");
+        } elif kind == TChar {
+            printf("char");
+        } elif kind == Const {
+            printf("const");
+        } elif kind == As {
+            printf("as");
+        } elif kind == Set {
+            printf("=");
+        } elif kind == Dot {
+            printf(".");
+        } elif kind == Comma {
+            printf(",");
+        } elif kind == Ident {
+            printf("%s", (dat.Ident_dat).str);
+        } elif kind == VInt {
+            printf("%d", (dat.VInt_dat).dat);
+        } elif kind == VString {
+            printf("\"%s\"", (dat.VString_dat).str);
+        } elif kind == Binop {
+            ((dat.Binop_dat).op).print();
+        } elif kind == Unop {
+            ((dat.Unop_dat).op).print();
+        } else {
+            printf("kind:%d", kind as int);
+        }
     }
 }
 

@@ -237,6 +237,11 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$Lval       -> $Lval . @ident"        , gram_rule_lval_dot    , &nonterm_symbs) );
     ret.append( make_rule("$Lval       -> $RvalStru -> @ident"   , gram_rule_arrow       , &nonterm_symbs) );
 
+    ret.append( make_rule("$LvalNoDot  -> @ident"                , gram_rule_var         , &nonterm_symbs) );
+    ret.append( make_rule("$LvalNoDot  -> * $RvalStru"           , gram_rule_ptr_lval    , &nonterm_symbs) );
+    ret.append( make_rule("$LvalNoDot  -> $RvalStru [ $Rval ]"   , gram_rule_array       , &nonterm_symbs) );
+    ret.append( make_rule("$LvalNoDot  -> $RvalStru -> @ident"   , gram_rule_arrow       , &nonterm_symbs) );
+
 
     ret.append( make_rule("$RvalAtom   -> ( $Rval )"             , gram_rule_elt_n1        , &nonterm_symbs) );
     ret.append( make_rule("$RvalAtom   -> @0"                    , gram_rule_int           , &nonterm_symbs) );
@@ -245,7 +250,7 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$RvalStru   -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$RvalStru   -> $RvalStru . @ident"    , gram_rule_rval_dot      , &nonterm_symbs) );
     ret.append( make_rule("$RvalStru   -> $RvalStru ( $arglist )", gram_rule_func          , &nonterm_symbs) );
-    ret.append( make_rule("$RvalStru   -> $Lval"                 , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
+    ret.append( make_rule("$RvalStru   -> $LvalNoDot"            , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
 
     ret.append( make_rule("$RvalUnary  -> $RvalStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$RvalUnary  -> @! $RvalUnary"         , gram_rule_unop          , &nonterm_symbs) );
@@ -291,6 +296,9 @@ gram_rule_t::gram_rules make_rules() {
 gram_rule_t::gram_rules parsing_rules = make_rules();
 
 rval* parse_rval(toklist* toks, token* end_token) {
+    printf("parsing rvalue ");
+    toks->ith(0).print();
+    printf("\n");
     if (!end_token) {
         printf("end token needed\n");
         exit(-1);
@@ -298,7 +306,7 @@ rval* parse_rval(toklist* toks, token* end_token) {
     int goal = string_list_find(nonterm_symbs, "Rval");
     gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok = *end_token;
-    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs);
+    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs, true);
     if (!ret.ptr) {
         printf("failed to parse an rvalue\n");
         exit(-1);
@@ -307,10 +315,13 @@ rval* parse_rval(toklist* toks, token* end_token) {
     return (rval*)ret.ptr;
 }
 lval* parse_lval(toklist* toks) {
+    printf("parsing lvalue ");
+    toks->ith(0).print();
+    printf("\n");
     gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::Set;
     int goal = string_list_find(nonterm_symbs, "Lval");
-    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs);
+    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs, true);
     if (!ret.ptr) {
         printf("failed to parse an lvalue\n");
         exit(-1);

@@ -158,51 +158,19 @@ void rval::print_to_file(FILE* fptr) {
         fprintf(fptr, "(");
         dat.binop_dat.v1->print_to_file(fptr);
         fprintf(fptr, ")");
-        if (dat.binop_dat.op.kind == binop::Eq) {
-            fprintf(fptr, " == ");
-        } else if (dat.binop_dat.op.kind == binop::Neq) {
-            fprintf(fptr, " != ");
-        } else if (dat.binop_dat.op.kind == binop::Lt) {
-            fprintf(fptr, " < ");
-        } else if (dat.binop_dat.op.kind == binop::Leq) {
-            fprintf(fptr, " <= ");
-        } else if (dat.binop_dat.op.kind == binop::Land) {
-            fprintf(fptr, " && ");
-        } else if (dat.binop_dat.op.kind == binop::Lor) {
-            fprintf(fptr, " || ");
-        } else if (dat.binop_dat.op.kind == binop::Band) {
-            fprintf(fptr, " & ");
-        } else if (dat.binop_dat.op.kind == binop::Bor) {
-            fprintf(fptr, " | ");
-        } else if (dat.binop_dat.op.kind == binop::Gt) {
-            fprintf(fptr, " > ");
-        } else if (dat.binop_dat.op.kind == binop::Geq) {
-            fprintf(fptr, " >= ");
-        } else if (dat.binop_dat.op.kind == binop::Div) {
-            fprintf(fptr, " / ");
-        } else if (dat.binop_dat.op.kind == binop::Mul) {
-            fprintf(fptr, " * ");
-        } else if (dat.binop_dat.op.kind == binop::Sub) {
-            fprintf(fptr, " - ");
-        } else if (dat.binop_dat.op.kind == binop::Add) {
-            fprintf(fptr, " + ");
-        }
         if (dat.binop_dat.op.kind == binop::Arrow) {
             fprintf(fptr, "->");
             dat.binop_dat.v2->print_to_file(fptr);
         } else {
-            fprintf(fptr, "(");
+            fprintf(fptr, " ");
+            dat.binop_dat.op.fprint(fptr);
+            fprintf(fptr, " (");
             dat.binop_dat.v2->print_to_file(fptr);
             fprintf(fptr, ")");
         }
     } else if (kind == Unop) {
-        if (dat.unop_dat.op.kind == unop::Lnot) {
-            fprintf(fptr, "!(");
-        } else if (dat.unop_dat.op.kind == unop::Neg) {
-            fprintf(fptr, "-(");
-        } else if (dat.unop_dat.op.kind == unop::Addr) {
-            fprintf(fptr, "&(");
-        }
+        dat.unop_dat.op.fprint(fptr);
+        fprintf(fptr, "(");
         dat.unop_dat.v->print_to_file(fptr);
         fprintf(fptr, ")");
     } else if (kind == Fcall) {
