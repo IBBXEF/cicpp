@@ -303,12 +303,13 @@ type gram_rule_t {
             i = i + 1;
         }
         if result_function != (r.result_function) {
-            printf("WARNING: identical rules with different result functions, assuming they are identical\n");
+            // TODO: readd warnings later
+            // printf("WARNING: identical rules with different result functions, assuming they are identical\n");
             // exit(EXIT_FAILURE);
             // return false;
         }
         if func_bonus_dat != (r.func_bonus_dat) {
-            printf("WARNING: identical rules with different bonus dat, assuming they are identical\n");
+            // printf("WARNING: identical rules with different bonus dat, assuming they are identical\n");
             // exit(EXIT_FAILURE);
             // return false;
         }
@@ -589,7 +590,9 @@ type gram_rule_t {
                 gram_rule_t* rule;
                 rule = table.lookup(inptop, nt);
                 if rule == nullptr {
-                    printf("failed to parse: no rule found for nonterminal %s with token kind %d\n", (nonterm_symbs.ith(nt)), (inptop.kind) as int);
+                    printf("failed to parse: no rule found for nonterminal %s with token ", (nonterm_symbs.ith(nt)));
+                    inptop.print();
+                    printf("\n");
                     exit(EXIT_FAILURE);
                 }
                 
@@ -897,24 +900,124 @@ type gram_rule_t {
             }
         }
     }
-    static func void remove_doubled_rules(gram_rules* rules) {
+    static func void remove_useless_rules(gram_rules* rules) {
         int i;
         i = 0;
-        while i < (rules->len()) {
-            gram_rule_t rule1;
-            rule1 = *(rules->ith(i));
+        while i < (rules->len()) { // remove doubled rules
+            gram_rule_t* rule1;
+            rule1 = rules->ith(i);
             int j;
             j = i+1;
             while j < (rules->len()) {
-                gram_rule_t rule2;
-                rule2 = *(rules->ith(j));
-                if rule1.eq(rule2) {
-                    rules->remove(j); // TODO: fix this memory leak
+                gram_rule_t* rule2;
+                rule2 = rules->ith(j);
+                if rule1->eq(*rule2) {
+                    rules->remove(j);
+                    rule2->del();
+                    free(rule2);
                     j = j - 1;
                 }
                 j = j + 1;
             }
             i = i + 1;
+        }
+        i = 0;
+        while i < (rules->len()) { // remove identity rules
+            gram_rule_t* rule1;
+            rule1 = rules->ith(i);
+            symlist sl;
+            sl = rule1->pattern;
+            if ((sl.len()) == 1)
+                && ((((sl.ith(0)).kind) as int) == 2)
+                && (((((sl.ith(0)).dat).NonTerm_dat).symb) == (rule1->result)) {
+                rules->remove(i);
+                rule1->del();
+                free(rule1);
+                i = i - 1;
+            }
+            i = i + 1;
+        }
+    }
+    static func bool _nonterm_inclusion(gram_rules* rules, int nt1, int nt2) {
+        bool ret;
+        ret = true;
+        int i;
+        i = 0;
+        while i < (rules->len()) {
+            gram_rule_t rule1;
+            rule1 = *(rules->ith(i));
+            if (rule1.result) == nt1 {
+                bool found_match;
+                found_match = false;
+                int j;
+                j = i+1;
+                while j < (rules->len()) {
+                    gram_rule_t rule2;
+                    rule2 = *(rules->ith(j));
+                    if (rule2.result) == nt2 {
+                        rule2.pattern = (rule2.pattern).deepcopy();
+                        int k;
+                        k = 0;
+                        while k < ((rule2.pattern).len()) {
+                            gram_symbol_t* s;
+                            s = (rule2.pattern).ith_ref(k);
+                            if (((s->kind) as int) == 2) && ((((s->dat).NonTerm_dat).symb) == nt2) {
+                                (((s->dat).NonTerm_dat).symb) = nt1;
+                            }
+                            k = k + 1;
+                        }
+                        rule2.result = nt1;
+                        found_match = found_match || (rule1.eq(rule2)); // TODO: incorrect if rule1 has nt2 in its pattern
+                        (rule2.pattern).del();
+                    }
+                    j = j + 1;
+                }
+                ret = ret && found_match;
+            }
+            i = i + 1;
+        }
+        return ret;
+    }
+    static func void fuse_identical_nonterms(gram_rules* rules, string_list* nonterm_symbs) {
+        int n1;
+        n1 = 0;
+        while n1 < (nonterm_symbs->len()) {
+            int n2;
+            n2 = n1+1;
+            while n2 < (nonterm_symbs->len()) {
+                if (_nonterm_inclusion(rules, n1, n2)) && (_nonterm_inclusion(rules, n2, n1)) {
+                    // nonterminals have identical rules
+                    if (n2+1) == (nonterm_symbs->len()) {
+                        nonterm_symbs->remove(n2); // TODO: fix potential memory leak ?
+                    }
+                    int i;
+                    i = 0;
+                    while i < (rules->len()) {
+                        gram_rule_t* rule;
+                        rule = rules->ith(i);
+                        if (rule->result) == n2 {
+                            rules->remove(i);
+                            rule->del();
+                            free(rule);
+                            i = i - 1;
+                        } else {
+                            int k;
+                            k = 0;
+                            while k < ((rule->pattern).len()) {
+                                gram_symbol_t* s;
+                                s = (rule->pattern).ith_ref(k);
+                                if (((s->kind) as int) == 2) && ((((s->dat).NonTerm_dat).symb) == n2) {
+                                    (((s->dat).NonTerm_dat).symb) = n1;
+                                }
+                                k = k + 1;
+                            }
+                        }
+                        i = i + 1;
+                    }
+                }
+                n2 = n2 + 1;
+            }
+            n1 = n1 + 1;
         }
     }
     static func void apply_left_factoring(gram_rules* rules, string_list* nonterm_symbs) {
@@ -984,7 +1087,8 @@ type gram_rule_t {
                                 j = j + 1;
                             }
                             rules->append(newrule);
-                            remove_doubled_rules(rules);
+                            remove_useless_rules(rules);
+                            fuse_identical_nonterms(rules, nonterm_symbs);
                             i = INT_MAX-1;
                         }
                     }

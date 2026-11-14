@@ -289,8 +289,8 @@ gram_rule_t::gram_rules make_rules() {
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
     }
-    gram_rule_t::remove_doubled_rules(&ret);
     gram_rule_t::apply_left_factoring(&ret, &nonterm_symbs);
+    gram_rule_t::remove_all_left_recursion(&ret, &nonterm_symbs); // this doesn't modify rules, but reorders them
     printf("with left factoring applied:\n");
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
