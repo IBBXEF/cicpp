@@ -73,6 +73,17 @@ struct clist {
     }
     l = (rev).l;
   }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i;
+    i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith((len()) - ((i) + (1))));
+      i = (i) + (1);
+    }
+    return ret;
+  }
   clist tail(){
     clist ret;
     (ret).l = (l)->next;
@@ -177,6 +188,17 @@ struct clist {
       (rev).push(pop());
     }
     l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i;
+    i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith((len()) - ((i) + (1))));
+      i = (i) + (1);
+    }
+    return ret;
   }
   clist tail(){
     clist ret;
@@ -347,6 +369,17 @@ struct clist {
       (rev).push(pop());
     }
     l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i;
+    i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith((len()) - ((i) + (1))));
+      i = (i) + (1);
+    }
+    return ret;
   }
   clist tail(){
     clist ret;

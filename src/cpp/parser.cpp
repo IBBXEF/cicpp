@@ -224,6 +224,10 @@ anyptr gram_rule_typ_ptr(clist_anyptr l) {
 }
 
 string_list nonterm_symbs;
+gram_rule_t::parsing_table lval_table;
+gram_rule_t::parsing_table rval_table_semicol;
+gram_rule_t::parsing_table rval_table_lbrack;
+gram_rule_t::parsing_table rval_table_rparent;
 
 gram_rule_t::gram_rules make_rules() {
     nonterm_symbs.init();
@@ -250,7 +254,7 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$RvalStru   -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$RvalStru   -> $RvalStru . @ident"    , gram_rule_rval_dot      , &nonterm_symbs) );
     ret.append( make_rule("$RvalStru   -> $RvalStru ( $arglist )", gram_rule_func          , &nonterm_symbs) );
-    ret.append( make_rule("$RvalStru   -> $LvalNoDot"            , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
+    ret.append( make_rule("$RvalStru   -> $Lval"            , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
 
     ret.append( make_rule("$RvalUnary  -> $RvalStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$RvalUnary  -> @! $RvalUnary"         , gram_rule_unop          , &nonterm_symbs) );
@@ -285,6 +289,7 @@ gram_rule_t::gram_rules make_rules() {
     }
     // gram_rule_t::remove_direct_left_recursion(&ret, &nonterm_symbs);
     gram_rule_t::remove_all_left_recursion(&ret, &nonterm_symbs);
+    gram_rule_t::remove_useless_rules(&ret, nonterm_symbs);
     printf("with left recursion eliminated:\n");
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
@@ -296,23 +301,47 @@ gram_rule_t::gram_rules make_rules() {
         ret.ith(i)->print(nonterm_symbs);
     }
 
+    gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
+    end.dat.Exact_dat.tok.kind = token::Set;
+    int goal = string_list_find(nonterm_symbs, "Lval");
+    lval_table = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, true);
+
+    end = {.kind=gram_rule_t::gram_symbol_t::Exact};
+    end.dat.Exact_dat.tok.kind = token::Semicol;
+    goal = string_list_find(nonterm_symbs, "Rval");
+    rval_table_semicol = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, true);
+
+    end = {.kind=gram_rule_t::gram_symbol_t::Exact};
+    end.dat.Exact_dat.tok.kind = token::LBRACK;
+    rval_table_lbrack = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, true);
+
+    end = {.kind=gram_rule_t::gram_symbol_t::Exact};
+    end.dat.Exact_dat.tok.kind = token::RPAREN;
+    rval_table_rparent = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, true);
+
     return ret;
 }
 
 gram_rule_t::gram_rules parsing_rules = make_rules();
 
-rval* parse_rval(toklist* toks, token* end_token) {
+rval* parse_rval(toklist* toks, int end_lbrack_or_rparent) {
     printf("parsing rvalue ");
     toks->ith(0).print();
     printf("\n");
-    if (!end_token) {
-        printf("end token needed\n");
-        exit(-1);
-    }
     int goal = string_list_find(nonterm_symbs, "Rval");
     gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
-    end.dat.Exact_dat.tok = *end_token;
-    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs, true);
+    gram_rule_t::parsing_table table;
+    if (end_lbrack_or_rparent == 1) {
+        table = rval_table_lbrack;
+        end.dat.Exact_dat.tok.kind = token::LBRACK;
+    } else if (end_lbrack_or_rparent == 2) {
+        table = rval_table_rparent;
+        end.dat.Exact_dat.tok.kind = token::RPAREN;
+    } else {
+        table = rval_table_semicol;
+        end.dat.Exact_dat.tok.kind = token::Semicol;
+    }
+    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs, table);
     if (!ret.ptr) {
         printf("failed to parse an rvalue\n");
         exit(-1);
@@ -327,7 +356,7 @@ lval* parse_lval(toklist* toks) {
     gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::Set;
     int goal = string_list_find(nonterm_symbs, "Lval");
-    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs, true);
+    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs, lval_table);
     if (!ret.ptr) {
         printf("failed to parse an lvalue\n");
         exit(-1);
@@ -366,8 +395,7 @@ typ* parse_typ(toklist* toks) {
             exit(-1);
         }
         *toks = toks->tail();
-        token tmp = {.kind=token::RPAREN};
-        t->dat.typeof_dat = parse_rval(toks, &tmp);
+        t->dat.typeof_dat = parse_rval(toks, 2);
         n = toks->ith(0);
         if (n.kind != token::RPAREN) {
             printf("expected ')' after typeof\n");
@@ -419,8 +447,7 @@ decl* parse_var_decl(toklist* toks, bool check_semicolon) {
     n = toks->ith(0);
     if (n.kind == token::Set) {
         *toks = toks->tail();
-        token tmp = {.kind=token::Semicol};
-        ret->dat.var_dat.v = parse_rval(toks, check_semicolon ? &tmp : nullptr);
+        ret->dat.var_dat.v = parse_rval(toks, 0); // we ignore that function declaration exists
     } else {
         ret->dat.var_dat.v = nullptr;
     }
@@ -474,8 +501,7 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::Return;
-        token tmp = {.kind=token::Semicol};
-        ret->dat.ret_dat.v = parse_rval(toks, &tmp);
+        ret->dat.ret_dat.v = parse_rval(toks, 0);
         n = toks->ith(0);
         if (n.kind != token::Semicol) {
             printf("expected ';' after return instruction; got token %i\n", (int)n.kind);
@@ -487,8 +513,7 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::If;
-        token tmp = {.kind=token::LBRACK};
-        ret->dat.if_dat.b = parse_rval(toks, &tmp);
+        ret->dat.if_dat.b = parse_rval(toks, 1);
         ret->dat.if_dat.truebrc = parse_instr_block(toks);
         ret->dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
         instr* curr = ret;
@@ -497,8 +522,7 @@ instr* parse_instr(toklist* toks) {
             *toks = toks->tail();
             instr cif;
             cif.kind = instr::If;
-            token tmp = {.kind=token::LBRACK};
-            cif.dat.if_dat.b = parse_rval(toks, &tmp);
+            cif.dat.if_dat.b = parse_rval(toks, 1);
             cif.dat.if_dat.truebrc = parse_instr_block(toks);
             cif.dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
             curr->dat.if_dat.falsebrc.push(&cif);
@@ -516,8 +540,7 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::While;
-        token tmp = {.kind=token::LBRACK};
-        ret->dat.while_dat.b = parse_rval(toks, &tmp);
+        ret->dat.while_dat.b = parse_rval(toks, 1);
         ret->dat.while_dat.instrs = parse_instr_block(toks);
         return ret;
     }
@@ -535,8 +558,7 @@ instr* parse_instr(toklist* toks) {
                 // we parse function calls as an rvalue
                 instr* ist = (instr*)malloc(sizeof(instr));
                 ist->kind = instr::Fcall;
-                token tmp = {.kind=token::Semicol};
-                ist->dat.fcall_dat.call = parse_rval(toks, &tmp);
+                ist->dat.fcall_dat.call = parse_rval(toks, 0);
                 n = toks->ith(0);
                 if (n.kind != token::Semicol) {
                     printf("expected ';' after instruction; got token %i\n", (int)n.kind);
@@ -560,8 +582,7 @@ instr* parse_instr(toklist* toks) {
                 exit(-1);
             }
             *toks = toks->tail();
-            token tmp = {.kind=token::Semicol};
-            ist->dat.set_dat.r = parse_rval(toks, &tmp);
+            ist->dat.set_dat.r = parse_rval(toks, 0);
             n = toks->ith(0);
             if (n.kind != token::Semicol) {
                 printf("expected ';' after instruction; got token %i\n", (int)n.kind);

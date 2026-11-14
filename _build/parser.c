@@ -73,6 +73,17 @@ struct clist {
     }
     l = (rev).l;
   }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i;
+    i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith((len()) - ((i) + (1))));
+      i = (i) + (1);
+    }
+    return ret;
+  }
   clist tail(){
     clist ret;
     (ret).l = (l)->next;
@@ -177,6 +188,17 @@ struct clist {
       (rev).push(pop());
     }
     l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i;
+    i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith((len()) - ((i) + (1))));
+      i = (i) + (1);
+    }
+    return ret;
   }
   clist tail(){
     clist ret;
@@ -347,6 +369,17 @@ struct clist {
       (rev).push(pop());
     }
     l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i;
+    i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith((len()) - ((i) + (1))));
+      i = (i) + (1);
+    }
+    return ret;
   }
   clist tail(){
     clist ret;
@@ -629,6 +662,17 @@ struct clist {
     }
     l = (rev).l;
   }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i;
+    i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith((len()) - ((i) + (1))));
+      i = (i) + (1);
+    }
+    return ret;
+  }
   clist tail(){
     clist ret;
     (ret).l = (l)->next;
@@ -767,6 +811,17 @@ struct gram_rule_t {
         (rev).push(pop());
       }
       l = (rev).l;
+    }
+    clist deepcopy(){
+      clist ret;
+      (ret).init();
+      int i;
+      i = 0;
+      while ((i) < (len())) {
+        (ret).push(ith((len()) - ((i) + (1))));
+        i = (i) + (1);
+      }
+      return ret;
     }
     clist tail(){
       clist ret;
@@ -940,6 +995,17 @@ struct gram_rule_t {
       }
       l = (rev).l;
     }
+    clist deepcopy(){
+      clist ret;
+      (ret).init();
+      int i;
+      i = 0;
+      while ((i) < (len())) {
+        (ret).push(ith((len()) - ((i) + (1))));
+        i = (i) + (1);
+      }
+      return ret;
+    }
     clist tail(){
       clist ret;
       (ret).l = (l)->next;
@@ -1050,6 +1116,17 @@ struct gram_rule_t {
         }
         l = (rev).l;
       }
+      clist deepcopy(){
+        clist ret;
+        (ret).init();
+        int i;
+        i = 0;
+        while ((i) < (len())) {
+          (ret).push(ith((len()) - ((i) + (1))));
+          i = (i) + (1);
+        }
+        return ret;
+      }
       clist tail(){
         clist ret;
         (ret).l = (l)->next;
@@ -1117,11 +1194,12 @@ struct gram_rule_t {
             (empty).init();
             printf("conflicting entry in the parsing table for nonterm $%s and symbol ", nonterm_name);
             (s).print(empty);
-            printf("\n");
             if (ignore_conflicts) {
-              printf("conflict ignored\n");
-            } else
-            exit(EXIT_FAILURE);
+              printf(", conflict ignored\n");
+            } else {
+              printf("\n");
+              exit(EXIT_FAILURE);
+            }
           }
         }
         i = (i) + (1);
@@ -1295,6 +1373,17 @@ struct gram_rule_t {
         }
         l = (rev).l;
       }
+      clist deepcopy(){
+        clist ret;
+        (ret).init();
+        int i;
+        i = 0;
+        while ((i) < (len())) {
+          (ret).push(ith((len()) - ((i) + (1))));
+          i = (i) + (1);
+        }
+        return ret;
+      }
       clist tail(){
         clist ret;
         (ret).l = (l)->next;
@@ -1410,6 +1499,17 @@ struct gram_rule_t {
       }
       l = (rev).l;
     }
+    clist deepcopy(){
+      clist ret;
+      (ret).init();
+      int i;
+      i = 0;
+      while ((i) < (len())) {
+        (ret).push(ith((len()) - ((i) + (1))));
+        i = (i) + (1);
+      }
+      return ret;
+    }
     clist tail(){
       clist ret;
       (ret).l = (l)->next;
@@ -1476,14 +1576,8 @@ struct gram_rule_t {
       i = (i) + (1);
     }
     if ((result_function) != ((r).result_function)) {
-      printf("ERROR: identical rules with different result functions\n");
-      exit(EXIT_FAILURE);
-      return false;
     }
     if ((func_bonus_dat) != ((r).func_bonus_dat)) {
-      printf("ERROR: identical rules with different bonus dat\n");
-      exit(EXIT_FAILURE);
-      return false;
     }
     return true;
   }
@@ -1617,6 +1711,17 @@ struct gram_rule_t {
         }
         l = (rev).l;
       }
+      clist deepcopy(){
+        clist ret;
+        (ret).init();
+        int i;
+        i = 0;
+        while ((i) < (len())) {
+          (ret).push(ith((len()) - ((i) + (1))));
+          i = (i) + (1);
+        }
+        return ret;
+      }
       clist tail(){
         clist ret;
         (ret).l = (l)->next;
@@ -1702,7 +1807,7 @@ struct gram_rule_t {
   #undef set_dat_t
   #undef set
   static
-  parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm, gram_symbol_t* stop_symbol, bool ignore_conflicts){
+  parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm, gram_symbol_t stop_symbol, bool ignore_conflicts){
     term_set* Fi;
     Fi = (term_set*)malloc((sizeof(term_set)) * ((nonterm_symbs).len()));
     term_set* FiRules;
@@ -1774,7 +1879,7 @@ struct gram_rule_t {
       (Fo[i]).init();
       i = (i) + (1);
     }
-    (tmp_ptr).init_ptr(stop_symbol);
+    (tmp_ptr).init_ptr(&(stop_symbol));
     (Fo[goal_nonterm]).add(tmp_ptr);
     not_finished = true;
     while (not_finished) {
@@ -1868,7 +1973,7 @@ struct gram_rule_t {
     return ret;
   }
   static
-  anyptr parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs, bool ignore_conflicts = false){
+  anyptr parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs, parsing_table table){
     if (((int)(stop_symbol).kind) == (2)) {
       printf("invalid stop symbol: it is Nonterminal\n");
       exit(EXIT_FAILURE);
@@ -1887,8 +1992,6 @@ struct gram_rule_t {
       stop_token = (((stop_symbol).dat).Exact_dat).tok;
     } else
     stop_token = (((stop_symbol).dat).Term_dat).tok;
-    parsing_table table;
-    table = make_parsing_table(rules, nonterm_symbs, goal_nonterm, &(stop_symbol), ignore_conflicts);
     while (((stack).len()) > (0)) {
       symbol_dat stacktop;
       stacktop = (stack).pop();
@@ -1913,7 +2016,9 @@ struct gram_rule_t {
         gram_rule_t* rule;
         rule = (table).lookup(inptop, nt);
         if ((rule) == (nullptr)) {
-          printf("failed to parse: no rule found for nonterminal %s with token kind %d\n", (nonterm_symbs).ith(nt), (int)(inptop).kind);
+          printf("failed to parse: no rule found for nonterminal %s with token ", (nonterm_symbs).ith(nt));
+          (inptop).print();
+          printf("\n");
           exit(EXIT_FAILURE);
         }
         parsed_ast* ast_loc;
@@ -2206,24 +2311,142 @@ struct gram_rule_t {
     }
   }
   static
-  void remove_doubled_rules(gram_rules* rules){
+  void remove_useless_rules(gram_rules* rules, string_list nonterm_symbs){
     int i;
     i = 0;
     while ((i) < ((rules)->len())) {
-      gram_rule_t rule1;
-      rule1 = (rules)->ith(i)[0];
+      gram_rule_t* rule1;
+      rule1 = (rules)->ith(i);
       int j;
       j = (i) + (1);
       while ((j) < ((rules)->len())) {
-        gram_rule_t rule2;
-        rule2 = (rules)->ith(j)[0];
-        if ((rule1).eq(rule2)) {
+        gram_rule_t* rule2;
+        rule2 = (rules)->ith(j);
+        if ((rule1) == (rule2)) {
+          printf("WARNING: found shadow copy of following rule:");
+          (rule2)->print(nonterm_symbs);
           (rules)->remove(j);
           j = (j) - (1);
         }
         j = (j) + (1);
       }
       i = (i) + (1);
+    }
+    i = 0;
+    while ((i) < ((rules)->len())) {
+      gram_rule_t* rule1;
+      rule1 = (rules)->ith(i);
+      int j;
+      j = (i) + (1);
+      while ((j) < ((rules)->len())) {
+        gram_rule_t* rule2;
+        rule2 = (rules)->ith(j);
+        if ((rule1)->eq(rule2[0])) {
+          (rules)->remove(j);
+          (rule2)->del();
+          free(rule2);
+          j = (j) - (1);
+        }
+        j = (j) + (1);
+      }
+      i = (i) + (1);
+    }
+    i = 0;
+    while ((i) < ((rules)->len())) {
+      gram_rule_t* rule1;
+      rule1 = (rules)->ith(i);
+      symlist sl;
+      sl = (rule1)->pattern;
+      if ((((sl).len()) == (1)) && ((((int)((sl).ith(0)).kind) == (2)) && ((((((sl).ith(0)).dat).NonTerm_dat).symb) == ((rule1)->result)))) {
+        (rules)->remove(i);
+        (rule1)->del();
+        free(rule1);
+        i = (i) - (1);
+      }
+      i = (i) + (1);
+    }
+  }
+  static
+  bool _nonterm_inclusion(gram_rules* rules, int nt1, int nt2){
+    bool ret;
+    ret = true;
+    int i;
+    i = 0;
+    while ((i) < ((rules)->len())) {
+      gram_rule_t rule1;
+      rule1 = (rules)->ith(i)[0];
+      if (((rule1).result) == (nt1)) {
+        bool found_match;
+        found_match = false;
+        int j;
+        j = (i) + (1);
+        while ((j) < ((rules)->len())) {
+          gram_rule_t rule2;
+          rule2 = (rules)->ith(j)[0];
+          if (((rule2).result) == (nt2)) {
+            (rule2).pattern = ((rule2).pattern).deepcopy();
+            int k;
+            k = 0;
+            while ((k) < (((rule2).pattern).len())) {
+              gram_symbol_t* s;
+              s = ((rule2).pattern).ith_ref(k);
+              if ((((int)(s)->kind) == (2)) && (((((s)->dat).NonTerm_dat).symb) == (nt2))) {
+                (((s)->dat).NonTerm_dat).symb = nt1;
+              }
+              k = (k) + (1);
+            }
+            (rule2).result = nt1;
+            found_match = (found_match) || ((rule1).eq(rule2));
+            ((rule2).pattern).del();
+          }
+          j = (j) + (1);
+        }
+        ret = (ret) && (found_match);
+      }
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  static
+  void fuse_identical_nonterms(gram_rules* rules, string_list* nonterm_symbs){
+    int n1;
+    n1 = 0;
+    while ((n1) < ((nonterm_symbs)->len())) {
+      int n2;
+      n2 = (n1) + (1);
+      while ((n2) < ((nonterm_symbs)->len())) {
+        if ((_nonterm_inclusion(rules, n1, n2)) && (_nonterm_inclusion(rules, n2, n1))) {
+          if (((n2) + (1)) == ((nonterm_symbs)->len())) {
+            (nonterm_symbs)->remove(n2);
+          }
+          int i;
+          i = 0;
+          while ((i) < ((rules)->len())) {
+            gram_rule_t* rule;
+            rule = (rules)->ith(i);
+            if (((rule)->result) == (n2)) {
+              (rules)->remove(i);
+              (rule)->del();
+              free(rule);
+              i = (i) - (1);
+            } else {
+              int k;
+              k = 0;
+              while ((k) < (((rule)->pattern).len())) {
+                gram_symbol_t* s;
+                s = ((rule)->pattern).ith_ref(k);
+                if ((((int)(s)->kind) == (2)) && (((((s)->dat).NonTerm_dat).symb) == (n2))) {
+                  (((s)->dat).NonTerm_dat).symb = n1;
+                }
+                k = (k) + (1);
+              }
+            }
+            i = (i) + (1);
+          }
+        }
+        n2 = (n2) + (1);
+      }
+      n1 = (n1) + (1);
     }
   }
   static
@@ -2263,8 +2486,8 @@ struct gram_rule_t {
             if (do_factorize) {
               not_finished = true;
               char* new_nonterm_str;
-              new_nonterm_str = (char*)malloc((strlen((nonterm_symbs)->ith(nt))) + ((1) + (6)));
-              sprintf(new_nonterm_str, "lfact_%s", (nonterm_symbs)->ith(nt));
+              new_nonterm_str = (char*)malloc((strlen((nonterm_symbs)->ith(nt))) + ((1) + (3)));
+              sprintf(new_nonterm_str, "lf_%s", (nonterm_symbs)->ith(nt));
               int new_nonterm;
               new_nonterm = string_list_thingy(nonterm_symbs, new_nonterm_str);
               gram_rule_t* newrule;
@@ -2291,7 +2514,8 @@ struct gram_rule_t {
                 j = (j) + (1);
               }
               (rules)->append(newrule);
-              remove_doubled_rules(rules);
+              remove_useless_rules(rules, nonterm_symbs[0]);
+              fuse_identical_nonterms(rules, nonterm_symbs);
               i = (INT_MAX) - (1);
             }
           }
