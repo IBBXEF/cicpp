@@ -289,6 +289,12 @@ gram_rule_t::gram_rules make_rules() {
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
     }
+    gram_rule_t::remove_doubled_rules(&ret);
+    gram_rule_t::apply_left_factoring(&ret, &nonterm_symbs);
+    printf("with left factoring applied:\n");
+    for (int i = 0; i < ret.len(); i++) {
+        ret.ith(i)->print(nonterm_symbs);
+    }
 
     return ret;
 }

@@ -73,6 +73,7 @@ tests: build
 	./test tests/parsing/ex7.c
 	./test tests/parsing/ex8.c
 	./test tests/parsing/ex9.c
+	cd test/runtime && make test
 
 	make build_test
 	diff test _build/_test

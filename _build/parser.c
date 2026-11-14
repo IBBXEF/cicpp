@@ -1095,9 +1095,9 @@ struct gram_rule_t {
       }
       _n_nonterms = n_nonterms;
     }
-    void add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r, bool ignore_conflicts){
+    void add_entry(gram_symbol_t s, int nonterm, gram_rule_t* r, bool ignore_conflicts, const char* nonterm_name){
       if (((int)(s).kind) == (2)) {
-        printf("invalid gram symbol for rule table: it is Nonterminal\n");
+        printf("invalid gram symbol for rule table: it is Nonterminal %s\n", nonterm_name);
         exit(EXIT_FAILURE);
       }
       if (((nonterm) < (0)) || ((nonterm) >= (_n_nonterms))) {
@@ -1115,7 +1115,7 @@ struct gram_rule_t {
           if (!((r)->eq(((table).ith(i)).r[0]))) {
             string_list empty;
             (empty).init();
-            printf("conflicting entry in the parsing table for nonterm %d and symbol ", nonterm);
+            printf("conflicting entry in the parsing table for nonterm $%s and symbol ", nonterm_name);
             (s).print(empty);
             printf("\n");
             if (ignore_conflicts) {
@@ -1457,13 +1457,10 @@ struct gram_rule_t {
     (pattern).del();
   }
   bool eq(gram_rule_t r){
-    printf("test: ");
     if ((result) != ((r).result)) {
-      printf("f3\n");
       return false;
     }
     if (((pattern).len()) != (((r).pattern).len())) {
-      printf("f4\n");
       return false;
     }
     int i;
@@ -1474,20 +1471,20 @@ struct gram_rule_t {
       s1 = (pattern).ith(i);
       s2 = ((r).pattern).ith(i);
       if (!((s1).eq(s2))) {
-        printf("f5\n");
         return false;
       }
       i = (i) + (1);
     }
     if ((result_function) != ((r).result_function)) {
-      printf("f1\n");
+      printf("ERROR: identical rules with different result functions\n");
+      exit(EXIT_FAILURE);
       return false;
     }
     if ((func_bonus_dat) != ((r).func_bonus_dat)) {
-      printf("f2\n");
+      printf("ERROR: identical rules with different bonus dat\n");
+      exit(EXIT_FAILURE);
       return false;
     }
-    printf("f0\n");
     return true;
   }
   void add_nonterm(int nt){
@@ -1850,7 +1847,7 @@ struct gram_rule_t {
           while ((k) < (((tmp).elts).len())) {
             gram_symbol_t* s;
             s = (((tmp).elts).ith(k)).ptr;
-            (ret).add_entry(s[0], i, (rules).ith(j), ignore_conflicts);
+            (ret).add_entry(s[0], i, (rules).ith(j), ignore_conflicts, (nonterm_symbs).ith(i));
             k = (k) + (1);
           }
         }
@@ -2096,8 +2093,8 @@ struct gram_rule_t {
       }
       if ((lrec_rules).len()) {
         char* new_nonterm_str;
-        new_nonterm_str = (char*)malloc((strlen((nonterm_symbs)->ith(i))) + ((1) + (10)));
-        sprintf(new_nonterm_str, "lrec_elim_%s", (nonterm_symbs)->ith(i));
+        new_nonterm_str = (char*)malloc((strlen((nonterm_symbs)->ith(i))) + ((1) + (5)));
+        sprintf(new_nonterm_str, "tail_%s", (nonterm_symbs)->ith(i));
         int new_nonterm;
         new_nonterm = string_list_thingy(nonterm_symbs, new_nonterm_str);
         gram_symbol_t new_sym;
@@ -2205,6 +2202,102 @@ struct gram_rule_t {
         }
         remove_direct_left_recursion(rules, nonterm_symbs);
         i = (i) + (1);
+      }
+    }
+  }
+  static
+  void remove_doubled_rules(gram_rules* rules){
+    int i;
+    i = 0;
+    while ((i) < ((rules)->len())) {
+      gram_rule_t rule1;
+      rule1 = (rules)->ith(i)[0];
+      int j;
+      j = (i) + (1);
+      while ((j) < ((rules)->len())) {
+        gram_rule_t rule2;
+        rule2 = (rules)->ith(j)[0];
+        if ((rule1).eq(rule2)) {
+          (rules)->remove(j);
+          j = (j) - (1);
+        }
+        j = (j) + (1);
+      }
+      i = (i) + (1);
+    }
+  }
+  static
+  void apply_left_factoring(gram_rules* rules, string_list* nonterm_symbs){
+    bool not_finished;
+    not_finished = true;
+    while (not_finished) {
+      not_finished = false;
+      int nt;
+      nt = 0;
+      while ((nt) < ((nonterm_symbs)->len())) {
+        int i;
+        i = 0;
+        while ((i) < ((rules)->len())) {
+          gram_rule_t* rule1;
+          int r1_pt_len;
+          rule1 = (rules)->ith(i);
+          r1_pt_len = ((rule1)->pattern).len();
+          if ((((rule1)->result) == (nt)) && (((rule1)->pattern).len())) {
+            bool do_factorize;
+            do_factorize = false;
+            int j;
+            j = (i) + (1);
+            while ((j) < ((rules)->len())) {
+              gram_rule_t* rule2;
+              int r2_pt_len;
+              rule2 = (rules)->ith(j);
+              r2_pt_len = ((rule2)->pattern).len();
+              if ((((rule2)->result) == (nt)) && (((rule2)->pattern).len())) {
+                if ((((rule1)->pattern).ith((r1_pt_len) - (1))).eq(((rule2)->pattern).ith((r2_pt_len) - (1)))) {
+                  do_factorize = true;
+                  j = (INT_MAX) - (1);
+                }
+              }
+              j = (j) + (1);
+            }
+            if (do_factorize) {
+              not_finished = true;
+              char* new_nonterm_str;
+              new_nonterm_str = (char*)malloc((strlen((nonterm_symbs)->ith(nt))) + ((1) + (6)));
+              sprintf(new_nonterm_str, "lfact_%s", (nonterm_symbs)->ith(nt));
+              int new_nonterm;
+              new_nonterm = string_list_thingy(nonterm_symbs, new_nonterm_str);
+              gram_rule_t* newrule;
+              newrule = (gram_rule_t*)malloc(sizeof(gram_rule_t));
+              (newrule)->init_bonus_func_data(nt, nullptr, nullptr);
+              ((newrule)->pattern).push(((rule1)->pattern).ith((r1_pt_len) - (1)));
+              (newrule)->add_nonterm(new_nonterm);
+              printf("factorizing $%s on ", (nonterm_symbs)->ith(nt));
+              (((rule1)->pattern).ith((r1_pt_len) - (1))).print(nonterm_symbs[0]);
+              printf("\n");
+              int j;
+              j = 0;
+              while ((j) < ((rules)->len())) {
+                gram_rule_t* rule2;
+                int r2_pt_len;
+                rule2 = (rules)->ith(j);
+                r2_pt_len = ((rule2)->pattern).len();
+                if ((((rule2)->result) == (nt)) && (((rule2)->pattern).len())) {
+                  if ((((newrule)->pattern).ith(1)).eq(((rule2)->pattern).ith((r2_pt_len) - (1)))) {
+                    (rule2[0]).result = new_nonterm;
+                    ((rule2)->pattern).remove((r2_pt_len) - (1));
+                  }
+                }
+                j = (j) + (1);
+              }
+              (rules)->append(newrule);
+              remove_doubled_rules(rules);
+              i = (INT_MAX) - (1);
+            }
+          }
+          i = (i) + (1);
+        }
+        nt = (nt) + (1);
       }
     }
   }
