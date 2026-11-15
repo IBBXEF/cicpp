@@ -836,6 +836,35 @@ type gram_rule_t {
         rules->del();
         *rules = new_rules;
     }
+    // inlines rule1 into rule2 at the start of the pattern (so its last element as the order is reversed)
+    static func void inline_rule(gram_rule_t* rule1, gram_rule_t* rule2) {
+        gram_symbol_t first_sym;
+        first_sym = (rule2->pattern).ith(((rule2->pattern).len()) - 1);
+        if (((first_sym.kind) as int) != 2) ||
+            ((((first_sym.dat).NonTerm_dat).symb) != (rule1->result)) {
+            printf("incompatible rules for inlining\n");
+            exit(EXIT_FAILURE);
+        }
+        (rule2->pattern).remove(((rule2->pattern).len())-1);
+        void** tmp;
+        tmp = (malloc(sizeof(*tmp)*5)) as void**;
+        tmp[0] = (rule1->result_function) as void*;
+        tmp[1] = (rule1->func_bonus_dat) as void*;
+        tmp[2] = (rule2->result_function) as void*;
+        tmp[3] = (rule2->func_bonus_dat) as void*;
+        int* tmpint;
+        tmpint = (malloc(sizeof(*tmpint))) as int*;
+        *tmpint = (rule1->pattern).len();
+        tmp[4] = tmpint as void*;
+        rule2->result_function = _gram_rule_ret_lrec_any_uninline;
+        rule2->func_bonus_dat = tmp as void*;
+        int k;
+        k = 0;
+        while k < ((rule1->pattern).len()) {
+            (rule2->pattern).append((rule1->pattern).ith(k));
+            k = k + 1;
+        }
+    }
     // does not support potentially epsilon nonterminals at the start of patterns
     static func void remove_all_left_recursion(gram_rules* rules, string_list* nonterm_symbs) {
         bool has_changed;
@@ -853,7 +882,6 @@ type gram_rule_t {
                     if (((first_sym.kind) as int) == 2) && // first_sym is a nonterminal
                         ((((first_sym.dat).NonTerm_dat).symb) < (rule->result)) {
                         
-                        (rule->pattern).remove(((rule->pattern).len())-1);
                         int j;
                         j = 0;
                         while j < (rules->len()) {
@@ -862,28 +890,9 @@ type gram_rule_t {
                             if (rule2.result) == (((first_sym.dat).NonTerm_dat).symb) {
                                 gram_rule_t* newrule;
                                 newrule = (malloc(sizeof(gram_rule_t))) as gram_rule_t*;
-                                void** tmp;
-                                tmp = (malloc(sizeof(*tmp)*5)) as void**;
-                                tmp[0] = (rule2.result_function) as void*;
-                                tmp[1] = (rule2.func_bonus_dat) as void*;
-                                tmp[2] = (rule->result_function) as void*;
-                                tmp[3] = (rule->func_bonus_dat) as void*;
-                                int* tmpint;
-                                tmpint = (malloc(sizeof(*tmpint))) as int*;
-                                *tmpint = (rule2.pattern).len();
-                                tmp[4] = tmpint as void*;
-                                newrule->init_bonus_func_data(rule->result, _gram_rule_ret_lrec_any_uninline, tmp as void*);
-                                int k;
-                                k = 0;
-                                while k < ((rule->pattern).len()) {
-                                    (newrule->pattern).append((rule->pattern).ith(k));
-                                    k = k + 1;
-                                }
-                                k = 0;
-                                while k < ((rule2.pattern).len()) {
-                                    (newrule->pattern).append((rule2.pattern).ith(k));
-                                    k = k + 1;
-                                }
+                                *newrule = *rule;
+                                newrule->pattern = (rule->pattern).deepcopy();
+                                inline_rule(&rule2, newrule);
                                 rules->append(newrule);
                             }
                             j = j + 1;
@@ -1041,7 +1050,7 @@ type gram_rule_t {
             n1 = n1 + 1;
         }
     }
-    static func void apply_left_factoring(gram_rules* rules, string_list* nonterm_symbs) {
+    static func void apply_direct_left_factoring(gram_rules* rules, string_list* nonterm_symbs) {
         bool not_finished;
         not_finished = true;
         while not_finished {

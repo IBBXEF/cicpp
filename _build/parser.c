@@ -2253,6 +2253,34 @@ struct gram_rule_t {
     rules[0] = new_rules;
   }
   static
+  void inline_rule(gram_rule_t* rule1, gram_rule_t* rule2){
+    gram_symbol_t first_sym;
+    first_sym = ((rule2)->pattern).ith((((rule2)->pattern).len()) - (1));
+    if ((((int)(first_sym).kind) != (2)) || (((((first_sym).dat).NonTerm_dat).symb) != ((rule1)->result))) {
+      printf("incompatible rules for inlining\n");
+      exit(EXIT_FAILURE);
+    }
+    ((rule2)->pattern).remove((((rule2)->pattern).len()) - (1));
+    void** tmp;
+    tmp = (void**)malloc((sizeof(tmp[0])) * (5));
+    tmp[0] = (void*)(rule1)->result_function;
+    tmp[1] = (void*)(rule1)->func_bonus_dat;
+    tmp[2] = (void*)(rule2)->result_function;
+    tmp[3] = (void*)(rule2)->func_bonus_dat;
+    int* tmpint;
+    tmpint = (int*)malloc(sizeof(tmpint[0]));
+    tmpint[0] = ((rule1)->pattern).len();
+    tmp[4] = (void*)tmpint;
+    (rule2[0]).result_function = _gram_rule_ret_lrec_any_uninline;
+    (rule2[0]).func_bonus_dat = (void*)tmp;
+    int k;
+    k = 0;
+    while ((k) < (((rule1)->pattern).len())) {
+      ((rule2)->pattern).append(((rule1)->pattern).ith(k));
+      k = (k) + (1);
+    }
+  }
+  static
   void remove_all_left_recursion(gram_rules* rules, string_list* nonterm_symbs){
     bool has_changed;
     has_changed = true;
@@ -2267,7 +2295,6 @@ struct gram_rule_t {
           gram_symbol_t first_sym;
           first_sym = ((rule)->pattern).ith((((rule)->pattern).len()) - (1));
           if ((((int)(first_sym).kind) == (2)) && (((((first_sym).dat).NonTerm_dat).symb) < ((rule)->result))) {
-            ((rule)->pattern).remove((((rule)->pattern).len()) - (1));
             int j;
             j = 0;
             while ((j) < ((rules)->len())) {
@@ -2276,28 +2303,9 @@ struct gram_rule_t {
               if (((rule2).result) == ((((first_sym).dat).NonTerm_dat).symb)) {
                 gram_rule_t* newrule;
                 newrule = (gram_rule_t*)malloc(sizeof(gram_rule_t));
-                void** tmp;
-                tmp = (void**)malloc((sizeof(tmp[0])) * (5));
-                tmp[0] = (void*)(rule2).result_function;
-                tmp[1] = (void*)(rule2).func_bonus_dat;
-                tmp[2] = (void*)(rule)->result_function;
-                tmp[3] = (void*)(rule)->func_bonus_dat;
-                int* tmpint;
-                tmpint = (int*)malloc(sizeof(tmpint[0]));
-                tmpint[0] = ((rule2).pattern).len();
-                tmp[4] = (void*)tmpint;
-                (newrule)->init_bonus_func_data((rule)->result, _gram_rule_ret_lrec_any_uninline, (void*)tmp);
-                int k;
-                k = 0;
-                while ((k) < (((rule)->pattern).len())) {
-                  ((newrule)->pattern).append(((rule)->pattern).ith(k));
-                  k = (k) + (1);
-                }
-                k = 0;
-                while ((k) < (((rule2).pattern).len())) {
-                  ((newrule)->pattern).append(((rule2).pattern).ith(k));
-                  k = (k) + (1);
-                }
+                newrule[0] = rule[0];
+                (newrule[0]).pattern = ((rule)->pattern).deepcopy();
+                inline_rule(&(rule2), newrule);
                 (rules)->append(newrule);
               }
               j = (j) + (1);
@@ -2455,7 +2463,7 @@ struct gram_rule_t {
     }
   }
   static
-  void apply_left_factoring(gram_rules* rules, string_list* nonterm_symbs){
+  void apply_direct_left_factoring(gram_rules* rules, string_list* nonterm_symbs){
     bool not_finished;
     not_finished = true;
     while (not_finished) {
