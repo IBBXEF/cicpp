@@ -250,13 +250,15 @@ int parse_int(
     RuleList rules,
     string_list nonterminals
 ) {
+    gram_rule_t::parsing_table table = gram_rule_t::make_parsing_table(rules, nonterminals, goal, stop, false);
     anyptr result =
         gram_rule_t::parse_with_rules(
             &input,
             goal,
             stop,
             rules,
-            nonterminals
+            nonterminals,
+            table
         );
 
     int value = *static_cast<int*>(result.get());
@@ -558,12 +560,14 @@ void test_invalid_input_rejected() {
             ident("unexpected")
         });
 
+        gram_rule_t::parsing_table table = gram_rule_t::make_parsing_table(rules, names, 0, eoi, false);
         (void)gram_rule_t::parse_with_rules(
             &input,
             0,
             eoi,
             rules,
-            names
+            names,
+            table
         );
 
         // Reaching here means invalid input was accepted.
@@ -625,12 +629,14 @@ void test_ambiguous_grammar_rejected() {
             ident("name")
         });
 
+        gram_rule_t::parsing_table table = gram_rule_t::make_parsing_table(rules, names, 0, eoi, false);
         (void)gram_rule_t::parse_with_rules(
             &input,
             0,
             eoi,
             rules,
-            names
+            names,
+            table
         );
 
         // The conflicting productions should not be accepted.
@@ -836,8 +842,15 @@ std::string lr_parse_ast(RuleList rules, string_list names,
   gram_rule_t::gram_symbol_t stop =
       exact_stop(punctuation(token::EndOfInput));
 
+  gram_rule_t::parsing_table table = gram_rule_t::make_parsing_table(rules, names, 0, stop, false);
   anyptr result = gram_rule_t::parse_with_rules(
-      &input, 0, stop, rules, names);
+        &input,
+        0,
+        stop,
+        rules,
+        names,
+        table
+    );
 
   CHECK(input.len() == 0);
 
