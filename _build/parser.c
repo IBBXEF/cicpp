@@ -2538,6 +2538,49 @@ struct gram_rule_t {
       }
     }
   }
+  static
+  void fix_factoring_conflicts(gram_rules* rules, string_list* nonterm_symbs){
+    bool has_changed;
+    has_changed = false;
+    int i;
+    i = 0;
+    while ((i) < ((rules)->len())) {
+      gram_rule_t* rule;
+      rule = (rules)->ith(i);
+      if ((((rule)->pattern).len()) > (1)) {
+        gram_symbol_t first_sym;
+        first_sym = ((rule)->pattern).ith((((rule)->pattern).len()) - (1));
+        if (((int)(first_sym).kind) == (2)) {
+          printf("inlining on ");
+          (rule)->print(nonterm_symbs[0]);
+          has_changed = true;
+          (rules)->remove(i);
+          i = (i) - (1);
+          int j;
+          j = 0;
+          while ((j) < ((rules)->len())) {
+            gram_rule_t* rule2;
+            rule2 = (rules)->ith(j);
+            if (((rule2)->result) == ((((first_sym).dat).NonTerm_dat).symb)) {
+              gram_rule_t* newrule;
+              newrule = (gram_rule_t*)malloc(sizeof(gram_rule_t));
+              newrule[0] = rule[0];
+              (newrule[0]).pattern = ((rule)->pattern).deepcopy();
+              inline_rule(rule2, newrule);
+              (rules)->append(newrule);
+            }
+            j = (j) + (1);
+          }
+        }
+      }
+      i = (i) + (1);
+    }
+    remove_all_left_recursion(rules, nonterm_symbs);
+    apply_direct_left_factoring(rules, nonterm_symbs);
+    if (has_changed) {
+      fix_factoring_conflicts(rules, nonterm_symbs);
+    }
+  }
 };
 gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_anyptr), string_list* nonterm_symbs){
   char* tmp;
