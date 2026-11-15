@@ -2198,10 +2198,14 @@ struct gram_rule_t {
       }
       if ((lrec_rules).len()) {
         char* new_nonterm_str;
-        new_nonterm_str = (char*)malloc((strlen((nonterm_symbs)->ith(i))) + ((1) + (5)));
-        sprintf(new_nonterm_str, "tail_%s", (nonterm_symbs)->ith(i));
+        new_nonterm_str = (char*)malloc((strlen((nonterm_symbs)->ith(i))) + ((1) + (50)));
+        sprintf(new_nonterm_str, "tail%x_%s", (nonterm_symbs)->len(), (nonterm_symbs)->ith(i));
         int new_nonterm;
         new_nonterm = string_list_thingy(nonterm_symbs, new_nonterm_str);
+        if (((new_nonterm) + (1)) != ((nonterm_symbs)->len())) {
+          printf("name conflict!!!\n");
+          exit(EXIT_FAILURE);
+        }
         gram_symbol_t new_sym;
         (new_sym).set_nonterm(new_nonterm);
         j = 0;
@@ -2325,6 +2329,7 @@ struct gram_rule_t {
         if ((rule1) == (rule2)) {
           printf("WARNING: found shadow copy of following rule:");
           (rule2)->print(nonterm_symbs);
+          exit(-(1));
           (rules)->remove(j);
           j = (j) - (1);
         }
