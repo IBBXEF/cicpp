@@ -40,6 +40,7 @@ build:
 build_first: $(SOURCE_FILES)
 	mkdir -p _build
 	g++ $(GCC_ARGS) -I_build -Isrc/cpp src/cpp/main.cpp -o _build/main
+	cp _build/main main
 	rm -fr _build/test
 	make $(TEMP_FILES)
 
