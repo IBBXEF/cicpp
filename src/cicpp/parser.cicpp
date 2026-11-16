@@ -340,7 +340,7 @@ type gram_rule_t {
     }
 
     func void print(string_list nonterm_symbs) {
-        printf("rule: $%s -> ", nonterm_symbs.ith(result));
+        printf("$%s -> ", nonterm_symbs.ith(result));
         int i;
         i = 0;
         while i < (pattern.len()) {
@@ -1221,6 +1221,8 @@ type gram_rule_t {
 
         term_set* Fi;
         Fi = compute_first_sets(*rules, *nonterm_symbs);
+        term_set* Fi_rules;
+        Fi_rules = Fi + (nonterm_symbs->len());
         term_set* Fi_direct;
         Fi_direct = compute_first_sets(*rules, *nonterm_symbs, true);
         term_ptr epsilon;
@@ -1245,9 +1247,8 @@ type gram_rule_t {
                 gram_symbol_t first_sym;
                 first_sym = (rule->pattern).ith(((rule->pattern).len()) - 1);
                 if ((first_sym.kind) as int) == 2 {
-                    term_set first_sym_first;
-                    first_sym_first = Fi[(((first_sym).dat).NonTerm_dat).symb];
-                    if (Fi_direct[rule->result].test_intersect(first_sym_first)) || (indirect_first.test_intersect(first_sym_first))
+                    if (Fi_rules[i].test_intersect(Fi_direct[rule->result])) ||
+                       (Fi_rules[i].test_intersect(indirect_first))
                     { // first_sym is a nonterminal shadowing a conflict
                         printf("inlining on ");
                         rule->print(*nonterm_symbs);
@@ -1270,7 +1271,7 @@ type gram_rule_t {
                         }
                         i = INT_MAX-1; // we break off the loop
                     } else {
-                        indirect_first.union_with(first_sym_first);
+                        indirect_first.union_with(Fi_rules[i]);
                         indirect_first.remove(epsilon);
                     }
                 }

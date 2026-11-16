@@ -236,12 +236,18 @@ gram_rule_t::gram_rules make_rules() {
 
     // the rules as they are a bit ugly and temporary
 
-    ret.append( make_rule("$Lval       -> @ident"                , gram_rule_var         , &nonterm_symbs) );
-    // ret.append( make_rule("$Lval       -> * $RvalStru"         , gram_rule_ptr_lval    , &nonterm_symbs) );
-    // ret.append( make_rule("$Lval       -> ( $Lval )"             , gram_rule_elt_n1      , &nonterm_symbs) );
+    ret.append( make_rule("$LvalAtom   -> @ident"                , gram_rule_var         , &nonterm_symbs) );
+    ret.append( make_rule("$LvalAtom   -> ( $Lval )"             , gram_rule_elt_n1      , &nonterm_symbs) );
+
+    ret.append( make_rule("$LvalStru   -> $LvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$LvalStru   -> $LvalStru . @ident"    , gram_rule_lval_dot    , &nonterm_symbs) );
+    // ret.append( make_rule("$LvalStru   -> $RvalStru -> @ident"   , gram_rule_arrow         , &nonterm_symbs) );
+
+    ret.append( make_rule("$Lval       -> $LvalStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> * $RvalStru"           , gram_rule_ptr_lval    , &nonterm_symbs) );
     // ret.append( make_rule("$Lval       -> $RvalStru [ $Rval ]"   , gram_rule_array       , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> $Lval . @ident"        , gram_rule_lval_dot    , &nonterm_symbs) );
-    // ret.append( make_rule("$Lval       -> $RvalStru -> @ident" , gram_rule_arrow         , &nonterm_symbs) );
+
+    ret.append( make_rule("$LvalFromR  -> @ident"                , gram_rule_var         , &nonterm_symbs) );
 
 
     ret.append( make_rule("$RvalAtom   -> ( $Rval )"             , gram_rule_elt_n1        , &nonterm_symbs) );
@@ -251,7 +257,7 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$RvalStru   -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
     // ret.append( make_rule("$RvalStru   -> $RvalStru . @ident"    , gram_rule_rval_dot      , &nonterm_symbs) );
     ret.append( make_rule("$RvalStru   -> $RvalStru ( $arglist )", gram_rule_func          , &nonterm_symbs) );
-    ret.append( make_rule("$RvalStru   -> $Lval"                 , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
+    ret.append( make_rule("$RvalStru   -> $LvalFromR"            , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
 
     ret.append( make_rule("$RvalUnary  -> $RvalStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$RvalUnary  -> @! $RvalUnary"         , gram_rule_unop          , &nonterm_symbs) );
@@ -281,13 +287,14 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$Type       -> $Type *"               , gram_rule_typ_ptr       , &nonterm_symbs) );
     // TODO: add a builtin bool type
 
+    printf("rules:\n");
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
     }
     // gram_rule_t::remove_direct_left_recursion(&ret, &nonterm_symbs);
     gram_rule_t::remove_all_left_recursion(&ret, &nonterm_symbs);
     gram_rule_t::remove_useless_rules(&ret, nonterm_symbs);
-    printf("with left recursion eliminated:\n");
+    printf("with left recursion eliminated:\nrules:\n");
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
     }
@@ -295,7 +302,7 @@ gram_rule_t::gram_rules make_rules() {
     gram_rule_t::fix_factoring_conflicts(&ret, &nonterm_symbs);
     // gram_rule_t::fuse_identical_nonterms(&ret, &nonterm_symbs);
     // gram_rule_t::remove_useless_rules(&ret, nonterm_symbs);
-    printf("with left factoring applied:\n");
+    printf("with left factoring applied:\nrules:\n");
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
     }
@@ -346,6 +353,7 @@ rval* parse_rval(toklist* toks, int end_lbrack_or_rparent) {
         exit(-1);
     }
     free(ret.n_refs);
+    printf("parsed rvalue!\n");
     return (rval*)ret.ptr;
 }
 lval* parse_lval(toklist* toks) {
@@ -360,6 +368,7 @@ lval* parse_lval(toklist* toks) {
         printf("failed to parse an lvalue\n");
         exit(-1);
     }
+    printf("parsed lvalue!\n");
     free(ret.n_refs);
     return (lval*)ret.ptr;
 }
