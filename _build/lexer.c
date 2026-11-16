@@ -182,9 +182,6 @@ struct clist {
   _clist* l;
   void push(dat_t dat){
     _clist* n;
-    n = nullptr;
-    n = (n) + (0);
-    char yyyy;
     n = (_clist*)malloc(sizeof(_clist));
     (n[0]).dat = dat;
     (n[0]).next = l;
@@ -301,9 +298,6 @@ struct clist {
   _clist* l;
   void push(dat_t dat){
     _clist* n;
-    n = nullptr;
-    n = (n) + (0);
-    char yyyy;
     n = (_clist*)malloc(sizeof(_clist));
     (n[0]).dat = dat;
     (n[0]).next = l;
@@ -432,9 +426,6 @@ struct clist {
   _clist* l;
   void push(dat_t dat){
     _clist* n;
-    n = nullptr;
-    n = (n) + (0);
-    char yyyy;
     n = (_clist*)malloc(sizeof(_clist));
     (n[0]).dat = dat;
     (n[0]).next = l;

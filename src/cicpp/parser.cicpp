@@ -605,7 +605,7 @@ type gram_rule_t {
                 gram_rule_t* rule;
                 rule = table.lookup(inptop, nt);
                 if rule == nullptr {
-                    printf("failed to parse: no rule found for nonterminal %s with token ", (nonterm_symbs.ith(nt)));
+                    printf("failed to parse: no rule found for nonterminal $%s with token ", (nonterm_symbs.ith(nt)));
                     inptop.print();
                     printf("\n");
                     exit(EXIT_FAILURE);
@@ -631,8 +631,6 @@ type gram_rule_t {
                 printf("parse nt ok\n");
             }
         }
-
-        table.del();
 
         anyptr final_res;
         final_res = ast.evaluate_ast();

@@ -13,9 +13,6 @@ type <dat_t> clist {
 
     func void push(dat_t dat) {
         _clist* n;
-        n = nullptr;
-        n = n + 0;
-        char yyyy;
         n = (malloc(sizeof(_clist))) as _clist*;
         (*n).dat = dat;
         (*n).next = l;
