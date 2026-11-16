@@ -357,6 +357,7 @@ type gram_rule_t {
     specialize set<term_ptr> as term_set
 
     static func parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm, gram_symbol_t stop_symbol, bool ignore_conflicts) {
+        printf("making parsing table for %d rules\n", rules.len());
         // create an initialize Fi
         term_set* Fi;
         Fi = (malloc(sizeof(term_set)*(nonterm_symbs.len()))) as term_set*;
@@ -738,6 +739,38 @@ type gram_rule_t {
         lcopy2.del();
         return res1;
     }
+    static func anyptr _gram_rule_ret_factor_accu(clist_anyptr l) {
+        clist_anyptr* lcopy;
+        lcopy = (malloc(sizeof(clist_anyptr))) as clist_anyptr*;
+        *lcopy = l.deepcopy();
+        anyptr ret;
+        ret.init_view(lcopy);
+        return ret;
+    }
+    static func anyptr _gram_rule_ret_factor_join(clist_anyptr l) {
+        if (l.remove((l.len())-1)).ptr {
+            printf("Impossible error: join bonus data not null\n");
+            exit(EXIT_FAILURE);
+        }
+        clist_anyptr* acc;
+        acc = ((l.remove((l.len())-1)).ptr) as clist_anyptr*;
+        while acc->len() {
+            l.append(acc->pop());
+        }
+        free(acc);
+        void** tmp;
+        tmp = ((l.remove((l.len())-1)).ptr) as void**;
+
+        clist_anyptr -> anyptr old_res_func;
+        anyptr old_bonus_dat;
+        old_res_func = (tmp[0]) as typeof(old_res_func);
+        old_bonus_dat.init_view(tmp[1]);
+        l.append(old_bonus_dat);
+
+        anyptr ret;
+        ret = old_res_func(l);
+        return ret;
+    }
 
     static func void remove_direct_left_recursion(gram_rules* rules, string_list* nonterm_symbs) {
         int i;
@@ -1096,10 +1129,10 @@ type gram_rule_t {
                                 printf("name conflict!\n");
                                 exit(EXIT_FAILURE);
                             }
-
+                            
                             gram_rule_t* newrule;
                             newrule = (malloc(sizeof(gram_rule_t))) as gram_rule_t*;
-                            newrule->init_bonus_func_data(nt, nullptr, nullptr);
+                            newrule->init_bonus_func_data(nt, _gram_rule_ret_factor_join, nullptr);
                             (newrule->pattern).push((rule1->pattern).ith(r1_pt_len-1));
                             newrule->add_nonterm(new_nonterm);
                             printf("factorizing $%s on ", nonterm_symbs->ith(nt));
@@ -1115,15 +1148,21 @@ type gram_rule_t {
                                 r2_pt_len = (rule2->pattern).len();
                                 if ((rule2->result) == nt) && ((rule2->pattern).len()) {
                                     if ((newrule->pattern).ith(1)).eq((rule2->pattern).ith(r2_pt_len-1)) {
+                                        void** tmp;
+                                        tmp = (malloc(sizeof(*tmp)*2)) as void**;
+                                        tmp[0] = (rule2->result_function) as void*;
+                                        tmp[1] = rule2->func_bonus_dat;
                                         rule2->result = new_nonterm;
+                                        rule2->result_function = _gram_rule_ret_factor_accu;
+                                        rule2->func_bonus_dat = tmp as void*;
                                         (rule2->pattern).remove(r2_pt_len-1);
                                     }
                                 }
                                 j = j + 1;
                             }
                             rules->append(newrule);
-                            remove_useless_rules(rules, *nonterm_symbs);
-                            fuse_identical_nonterms(rules, nonterm_symbs);
+                            // remove_useless_rules(rules, *nonterm_symbs);
+                            // fuse_identical_nonterms(rules, nonterm_symbs);
                             i = INT_MAX-1;
                         }
                     }
@@ -1132,9 +1171,12 @@ type gram_rule_t {
                 nt = nt + 1;
             }
         }
+        fuse_identical_nonterms(rules, nonterm_symbs);
+        remove_useless_rules(rules, *nonterm_symbs);
     }
     // input rules must be left-recursion free
-    static func void fix_factoring_conflicts(gram_rules* rules, string_list* nonterm_symbs, int max_iter = 1) {
+    static func void fix_factoring_conflicts(gram_rules* rules, string_list* nonterm_symbs, int max_iter = 2) {
+        max_iter = max_iter-1;
         apply_direct_left_factoring(rules, nonterm_symbs);
         bool has_changed;
         has_changed = false;
@@ -1179,7 +1221,7 @@ type gram_rule_t {
             printf("fix_factoring_conflicts reached max iteration count\n");
         }
         if has_changed {
-            fix_factoring_conflicts(rules, nonterm_symbs, max_iter-1);
+            fix_factoring_conflicts(rules, nonterm_symbs, max_iter);
         }
     }
 }

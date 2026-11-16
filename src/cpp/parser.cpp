@@ -270,7 +270,7 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$RvalAdd    -> $RvalAdd - $RvalMul"   , gram_rule_binop         , &nonterm_symbs) );
 
     ret.append( make_rule("$Rval       -> $RvalAdd"              , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$Rval       -> $RvalAtom as $Type"    , gram_rule_typecast      , &nonterm_symbs) );
+    ret.append( make_rule("$Rval       -> $Rval as $Type"        , gram_rule_typecast      , &nonterm_symbs) );
 
     ret.append( make_rule("$arglist    -> $Rval , $arglist"      , gram_rule_arglist_push  , &nonterm_symbs) );
     ret.append( make_rule("$arglist    -> $Rval"                 , gram_rule_arglist_base  , &nonterm_symbs) );
@@ -296,7 +296,7 @@ gram_rule_t::gram_rules make_rules() {
     }
     // gram_rule_t::apply_direct_left_factoring(&ret, &nonterm_symbs);
     gram_rule_t::fix_factoring_conflicts(&ret, &nonterm_symbs);
-    gram_rule_t::remove_all_left_recursion(&ret, &nonterm_symbs); // this doesn't modify rules, but reorders them
+    // gram_rule_t::remove_all_left_recursion(&ret, &nonterm_symbs); // this doesn't modify rules, but reorders them
     printf("with left factoring applied:\n");
     for (int i = 0; i < ret.len(); i++) {
         ret.ith(i)->print(nonterm_symbs);
