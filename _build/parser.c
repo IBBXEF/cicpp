@@ -2672,8 +2672,6 @@ struct gram_rule_t {
     Fi = compute_first_sets(rules[0], nonterm_symbs[0]);
     term_set* Fi_direct;
     Fi_direct = compute_first_sets(rules[0], nonterm_symbs[0], true);
-    term_set* FiRules;
-    FiRules = (Fi_direct) + ((nonterm_symbs)->len());
     int i;
     i = 0;
     while ((i) < ((rules)->len())) {
@@ -2682,7 +2680,7 @@ struct gram_rule_t {
       if ((((rule)->pattern).len()) > (1)) {
         gram_symbol_t first_sym;
         first_sym = ((rule)->pattern).ith((((rule)->pattern).len()) - (1));
-        if ((((int)(first_sym).kind) == (2)) && ((FiRules[i]).test_intersect(Fi[(((first_sym).dat).NonTerm_dat).symb]))) {
+        if ((((int)(first_sym).kind) == (2)) && ((Fi_direct[(rule)->result]).test_intersect(Fi[(((first_sym).dat).NonTerm_dat).symb]))) {
           printf("inlining on ");
           (rule)->print(nonterm_symbs[0]);
           has_changed = true;

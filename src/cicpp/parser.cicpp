@@ -1224,8 +1224,6 @@ type gram_rule_t {
         Fi = compute_first_sets(*rules, *nonterm_symbs);
         term_set* Fi_direct;
         Fi_direct = compute_first_sets(*rules, *nonterm_symbs, true);
-        term_set* FiRules;
-        FiRules = Fi_direct + (nonterm_symbs->len());
 
         int i;
         i = 0;
@@ -1236,7 +1234,7 @@ type gram_rule_t {
                 gram_symbol_t first_sym;
                 first_sym = (rule->pattern).ith(((rule->pattern).len()) - 1);
                 if (((first_sym.kind) as int) == 2) &&
-                    (FiRules[i].test_intersect(Fi[(((first_sym).dat).NonTerm_dat).symb]))
+                    (Fi_direct[rule->result].test_intersect(Fi[(((first_sym).dat).NonTerm_dat).symb]))
                 { // first_sym is a nonterminal shadowing a conflict
                     printf("inlining on ");
                     rule->print(*nonterm_symbs);
