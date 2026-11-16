@@ -961,6 +961,7 @@ type gram_rule_t {
         }
     }
     static func void remove_useless_rules(gram_rules* rules, string_list nonterm_symbs) {
+        // TODO: add warnings for nonterminals with no production rules
         int i;
         i = 0;
         while i < (rules->len()) { // remove shadow copy of rules

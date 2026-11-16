@@ -234,17 +234,14 @@ gram_rule_t::gram_rules make_rules() {
     gram_rule_t::gram_rules ret;
     ret.init();
 
-    ret.append( make_rule("$Lval       -> @ident"                , gram_rule_var         , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> * $RvalSuNdot"         , gram_rule_ptr_lval    , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> ( $Lval )"             , gram_rule_elt_n1      , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> $RvalStru [ $Rval ]"   , gram_rule_array       , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> $Lval . @ident"        , gram_rule_lval_dot    , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> $RvalStru -> @ident"   , gram_rule_arrow       , &nonterm_symbs) );
+    // the rules as they are a bit ugly and temporary
 
-    ret.append( make_rule("$LvalNoDot  -> @ident"                , gram_rule_var         , &nonterm_symbs) );
-    ret.append( make_rule("$LvalNoDot  -> * $RvalStru"           , gram_rule_ptr_lval    , &nonterm_symbs) );
-    ret.append( make_rule("$LvalNoDot  -> $RvalStru [ $Rval ]"   , gram_rule_array       , &nonterm_symbs) );
-    ret.append( make_rule("$LvalNoDot  -> $RvalStru -> @ident"   , gram_rule_arrow       , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> @ident"                , gram_rule_var         , &nonterm_symbs) );
+    // ret.append( make_rule("$Lval       -> * $RvalStru"         , gram_rule_ptr_lval    , &nonterm_symbs) );
+    // ret.append( make_rule("$Lval       -> ( $Lval )"             , gram_rule_elt_n1      , &nonterm_symbs) );
+    // ret.append( make_rule("$Lval       -> $RvalStru [ $Rval ]"   , gram_rule_array       , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> $Lval . @ident"        , gram_rule_lval_dot    , &nonterm_symbs) );
+    // ret.append( make_rule("$Lval       -> $RvalStru -> @ident" , gram_rule_arrow         , &nonterm_symbs) );
 
 
     ret.append( make_rule("$RvalAtom   -> ( $Rval )"             , gram_rule_elt_n1        , &nonterm_symbs) );
@@ -252,12 +249,9 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$RvalAtom   -> @\"string\""           , gram_rule_string        , &nonterm_symbs) );
     
     ret.append( make_rule("$RvalStru   -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$RvalStru   -> $RvalStru . @ident"    , gram_rule_rval_dot      , &nonterm_symbs) );
+    // ret.append( make_rule("$RvalStru   -> $RvalStru . @ident"    , gram_rule_rval_dot      , &nonterm_symbs) );
     ret.append( make_rule("$RvalStru   -> $RvalStru ( $arglist )", gram_rule_func          , &nonterm_symbs) );
-    ret.append( make_rule("$RvalStru   -> $LvalNoDot"            , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
-    
-    ret.append( make_rule("$RvalSuNdot -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$RvalSuNdot -> $RvalSuNdot ( $arglist )", gram_rule_func        , &nonterm_symbs) );
+    ret.append( make_rule("$RvalStru   -> $Lval"                 , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
 
     ret.append( make_rule("$RvalUnary  -> $RvalStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$RvalUnary  -> @! $RvalUnary"         , gram_rule_unop          , &nonterm_symbs) );
@@ -309,20 +303,20 @@ gram_rule_t::gram_rules make_rules() {
     gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::Set;
     int goal = string_list_find(nonterm_symbs, "Lval");
-    lval_table = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, true);
+    lval_table = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, false);
 
     end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::Semicol;
     goal = string_list_find(nonterm_symbs, "Rval");
-    rval_table_semicol = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, true);
+    rval_table_semicol = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, false);
 
     end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::LBRACK;
-    rval_table_lbrack = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, true);
+    rval_table_lbrack = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, false);
 
     end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::RPAREN;
-    rval_table_rparent = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, true);
+    rval_table_rparent = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, false);
 
     return ret;
 }
