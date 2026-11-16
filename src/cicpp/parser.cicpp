@@ -356,13 +356,13 @@ type gram_rule_t {
     specialize comparable_ptr<gram_symbol_t> as term_ptr
     specialize set<term_ptr> as term_set
 
-    static func parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm, gram_symbol_t stop_symbol, bool ignore_conflicts) {
-        printf("making parsing table for %d rules\n", rules.len());
-        // create an initialize Fi
+    static func term_set* compute_first_sets(gram_rules rules, string_list nonterm_symbs) {
+        term_set* ret;
+        ret = (malloc(sizeof(term_set)*((nonterm_symbs.len()) + rules.len()))) as term_set*;
         term_set* Fi;
-        Fi = (malloc(sizeof(term_set)*(nonterm_symbs.len()))) as term_set*;
         term_set* FiRules;
-        FiRules = (malloc(sizeof(term_set)*(rules.len()))) as term_set*;
+        Fi = ret;
+        FiRules = ret + (nonterm_symbs.len());
         term_ptr tmp_ptr;
         term_ptr epsilon;
         tmp_ptr.init_null();
@@ -426,10 +426,26 @@ type gram_rule_t {
                 i = i + 1;
             }
         }
+        return ret;
+    }
+
+    static func parsing_table make_parsing_table(gram_rules rules, string_list nonterm_symbs, int goal_nonterm, gram_symbol_t stop_symbol, bool ignore_conflicts) {
+        printf("making parsing table for %d rules\n", rules.len());
+        // create an initialize Fi
+        term_set* Fi;
+        term_set* FiRules;
+        Fi = compute_first_sets(rules, nonterm_symbs);
+        FiRules = Fi + (nonterm_symbs.len());
+
+        term_ptr tmp_ptr;
+        term_ptr epsilon;
+        tmp_ptr.init_null();
+        epsilon.init_null();
 
         // create an initialize Fo
         term_set* Fo;
         Fo = (malloc(sizeof(term_set)*(nonterm_symbs.len()))) as term_set*;
+        int i;
         i = 0;
         while i < (nonterm_symbs.len()) {
             Fo[i].init();
@@ -439,6 +455,7 @@ type gram_rule_t {
         Fo[goal_nonterm].add(tmp_ptr);
 
         // populate Fo
+        bool not_finished;
         not_finished = true;
         while not_finished {
             not_finished = false;
@@ -533,8 +550,7 @@ type gram_rule_t {
             FiRules[i].del();
             i = i + 1;
         }
-        free(Fi);
-        free(FiRules);
+        free(Fi); // FiRules is freed too
         free(Fo);
         return ret;
     }
