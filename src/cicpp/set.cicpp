@@ -52,6 +52,17 @@ type <set_dat_t> set {
         }
         return ret;
     }
+    func bool test_intersect(set other) {
+        int i;
+        i = 0;
+        while i < (elts.len()) {
+            if other.contains(elts.ith(i)) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
 }
 
 type <dat_t> comparable_ptr {

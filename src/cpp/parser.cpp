@@ -296,6 +296,8 @@ gram_rule_t::gram_rules make_rules() {
     }
     // gram_rule_t::apply_direct_left_factoring(&ret, &nonterm_symbs);
     gram_rule_t::fix_factoring_conflicts(&ret, &nonterm_symbs);
+    // gram_rule_t::fuse_identical_nonterms(&ret, &nonterm_symbs);
+    gram_rule_t::remove_useless_rules(&ret, nonterm_symbs);
     // gram_rule_t::remove_all_left_recursion(&ret, &nonterm_symbs); // this doesn't modify rules, but reorders them
     printf("with left factoring applied:\n");
     for (int i = 0; i < ret.len(); i++) {
