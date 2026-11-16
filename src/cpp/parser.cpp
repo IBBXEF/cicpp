@@ -235,7 +235,7 @@ gram_rule_t::gram_rules make_rules() {
     ret.init();
 
     ret.append( make_rule("$Lval       -> @ident"                , gram_rule_var         , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> * $RvalStru"           , gram_rule_ptr_lval    , &nonterm_symbs) );
+    ret.append( make_rule("$Lval       -> * $RvalSuNdot"         , gram_rule_ptr_lval    , &nonterm_symbs) );
     ret.append( make_rule("$Lval       -> ( $Lval )"             , gram_rule_elt_n1      , &nonterm_symbs) );
     ret.append( make_rule("$Lval       -> $RvalStru [ $Rval ]"   , gram_rule_array       , &nonterm_symbs) );
     ret.append( make_rule("$Lval       -> $Lval . @ident"        , gram_rule_lval_dot    , &nonterm_symbs) );
@@ -254,7 +254,10 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$RvalStru   -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$RvalStru   -> $RvalStru . @ident"    , gram_rule_rval_dot      , &nonterm_symbs) );
     ret.append( make_rule("$RvalStru   -> $RvalStru ( $arglist )", gram_rule_func          , &nonterm_symbs) );
-    ret.append( make_rule("$RvalStru   -> $Lval"            , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
+    ret.append( make_rule("$RvalStru   -> $LvalNoDot"            , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
+    
+    ret.append( make_rule("$RvalSuNdot -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$RvalSuNdot -> $RvalSuNdot ( $arglist )", gram_rule_func        , &nonterm_symbs) );
 
     ret.append( make_rule("$RvalUnary  -> $RvalStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$RvalUnary  -> @! $RvalUnary"         , gram_rule_unop          , &nonterm_symbs) );
