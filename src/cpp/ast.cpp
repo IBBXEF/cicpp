@@ -65,6 +65,39 @@ struct rval
 };
 
 
+struct expr
+{
+    enum {
+        Int,
+        Field,
+        Arrow,
+        String,
+        Var,
+        Binop,
+        Unop,
+        Fcall,
+        Typecast,
+        Addr,
+        Index
+    } kind;
+
+    union {
+        int int_dat;
+        const char* string_dat;
+        const char* var_dat;
+        struct { expr* stru; const char* field; } field_dat;
+        struct { expr* stru; const char* field; } arrow_dat;
+        struct { expr* v1; binop op; expr* v2; } binop_dat;
+        struct { unop op; expr* v; } unop_dat;
+        struct { expr* func; clist_voidptr* args; } fcall_dat;
+        struct { typ* t; expr* v; } typecast_dat;
+        struct { expr* arr; expr* ind; } ind_dat;
+    } dat;
+
+    void print_to_file(FILE* fptr);
+};
+
+
 struct typ
 {
     enum {
@@ -82,7 +115,7 @@ struct typ
         typ* ptr_dat;
         typ* const_dat;
         const char* TIdent_dat;
-        rval* typeof_dat;
+        expr* typeof_dat;
         struct { typ* ret_t; old_clist args_t; } tfunptr_dat;
     } dat;
 
@@ -117,22 +150,70 @@ struct typ
 };
 
 
-void lval::print_to_file(FILE* fptr) {
-    if (kind == Var) {
-        fprintf(fptr, "%s", dat.var_dat);
-    } else if (kind == Index) {
-        dat.ind_dat.arr->print_to_file(fptr);
-        fprintf(fptr, "[");
-        dat.ind_dat.ind->print_to_file(fptr);
-        fprintf(fptr, "]");
-    } else if (kind == Field) {
-        fprintf(fptr, "(");
-        dat.field_dat.stru->print_to_file(fptr);
-        fprintf(fptr, ").%s", dat.field_dat.field);
-    }
-}
+// void lval::print_to_file(FILE* fptr) {
+//     if (kind == Var) {
+//         fprintf(fptr, "%s", dat.var_dat);
+//     } else if (kind == Index) {
+//         dat.ind_dat.arr->print_to_file(fptr);
+//         fprintf(fptr, "[");
+//         dat.ind_dat.ind->print_to_file(fptr);
+//         fprintf(fptr, "]");
+//     } else if (kind == Field) {
+//         fprintf(fptr, "(");
+//         dat.field_dat.stru->print_to_file(fptr);
+//         fprintf(fptr, ").%s", dat.field_dat.field);
+//     }
+// }
 
-void rval::print_to_file(FILE* fptr) {
+// void rval::print_to_file(FILE* fptr) {
+//     if (kind == Int) {
+//         fprintf(fptr, "%i", dat.int_dat);
+//     } else if (kind == String) {
+//         fprintf(fptr, "\"%s\"", dat.string_dat);
+//     } else if (kind == Field) {
+//         fprintf(fptr, "(");
+//         dat.field_dat.stru->print_to_file(fptr);
+//         fprintf(fptr, ").%s", dat.field_dat.field);
+//     } else if (kind == Typecast) {
+//         fprintf(fptr, "(");
+//         dat.typecast_dat.t->print_to_file(fptr, 0);
+//         fprintf(fptr, ")");
+//         dat.typecast_dat.v->print_to_file(fptr);
+//     } else if (kind == Lval) {
+//         dat.lval_dat->print_to_file(fptr);
+//     } else if (kind == Binop) {
+//         fprintf(fptr, "(");
+//         dat.binop_dat.v1->print_to_file(fptr);
+//         fprintf(fptr, ")");
+//         if (dat.binop_dat.op.kind == binop::Arrow) {
+//             fprintf(fptr, "->");
+//             dat.binop_dat.v2->print_to_file(fptr);
+//         } else {
+//             fprintf(fptr, " ");
+//             dat.binop_dat.op.fprint(fptr);
+//             fprintf(fptr, " (");
+//             dat.binop_dat.v2->print_to_file(fptr);
+//             fprintf(fptr, ")");
+//         }
+//     } else if (kind == Unop) {
+//         dat.unop_dat.op.fprint(fptr);
+//         fprintf(fptr, "(");
+//         dat.unop_dat.v->print_to_file(fptr);
+//         fprintf(fptr, ")");
+//     } else if (kind == Fcall) {
+//         dat.fcall_dat.func->print_to_file(fptr);
+//         fprintf(fptr, "(");
+//         for (int i = 0; i < dat.fcall_dat.args->len(); i++) {
+//             if (i) {
+//                 fprintf(fptr, ", ");
+//             }
+//             ((rval*)dat.fcall_dat.args->ith(i))->print_to_file(fptr);
+//         }
+//         fprintf(fptr, ")");
+//     }
+// }
+
+void expr::print_to_file(FILE* fptr) {
     if (kind == Int) {
         fprintf(fptr, "%i", dat.int_dat);
     } else if (kind == String) {
@@ -141,27 +222,23 @@ void rval::print_to_file(FILE* fptr) {
         fprintf(fptr, "(");
         dat.field_dat.stru->print_to_file(fptr);
         fprintf(fptr, ").%s", dat.field_dat.field);
+    } else if (kind == Arrow) {
+        fprintf(fptr, "(");
+        dat.field_dat.stru->print_to_file(fptr);
+        fprintf(fptr, ")->%s", dat.field_dat.field);
     } else if (kind == Typecast) {
         fprintf(fptr, "(");
         dat.typecast_dat.t->print_to_file(fptr, 0);
         fprintf(fptr, ")");
         dat.typecast_dat.v->print_to_file(fptr);
-    } else if (kind == Lval) {
-        dat.lval_dat->print_to_file(fptr);
     } else if (kind == Binop) {
         fprintf(fptr, "(");
         dat.binop_dat.v1->print_to_file(fptr);
+        fprintf(fptr, ") ");
+        dat.binop_dat.op.fprint(fptr);
+        fprintf(fptr, " (");
+        dat.binop_dat.v2->print_to_file(fptr);
         fprintf(fptr, ")");
-        if (dat.binop_dat.op.kind == binop::Arrow) {
-            fprintf(fptr, "->");
-            dat.binop_dat.v2->print_to_file(fptr);
-        } else {
-            fprintf(fptr, " ");
-            dat.binop_dat.op.fprint(fptr);
-            fprintf(fptr, " (");
-            dat.binop_dat.v2->print_to_file(fptr);
-            fprintf(fptr, ")");
-        }
     } else if (kind == Unop) {
         dat.unop_dat.op.fprint(fptr);
         fprintf(fptr, "(");
@@ -174,9 +251,12 @@ void rval::print_to_file(FILE* fptr) {
             if (i) {
                 fprintf(fptr, ", ");
             }
-            ((rval*)dat.fcall_dat.args->ith(i))->print_to_file(fptr);
+            ((expr*)dat.fcall_dat.args->ith(i))->print_to_file(fptr);
         }
         fprintf(fptr, ")");
+    } else {
+        exit(EXIT_FAILURE);
+        printf("invalid expression kind\n");
     }
 }
 
@@ -194,7 +274,7 @@ struct decl
     enum { Var, Func, Type, Include_C, Static, Templated, Specialize } kind;
 
     union {
-        struct { const char* name; typ* t; rval* v; } var_dat;
+        struct { const char* name; typ* t; expr* v; } var_dat;
         struct { const char* name; typ* ret_t;
                  old_clist args_decls; old_clist* instrs; }  func_dat; // if instrs is nullptr, it is a function prototype
         struct { const char* name; old_clist constrs;
@@ -221,12 +301,12 @@ struct instr
     enum { Set, Return, If, While, Decl, Fcall } kind;
 
     union {
-        struct { lval* l; rval* r; }                      set_dat;
-        struct { rval* v; }                               ret_dat;
-        struct { rval* b; old_clist truebrc; old_clist falsebrc; } if_dat;
-        struct { rval* b; old_clist instrs; }               while_dat;
+        struct { expr* l; expr* r; }                      set_dat;
+        struct { expr* v; }                               ret_dat;
+        struct { expr* b; old_clist truebrc; old_clist falsebrc; } if_dat;
+        struct { expr* b; old_clist instrs; }               while_dat;
         struct { decl* d; }                              decl_dat;
-        struct { rval* call; }                          fcall_dat;
+        struct { expr* call; }                          fcall_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident, ast* prog) {

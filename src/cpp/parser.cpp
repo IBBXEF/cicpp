@@ -5,7 +5,6 @@
 #include "ast.cpp"
 #include "lexer.cpp"
 
-lval* parse_lval_old(toklist* toks);
 typ* parse_typ(toklist* toks);
 
 anyptr gram_rule_elt_n0(clist_anyptr l) {
@@ -25,133 +24,106 @@ anyptr gram_rule_elt_n1(clist_anyptr l) {
     return ret;
 }
 anyptr gram_rule_binop(clist_anyptr l) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    ret->kind = rval::Binop;
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Binop;
     ret->dat.binop_dat.op = ((token*)l.ith(1).ptr)->dat.Binop_dat.op;
-    ret->dat.binop_dat.v1 = (rval*)l.ith(0).ptr;
-    ret->dat.binop_dat.v2 = (rval*)l.ith(2).ptr;
+    ret->dat.binop_dat.v1 = (expr*)l.ith(0).ptr;
+    ret->dat.binop_dat.v2 = (expr*)l.ith(2).ptr;
     anyptr r;
     r.init_view(ret);
     return r;
 }
 anyptr gram_rule_unop(clist_anyptr l) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    ret->kind = rval::Unop;
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Unop;
     ret->dat.unop_dat.op = ((token*)l.ith(0).ptr)->dat.Unop_dat.op;
-    ret->dat.unop_dat.v = (rval*)l.ith(1).ptr;
+    ret->dat.unop_dat.v = (expr*)l.ith(1).ptr;
     anyptr r;
     r.init_view(ret);
     return r;
 }
 anyptr gram_rule_neg(clist_anyptr l) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    ret->kind = rval::Unop;
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Unop;
     ret->dat.unop_dat.op.kind = unop::Neg;
-    ret->dat.unop_dat.v = (rval*)l.ith(1).ptr;
+    ret->dat.unop_dat.v = (expr*)l.ith(1).ptr;
     anyptr r;
     r.init_view(ret);
     return r;
 }
-anyptr gram_rule_Rval_of_Lval(clist_anyptr l) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    ret->kind = rval::Lval;
-    ret->dat.lval_dat = (lval*)l.ith(0).ptr;
-    anyptr r;
-    r.init_view(ret);
-    return r;
-}
-anyptr gram_rule_lval_dot(clist_anyptr l) {
-    lval* ret = (lval*)malloc(sizeof(lval));
-    ret->kind = lval::Field;
-    ret->dat.field_dat.stru = (lval*)l.ith(0).ptr;
-    ret->dat.field_dat.field = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
-    anyptr r;
-    r.init_view(ret);
-    return r;
-}
-anyptr gram_rule_rval_dot(clist_anyptr l) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    ret->kind = rval::Field;
-    ret->dat.field_dat.stru = (rval*)l.ith(0).ptr;
+anyptr gram_rule_dot(clist_anyptr l) {
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Field;
+    ret->dat.field_dat.stru = (expr*)l.ith(0).ptr;
     ret->dat.field_dat.field = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
     anyptr r;
     r.init_view(ret);
     return r;
 }
 anyptr gram_rule_arrow(clist_anyptr l) {
-    // we parse a->b as (a[0]).b
-    lval* stru = (lval*)malloc(sizeof(lval));
-    stru->kind = lval::Index;
-    stru->dat.ind_dat.arr = (rval*)l.ith(0).ptr;
-    stru->dat.ind_dat.ind = (rval*)malloc(sizeof(rval));
-    stru->dat.ind_dat.ind->kind = rval::Int;
-    stru->dat.ind_dat.ind->dat.int_dat = 0;
-
-    lval* ret = (lval*)malloc(sizeof(lval));
-    ret->kind = lval::Field;
-    ret->dat.field_dat.stru = stru;
-    ret->dat.field_dat.field = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Arrow;
+    ret->dat.arrow_dat.stru = (expr*)l.ith(0).ptr;
+    ret->dat.arrow_dat.field = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
     anyptr r;
     r.init_view(ret);
     return r;
 }
-anyptr gram_rule_ptr_lval(clist_anyptr l) {
-    // we parse *a as a[0]
-    lval* ret = (lval*)malloc(sizeof(lval));
-    ret->kind = lval::Index;
-    ret->dat.ind_dat.arr = (rval*)l.ith(1).ptr;
-    ret->dat.ind_dat.ind = (rval*)malloc(sizeof(rval));
-    ret->dat.ind_dat.ind->kind = rval::Int;
-    ret->dat.ind_dat.ind->dat.int_dat = 0;
+anyptr gram_rule_deref(clist_anyptr l) {
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Unop;
+    ret->dat.unop_dat.op.kind = unop::Deref;
+    ret->dat.unop_dat.v = (expr*)l.ith(1).ptr;
     anyptr r;
     r.init_view(ret);
     return r;
 }
 anyptr gram_rule_addr(clist_anyptr l) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    ret->kind = rval::Addr;
-    ret->dat.addr_dat.v = (lval*)l.ith(1).ptr;
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Unop;
+    ret->dat.unop_dat.op.kind = unop::Addr;
+    ret->dat.unop_dat.v = (expr*)l.ith(1).ptr;
     anyptr r;
     r.init_view(ret);
     return r;
 }
 anyptr gram_rule_int(clist_anyptr l) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    ret->kind = rval::Int;
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Int;
     ret->dat.int_dat = ((token*)l.ith(0).ptr)->dat.VInt_dat.dat;
     anyptr r;
     r.init_view(ret);
     return r;
 }
 anyptr gram_rule_string(clist_anyptr l) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    ret->kind = rval::String;
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::String;
     ret->dat.string_dat = ((token*)l.ith(0).ptr)->dat.VString_dat.str;
     anyptr r;
     r.init_view(ret);
     return r;
 }
 anyptr gram_rule_var(clist_anyptr l) {
-    lval* ret = (lval*)malloc(sizeof(lval));
-    ret->kind = lval::Var;
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Var;
     ret->dat.var_dat = ((token*)l.ith(0).ptr)->dat.Ident_dat.str;
     anyptr r;
     r.init_view(ret);
     return r;
 }
 anyptr gram_rule_array(clist_anyptr l) {
-    lval* ret = (lval*)malloc(sizeof(lval));
-    ret->kind = lval::Index;
-    ret->dat.ind_dat.arr = (rval*)l.ith(0).ptr;
-    ret->dat.ind_dat.ind = (rval*)l.ith(2).ptr;
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Index;
+    ret->dat.ind_dat.arr = (expr*)l.ith(0).ptr;
+    ret->dat.ind_dat.ind = (expr*)l.ith(2).ptr;
     anyptr r;
     r.init_view(ret);
     return r;
 }
 anyptr gram_rule_func(clist_anyptr l) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    ret->kind = rval::Fcall;
-    ret->dat.fcall_dat.func = (rval*)l.ith(0).ptr;
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Fcall;
+    ret->dat.fcall_dat.func = (expr*)l.ith(0).ptr;
     ret->dat.fcall_dat.args = (clist_voidptr*)l.ith(2).ptr;
 
     anyptr r;
@@ -183,9 +155,9 @@ anyptr gram_rule_arglist_empty(clist_anyptr l) {
     return r;
 }
 anyptr gram_rule_typecast(clist_anyptr l) {
-    rval* ret = (rval*)malloc(sizeof(rval));
-    ret->kind = rval::Typecast;
-    ret->dat.typecast_dat.v = (rval*)l.ith(0).ptr;
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Typecast;
+    ret->dat.typecast_dat.v = (expr*)l.ith(0).ptr;
     ret->dat.typecast_dat.t = (typ*)l.ith(2).ptr;
 
     anyptr r;
@@ -224,10 +196,10 @@ anyptr gram_rule_typ_ptr(clist_anyptr l) {
 }
 
 string_list nonterm_symbs;
-gram_rule_t::parsing_table lval_table;
-gram_rule_t::parsing_table rval_table_semicol;
-gram_rule_t::parsing_table rval_table_lbrack;
-gram_rule_t::parsing_table rval_table_rparent;
+gram_rule_t::parsing_table expr_table_set;
+gram_rule_t::parsing_table expr_table_semicol;
+gram_rule_t::parsing_table expr_table_lbrack;
+gram_rule_t::parsing_table expr_table_rparent;
 
 gram_rule_t::gram_rules make_rules() {
     nonterm_symbs.init();
@@ -236,47 +208,36 @@ gram_rule_t::gram_rules make_rules() {
 
     // the rules as they are a bit ugly and temporary
 
-    ret.append( make_rule("$LvalAtom   -> @ident"                , gram_rule_var         , &nonterm_symbs) );
-    ret.append( make_rule("$LvalAtom   -> ( $Lval )"             , gram_rule_elt_n1      , &nonterm_symbs) );
-
-    ret.append( make_rule("$LvalStru   -> $LvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$LvalStru   -> $LvalStru . @ident"    , gram_rule_lval_dot    , &nonterm_symbs) );
-    // ret.append( make_rule("$LvalStru   -> $RvalAtom -> @ident"   , gram_rule_arrow         , &nonterm_symbs) );
-
-    ret.append( make_rule("$Lval       -> $LvalStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$Lval       -> * $RvalStru"           , gram_rule_ptr_lval    , &nonterm_symbs) );
-    // ret.append( make_rule("$Lval       -> $RvalStru [ $Rval ]"   , gram_rule_array       , &nonterm_symbs) );
-
-    ret.append( make_rule("$LvalFromR  -> @ident"                , gram_rule_var         , &nonterm_symbs) );
-
-
-    ret.append( make_rule("$RvalAtom   -> ( $Rval )"             , gram_rule_elt_n1        , &nonterm_symbs) );
-    ret.append( make_rule("$RvalAtom   -> @0"                    , gram_rule_int           , &nonterm_symbs) );
-    ret.append( make_rule("$RvalAtom   -> @\"string\""           , gram_rule_string        , &nonterm_symbs) );
+    ret.append( make_rule("$ExprAtom   -> @ident"                , gram_rule_var           , &nonterm_symbs) );
+    ret.append( make_rule("$ExprAtom   -> ( $Expr )"             , gram_rule_elt_n1        , &nonterm_symbs) );
+    ret.append( make_rule("$ExprAtom   -> @0"                    , gram_rule_int           , &nonterm_symbs) );
+    ret.append( make_rule("$ExprAtom   -> @\"string\""           , gram_rule_string        , &nonterm_symbs) );
     
-    ret.append( make_rule("$RvalStru   -> $RvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
-    // ret.append( make_rule("$RvalStru   -> $RvalStru . @ident"    , gram_rule_rval_dot      , &nonterm_symbs) );
-    ret.append( make_rule("$RvalStru   -> $RvalStru ( $arglist )", gram_rule_func          , &nonterm_symbs) );
-    ret.append( make_rule("$RvalStru   -> $LvalFromR"            , gram_rule_Rval_of_Lval  , &nonterm_symbs) );
+    ret.append( make_rule("$ExprStru   -> $ExprAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$ExprStru   -> $ExprStru . @ident"    , gram_rule_dot           , &nonterm_symbs) );
+    ret.append( make_rule("$ExprStru   -> $ExprStru -> @ident"   , gram_rule_arrow         , &nonterm_symbs) );
+    // ret.append( make_rule("$ExprStru   -> $ExprStru [ $Expr ]"   , gram_rule_array         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprStru   -> $ExprStru ( $arglist )", gram_rule_func          , &nonterm_symbs) );
 
-    ret.append( make_rule("$RvalUnary  -> $RvalStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$RvalUnary  -> @! $RvalUnary"         , gram_rule_unop          , &nonterm_symbs) );
-    ret.append( make_rule("$RvalUnary  -> -  $RvalUnary"         , gram_rule_neg           , &nonterm_symbs) );
-    ret.append( make_rule("$RvalUnary  -> & $Lval"               , gram_rule_addr          , &nonterm_symbs) );
+    ret.append( make_rule("$ExprUnary  -> $ExprStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$ExprUnary  -> @! $ExprUnary"         , gram_rule_unop          , &nonterm_symbs) );
+    ret.append( make_rule("$ExprUnary  -> -  $ExprUnary"         , gram_rule_neg           , &nonterm_symbs) );
+    ret.append( make_rule("$ExprUnary  -> & $ExprUnary"          , gram_rule_addr          , &nonterm_symbs) );
+    ret.append( make_rule("$ExprUnary  -> * $ExprUnary"          , gram_rule_deref         , &nonterm_symbs) );
 
-    ret.append( make_rule("$RvalMul    -> $RvalUnary"            , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$RvalMul    -> $RvalMul * $RvalUnary" , gram_rule_binop         , &nonterm_symbs) );
-    ret.append( make_rule("$RvalMul    -> $RvalMul / $RvalUnary" , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprMul    -> $ExprUnary"            , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$ExprMul    -> $ExprMul * $ExprUnary" , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprMul    -> $ExprMul / $ExprUnary" , gram_rule_binop         , &nonterm_symbs) );
 
-    ret.append( make_rule("$RvalAdd    -> $RvalMul"              , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$RvalAdd    -> $RvalAdd + $RvalMul"   , gram_rule_binop         , &nonterm_symbs) );
-    ret.append( make_rule("$RvalAdd    -> $RvalAdd - $RvalMul"   , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprAdd    -> $ExprMul"              , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$ExprAdd    -> $ExprAdd + $ExprMul"   , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprAdd    -> $ExprAdd - $ExprMul"   , gram_rule_binop         , &nonterm_symbs) );
 
-    ret.append( make_rule("$Rval       -> $RvalAdd"              , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$Rval       -> $Rval as $Type"        , gram_rule_typecast      , &nonterm_symbs) );
+    ret.append( make_rule("$Expr       -> $ExprAdd"              , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$Expr       -> $Expr as $Type"        , gram_rule_typecast      , &nonterm_symbs) );
 
-    ret.append( make_rule("$arglist    -> $Rval , $arglist"      , gram_rule_arglist_push  , &nonterm_symbs) );
-    ret.append( make_rule("$arglist    -> $Rval"                 , gram_rule_arglist_base  , &nonterm_symbs) );
+    ret.append( make_rule("$arglist    -> $Expr , $arglist"      , gram_rule_arglist_push  , &nonterm_symbs) );
+    ret.append( make_rule("$arglist    -> $Expr"                 , gram_rule_arglist_base  , &nonterm_symbs) );
     ret.append( make_rule("$arglist    ->"                       , gram_rule_arglist_empty , &nonterm_symbs) );
 
 
@@ -311,43 +272,48 @@ gram_rule_t::gram_rules make_rules() {
 
     gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::Set;
-    int goal = string_list_find(nonterm_symbs, "Lval");
-    lval_table = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
+    int goal = string_list_find(nonterm_symbs, "Expr");
+    expr_table_set = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
 
     end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::Semicol;
-    goal = string_list_find(nonterm_symbs, "Rval");
-    rval_table_semicol = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
+    expr_table_semicol = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
 
     end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::LBRACK;
-    rval_table_lbrack = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
+    expr_table_lbrack = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
 
     end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::RPAREN;
-    rval_table_rparent = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
+    expr_table_rparent = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
 
     return ret;
 }
 
 gram_rule_t::gram_rules parsing_rules = make_rules();
 
-rval* parse_rval(toklist* toks, int end_lbrack_or_rparent) {
+expr* parse_expr(toklist* toks, int end_tok_kind) {
     printf("parsing rvalue ");
     toks->ith(0).print();
     printf("\n");
-    int goal = string_list_find(nonterm_symbs, "Rval");
+    int goal = string_list_find(nonterm_symbs, "Expr");
     gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     gram_rule_t::parsing_table table;
-    if (end_lbrack_or_rparent == 1) {
-        table = rval_table_lbrack;
+    if (end_tok_kind == token::LBRACK) {
+        table = expr_table_lbrack;
         end.dat.Exact_dat.tok.kind = token::LBRACK;
-    } else if (end_lbrack_or_rparent == 2) {
-        table = rval_table_rparent;
+    } else if (end_tok_kind == token::Set) {
+        table = expr_table_set;
+        end.dat.Exact_dat.tok.kind = token::Set;
+    } else if (end_tok_kind == token::RPAREN) {
+        table = expr_table_rparent;
         end.dat.Exact_dat.tok.kind = token::RPAREN;
-    } else {
-        table = rval_table_semicol;
+    } else if (end_tok_kind == token::Semicol) {
+        table = expr_table_semicol;
         end.dat.Exact_dat.tok.kind = token::Semicol;
+    } else {
+        printf("invalid expression stop token\n");
+        exit(EXIT_FAILURE);
     }
     anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs, table);
     if (!ret.ptr) {
@@ -356,23 +322,7 @@ rval* parse_rval(toklist* toks, int end_lbrack_or_rparent) {
     }
     free(ret.n_refs);
     printf("parsed rvalue!\n");
-    return (rval*)ret.ptr;
-}
-lval* parse_lval(toklist* toks) {
-    printf("parsing lvalue ");
-    toks->ith(0).print();
-    printf("\n");
-    gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
-    end.dat.Exact_dat.tok.kind = token::Set;
-    int goal = string_list_find(nonterm_symbs, "Lval");
-    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs, lval_table);
-    if (!ret.ptr) {
-        printf("failed to parse an lvalue\n");
-        exit(-1);
-    }
-    printf("parsed lvalue!\n");
-    free(ret.n_refs);
-    return (lval*)ret.ptr;
+    return (expr*)ret.ptr;
 }
 
 typ* parse_typ(toklist* toks) {
@@ -405,7 +355,7 @@ typ* parse_typ(toklist* toks) {
             exit(-1);
         }
         *toks = toks->tail();
-        t->dat.typeof_dat = parse_rval(toks, 2);
+        t->dat.typeof_dat = parse_expr(toks, token::RPAREN);
         n = toks->ith(0);
         if (n.kind != token::RPAREN) {
             printf("expected ')' after typeof\n");
@@ -426,7 +376,7 @@ typ* parse_typ(toklist* toks) {
         t = p;
         n = toks->ith(0);
     }
-    if (n.kind == token::Binop && n.dat.Binop_dat.op.kind == binop::Arrow) {
+    if (n.kind == token::Arrow) {
         *toks = toks->tail();
         typ* p = (typ*)malloc(sizeof(typ));
         p->kind = typ::Tfunptr;
@@ -457,7 +407,7 @@ decl* parse_var_decl(toklist* toks, bool check_semicolon) {
     n = toks->ith(0);
     if (n.kind == token::Set) {
         *toks = toks->tail();
-        ret->dat.var_dat.v = parse_rval(toks, 0); // we ignore that function declaration exists
+        ret->dat.var_dat.v = parse_expr(toks, token::Semicol); // we ignore that function declaration exists
     } else {
         ret->dat.var_dat.v = nullptr;
     }
@@ -511,7 +461,7 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::Return;
-        ret->dat.ret_dat.v = parse_rval(toks, 0);
+        ret->dat.ret_dat.v = parse_expr(toks, token::Semicol);
         n = toks->ith(0);
         if (n.kind != token::Semicol) {
             printf("expected ';' after return instruction; got token %i\n", (int)n.kind);
@@ -523,7 +473,7 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::If;
-        ret->dat.if_dat.b = parse_rval(toks, 1);
+        ret->dat.if_dat.b = parse_expr(toks, token::LBRACK);
         ret->dat.if_dat.truebrc = parse_instr_block(toks);
         ret->dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
         instr* curr = ret;
@@ -532,7 +482,7 @@ instr* parse_instr(toklist* toks) {
             *toks = toks->tail();
             instr cif;
             cif.kind = instr::If;
-            cif.dat.if_dat.b = parse_rval(toks, 1);
+            cif.dat.if_dat.b = parse_expr(toks, token::LBRACK);
             cif.dat.if_dat.truebrc = parse_instr_block(toks);
             cif.dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
             curr->dat.if_dat.falsebrc.push(&cif);
@@ -550,7 +500,7 @@ instr* parse_instr(toklist* toks) {
         *toks = toks->tail();
         instr* ret = (instr*)malloc(sizeof(instr));
         ret->kind = instr::While;
-        ret->dat.while_dat.b = parse_rval(toks, 1);
+        ret->dat.while_dat.b = parse_expr(toks, token::LBRACK);
         ret->dat.while_dat.instrs = parse_instr_block(toks);
         return ret;
     }
@@ -568,7 +518,7 @@ instr* parse_instr(toklist* toks) {
                 // we parse function calls as an rvalue
                 instr* ist = (instr*)malloc(sizeof(instr));
                 ist->kind = instr::Fcall;
-                ist->dat.fcall_dat.call = parse_rval(toks, 0);
+                ist->dat.fcall_dat.call = parse_expr(toks, token::Semicol);
                 n = toks->ith(0);
                 if (n.kind != token::Semicol) {
                     printf("expected ';' after instruction; got token %i\n", (int)n.kind);
@@ -586,13 +536,13 @@ instr* parse_instr(toklist* toks) {
         } else if (n.kind == token::Set) { // we have an '=' in our instruction, so it is a set operation (not always true but almost)
             instr* ist = (instr*)malloc(sizeof(instr));
             ist->kind = instr::Set;
-            ist->dat.set_dat.l = parse_lval(&left);
+            ist->dat.set_dat.l = parse_expr(&left, token::Set);
             if (left.len() != toks->len()) {
                 printf("impossible to parse lval for assignment operation (able to parse %d/%d tokens)\n", (int)(base.len() - left.len()), (int)(base.len() - toks->len()));
                 exit(-1);
             }
             *toks = toks->tail();
-            ist->dat.set_dat.r = parse_rval(toks, 0);
+            ist->dat.set_dat.r = parse_expr(toks, token::Semicol);
             n = toks->ith(0);
             if (n.kind != token::Semicol) {
                 printf("expected ';' after instruction; got token %i\n", (int)n.kind);

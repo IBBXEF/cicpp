@@ -423,7 +423,7 @@ void clist_anyptr_free(clist_anyptr l){
 #include <string.h>
 #include <stdlib.h>
 struct binop {
-  enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt, Arrow } kind;
+  enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt } kind;
   void fprint(FILE* fptr){
     if ((kind) == (Eq)) {
       fprintf(fptr, "==");
@@ -466,9 +466,6 @@ struct binop {
     } else
     if ((kind) == (Add)) {
       fprintf(fptr, "+");
-    } else
-    if ((kind) == (Arrow)) {
-      fprintf(fptr, "->");
     }
   }
   void print(){
@@ -476,7 +473,7 @@ struct binop {
   }
 };
 struct unop {
-  enum { Lnot, Neg, Addr } kind;
+  enum { Lnot, Neg, Addr, Deref } kind;
   void fprint(FILE* fptr){
     if ((kind) == (Lnot)) {
       fprintf(fptr, "!");
@@ -486,6 +483,9 @@ struct unop {
     } else
     if ((kind) == (Addr)) {
       fprintf(fptr, "&");
+    } else
+    if ((kind) == (Deref)) {
+      fprintf(fptr, "*");
     }
   }
   void print(){
@@ -493,7 +493,7 @@ struct unop {
   }
 };
 struct token {
-  enum { TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident, EndOfInput } kind;
+  enum { TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, Arrow, VInt, VString, Ident, EndOfInput } kind;
   union {
     struct {
       binop op;
@@ -1605,7 +1605,7 @@ struct gram_rule_t {
     }
   }
   void print(string_list nonterm_symbs){
-    printf("rule: $%s -> ", (nonterm_symbs).ith(result));
+    printf("$%s -> ", (nonterm_symbs).ith(result));
     int i;
     i = 0;
     while ((i) < ((pattern).len())) {
@@ -2038,7 +2038,6 @@ struct gram_rule_t {
         }
         (stacktop).update_tok_ast(inptop);
         l[0] = (l)->tail();
-        printf("parse tok ok\n");
       } else {
         int nt;
         nt = ((((stacktop).sym).dat).NonTerm_dat).symb;
@@ -2065,7 +2064,6 @@ struct gram_rule_t {
           (stack).push(sym_dat);
           i = (i) + (1);
         }
-        printf("parse nt ok\n");
       }
     }
     anyptr final_res;
@@ -2639,6 +2637,8 @@ struct gram_rule_t {
     order_rules_by_nonterm(rules, nonterm_symbs[0]);
     term_set* Fi;
     Fi = compute_first_sets(rules[0], nonterm_symbs[0]);
+    term_set* Fi_rules;
+    Fi_rules = (Fi) + ((nonterm_symbs)->len());
     term_set* Fi_direct;
     Fi_direct = compute_first_sets(rules[0], nonterm_symbs[0], true);
     term_ptr epsilon;
@@ -2661,9 +2661,7 @@ struct gram_rule_t {
         gram_symbol_t first_sym;
         first_sym = ((rule)->pattern).ith((((rule)->pattern).len()) - (1));
         if (((int)(first_sym).kind) == (2)) {
-          term_set first_sym_first;
-          first_sym_first = Fi[(((first_sym).dat).NonTerm_dat).symb];
-          if (((Fi_direct[(rule)->result]).test_intersect(first_sym_first)) || ((indirect_first).test_intersect(first_sym_first))) {
+          if (((Fi_rules[i]).test_intersect(Fi_direct[(rule)->result])) || ((Fi_rules[i]).test_intersect(indirect_first))) {
             printf("inlining on ");
             (rule)->print(nonterm_symbs[0]);
             has_changed = true;
@@ -2685,7 +2683,7 @@ struct gram_rule_t {
             }
             i = (INT_MAX) - (1);
           } else {
-            (indirect_first).union_with(first_sym_first);
+            (indirect_first).union_with(Fi_rules[i]);
             (indirect_first).remove(epsilon);
           }
         }

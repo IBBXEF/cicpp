@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 struct binop {
-  enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt, Arrow } kind;
+  enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt } kind;
   void fprint(FILE* fptr){
     if ((kind) == (Eq)) {
       fprintf(fptr, "==");
@@ -46,9 +46,6 @@ struct binop {
     } else
     if ((kind) == (Add)) {
       fprintf(fptr, "+");
-    } else
-    if ((kind) == (Arrow)) {
-      fprintf(fptr, "->");
     }
   }
   void print(){
@@ -56,7 +53,7 @@ struct binop {
   }
 };
 struct unop {
-  enum { Lnot, Neg, Addr } kind;
+  enum { Lnot, Neg, Addr, Deref } kind;
   void fprint(FILE* fptr){
     if ((kind) == (Lnot)) {
       fprintf(fptr, "!");
@@ -66,6 +63,9 @@ struct unop {
     } else
     if ((kind) == (Addr)) {
       fprintf(fptr, "&");
+    } else
+    if ((kind) == (Deref)) {
+      fprintf(fptr, "*");
     }
   }
   void print(){
@@ -73,7 +73,7 @@ struct unop {
   }
 };
 struct token {
-  enum { TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, VInt, VString, Ident, EndOfInput } kind;
+  enum { TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, Arrow, VInt, VString, Ident, EndOfInput } kind;
   union {
     struct {
       binop op;

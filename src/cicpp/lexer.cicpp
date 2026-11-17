@@ -5,7 +5,7 @@
 
 
 type binop {
-    Add; Mul; Sub; Div; Band; Bor; Land; Lor; Eq; Leq; Lt; Neq; Geq; Gt; Arrow;
+    Add; Mul; Sub; Div; Band; Bor; Land; Lor; Eq; Leq; Lt; Neq; Geq; Gt;
 
     func void fprint(FILE* fptr) {
         if (kind == Eq) {
@@ -36,8 +36,6 @@ type binop {
             fprintf(fptr, "-");
         } elif (kind == Add) {
             fprintf(fptr, "+");
-        } elif (kind == Arrow) {
-            fprintf(fptr, "->");
         }
     }
     func void print() {
@@ -49,6 +47,7 @@ type unop {
     Lnot;
     Neg;
     Addr;
+    Deref;
     func void fprint(FILE* fptr) {
         if (kind == Lnot) {
             fprintf(fptr, "!");
@@ -56,6 +55,8 @@ type unop {
             fprintf(fptr, "-");
         } elif (kind == Addr) {
             fprintf(fptr, "&");
+        } elif (kind == Deref) {
+            fprintf(fptr, "*");
         }
     }
     func void print() {
@@ -103,6 +104,7 @@ type token {
     TwoColon;
     Hashtag;
     Dot;
+    Arrow;
 
     VInt {int dat;};
     VString {const char* str;};
