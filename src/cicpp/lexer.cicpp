@@ -105,6 +105,7 @@ type token {
     Hashtag;
     Dot;
     Arrow;
+    Implies;
 
     VInt {int dat;};
     VString {const char* str;};
@@ -185,6 +186,8 @@ type token {
             printf(".");
         } elif kind == Arrow {
             printf("->");
+        } elif kind == Implies {
+            printf("=>");
         } elif kind == Comma {
             printf(",");
         } elif kind == Semicol {

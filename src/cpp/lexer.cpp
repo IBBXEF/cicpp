@@ -197,6 +197,8 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
         n = ret->ith_ref(ret->len()-1);
         if (n->kind == token::Binop && n->dat.Binop_dat.op.kind == binop::Sub) { // last token was an '-'
             n->kind = token::Arrow;
+        } else if (n->kind == token::Set) { // last token was an '='
+            n->kind = token::Implies;
         } else {
             token tok;
             tok.kind = token::Binop;

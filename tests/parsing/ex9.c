@@ -1,2 +1,2 @@
 
-int -> void* a;
+int => void* a;

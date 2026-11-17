@@ -4,12 +4,12 @@
 
 type anyptr {
     void* ptr;
-    void* -> void free_func;
+    void* => void free_func;
     int* n_refs;
 
     static func void do_nothing(void* p) { p = p; }
 
-    func void init(void* _ptr, void* -> void _free_func) {
+    func void init(void* _ptr, void* => void _free_func) {
         ptr = _ptr;
         free_func = _free_func;
         n_refs = malloc(4) as int*; // 4 = sizeof(int)

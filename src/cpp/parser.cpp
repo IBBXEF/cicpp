@@ -398,7 +398,7 @@ typ* parse_typ(toklist* toks) {
         t = p;
         n = toks->ith(0);
     }
-    if (n.kind == token::Arrow) {
+    if (n.kind == token::Implies) {
         *toks = toks->tail();
         typ* p = (typ*)malloc(sizeof(typ));
         p->kind = typ::Tfunptr;

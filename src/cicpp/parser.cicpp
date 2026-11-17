@@ -192,7 +192,7 @@ type gram_rule_t {
 
     // user-defined "result function" that will turn the matched pattern into the result.
     // the input pointers's ownership belongs to the function, but not the list itself
-    clist_anyptr -> anyptr result_function;
+    clist_anyptr => anyptr result_function;
     void* func_bonus_dat; // optionnal additionnal data that will be given to the function as the last element of the clist.
 
     type parsed_ast {
@@ -269,13 +269,13 @@ type gram_rule_t {
 
     specialize clist<symbol_dat> as symdatlist
 
-    func void init(int rule_result, clist_anyptr -> anyptr rule_result_function) {
+    func void init(int rule_result, clist_anyptr => anyptr rule_result_function) {
         result = rule_result;
         result_function = rule_result_function;
         func_bonus_dat = nullptr;
         pattern.init();
     }
-    func void init_bonus_func_data(int rule_result, clist_anyptr -> anyptr rule_result_function, void* result_func_bonus_dat) {
+    func void init_bonus_func_data(int rule_result, clist_anyptr => anyptr rule_result_function, void* result_func_bonus_dat) {
         init(rule_result, rule_result_function);
         func_bonus_dat = result_func_bonus_dat;
     }
@@ -672,7 +672,7 @@ type gram_rule_t {
         }
         anyptr other_tail_dat;
         other_tail_dat = tail_dat->remove(tail_dat->len() - 1);
-        clist_anyptr -> anyptr old_res_func;
+        clist_anyptr => anyptr old_res_func;
         old_res_func = tail_dat->remove(tail_dat->len() - 1).ptr as typeof(old_res_func);
         anyptr old_bonus_dat;
         old_bonus_dat = tail_dat->remove(tail_dat->len() - 1);
@@ -702,7 +702,7 @@ type gram_rule_t {
         tmp = lcopy.remove(lcopy.len() - 1).ptr as void**;
         clist_anyptr* tail_dat;
         tail_dat = lcopy.remove(lcopy.len() - 1).ptr as clist_anyptr*;
-        clist_anyptr -> anyptr old_res_func;
+        clist_anyptr => anyptr old_res_func;
         anyptr old_bonus_dat;
         old_res_func = tmp[0] as typeof(old_res_func);
         old_bonus_dat.init_view(tmp[1]);
@@ -718,9 +718,9 @@ type gram_rule_t {
     static func anyptr _gram_rule_ret_lrec_any_uninline(clist_anyptr l) {
         void** tmp;
         anyptr old_bonus_dat1;
-        clist_anyptr -> anyptr old_res_func1;
+        clist_anyptr => anyptr old_res_func1;
         anyptr old_bonus_dat2;
-        clist_anyptr -> anyptr old_res_func2;
+        clist_anyptr => anyptr old_res_func2;
         int* old1_len;
         tmp = l.remove(l.len() - 1).ptr as void**;
         old_res_func1 = tmp[0] as typeof(old_res_func1);
@@ -777,7 +777,7 @@ type gram_rule_t {
         void** tmp;
         tmp = l.remove(l.len() - 1).ptr as void**;
 
-        clist_anyptr -> anyptr old_res_func;
+        clist_anyptr => anyptr old_res_func;
         anyptr old_bonus_dat;
         old_res_func = tmp[0] as typeof(old_res_func);
         old_bonus_dat.init_view(tmp[1]);
@@ -1293,7 +1293,7 @@ type gram_rule_t {
 }
 
 
-func gram_rule_t* make_rule(const char* str, clist_anyptr -> anyptr rule_result_function, string_list* nonterm_symbs) {
+func gram_rule_t* make_rule(const char* str, clist_anyptr => anyptr rule_result_function, string_list* nonterm_symbs) {
     
     char* tmp;
     if str[0] != '$' || str[1] == '$' {
