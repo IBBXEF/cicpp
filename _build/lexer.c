@@ -128,6 +128,12 @@ struct token {
     if ((kind) == (RSQUAR)) {
       printf("]");
     } else
+    if ((kind) == (LBRACK)) {
+      printf("{");
+    } else
+    if ((kind) == (RBRACK)) {
+      printf("}");
+    } else
     if ((kind) == (TInt)) {
       printf("int");
     } else
@@ -140,8 +146,38 @@ struct token {
     if ((kind) == (Const)) {
       printf("const");
     } else
+    if ((kind) == (Static)) {
+      printf("static");
+    } else
+    if ((kind) == (Func)) {
+      printf("func");
+    } else
     if ((kind) == (As)) {
       printf("as");
+    } else
+    if ((kind) == (Specialize)) {
+      printf("specialize");
+    } else
+    if ((kind) == (Type)) {
+      printf("type");
+    } else
+    if ((kind) == (While)) {
+      printf("while");
+    } else
+    if ((kind) == (If)) {
+      printf("if");
+    } else
+    if ((kind) == (Else)) {
+      printf("else");
+    } else
+    if ((kind) == (Elif)) {
+      printf("elif");
+    } else
+    if ((kind) == (Return)) {
+      printf("return");
+    } else
+    if ((kind) == (Hashtag)) {
+      printf("#");
     } else
     if ((kind) == (Set)) {
       printf("=");
@@ -149,8 +185,14 @@ struct token {
     if ((kind) == (Dot)) {
       printf(".");
     } else
+    if ((kind) == (Arrow)) {
+      printf("->");
+    } else
     if ((kind) == (Comma)) {
       printf(",");
+    } else
+    if ((kind) == (Semicol)) {
+      printf(";");
     } else
     if ((kind) == (Ident)) {
       printf("%s", ((dat).Ident_dat).str);

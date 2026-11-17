@@ -52,7 +52,7 @@ build_test: $(SOURCE_FILES) $(TEMP_TEST_FILES)
 	mkdir -p _build
 	mkdir -p _build/test
 	mkdir -p _build/test2
-	g++ $(GCC_ARGS) -I_build/test -Isrc/cpp src/cpp/main.cpp -o _build/_test
+	g++ $(GCC_ARGS) -I_build/test2 -Isrc/cpp src/cpp/main.cpp -o _build/_test
 
 replacelib: $(TEMP_FILES)
 	cp _build/test/lexer.c _build/lexer.c
