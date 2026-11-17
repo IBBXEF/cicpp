@@ -119,19 +119,19 @@ type token {
 
 
     func bool eq(token b) {
-        if (kind) != (b.kind) {
+        if kind != b.kind {
             return false;
         }
         if kind == Binop {
-            return (((dat.Binop_dat).op).kind) == ((((b.dat).Binop_dat).op).kind);
+            return dat.Binop_dat.op.kind == b.dat.Binop_dat.op.kind;
         } elif kind == Unop {
-            return (((dat.Unop_dat).op).kind) == ((((b.dat).Unop_dat).op).kind);
+            return dat.Unop_dat.op.kind == b.dat.Unop_dat.op.kind;
         } elif kind == VInt {
-            return ((dat.VInt_dat).dat) == (((b.dat).VInt_dat).dat);
+            return dat.VInt_dat.dat == b.dat.VInt_dat.dat;
         } elif kind == VString {
-            return (!strcmp((dat.VString_dat).str, ((b.dat).VString_dat).str));
+            return !strcmp(dat.VString_dat.str, b.dat.VString_dat.str);
         } elif kind == Ident {
-            return (!strcmp((dat.Ident_dat).str, ((b.dat).Ident_dat).str));
+            return !strcmp(dat.Ident_dat.str, b.dat.Ident_dat.str);
         }
         return true;
     }
@@ -162,15 +162,15 @@ type token {
         } elif kind == Comma {
             printf(",");
         } elif kind == Ident {
-            printf("%s", (dat.Ident_dat).str);
+            printf("%s", dat.Ident_dat.str);
         } elif kind == VInt {
-            printf("%d", (dat.VInt_dat).dat);
+            printf("%d", dat.VInt_dat.dat);
         } elif kind == VString {
-            printf("\"%s\"", (dat.VString_dat).str);
+            printf("\"%s\"", dat.VString_dat.str);
         } elif kind == Binop {
-            ((dat.Binop_dat).op).print();
+            dat.Binop_dat.op.print();
         } elif kind == Unop {
-            ((dat.Unop_dat).op).print();
+            dat.Unop_dat.op.print();
         } elif kind == Typeof {
             printf("typeof");
         } else {

@@ -14,7 +14,7 @@ type <set_dat_t> set {
     func bool contains(set_dat_t s) {
         int i;
         i = 0;
-        while i < (elts.len()) {
+        while i < elts.len() {
             if s.eq(elts.ith(i)) {
                 return true;
             }
@@ -25,7 +25,7 @@ type <set_dat_t> set {
     func bool remove(set_dat_t s) {
         int i;
         i = 0;
-        while i < (elts.len()) {
+        while i < elts.len() {
             if s.eq(elts.ith(i)) {
                 elts.remove(i);
                 return true;
@@ -46,8 +46,8 @@ type <set_dat_t> set {
         ret = false;
         int i;
         i = 0;
-        while i < ((other.elts).len()) {
-            ret = add((other.elts).ith(i)) || ret;
+        while i < other.elts.len() {
+            ret = add(other.elts.ith(i)) || ret;
             i = i + 1;
         }
         return ret;
@@ -55,7 +55,7 @@ type <set_dat_t> set {
     func bool test_intersect(set other) {
         int i;
         i = 0;
-        while i < (elts.len()) {
+        while i < elts.len() {
             if other.contains(elts.ith(i)) {
                 return true;
             }
@@ -74,9 +74,9 @@ type <dat_t> comparable_ptr {
         ptr = p;
     }
     func bool eq(comparable_ptr p2) {
-        if (!ptr) || (!(p2.ptr)) {
-            return ptr == (p2.ptr);
+        if !ptr || !p2.ptr {
+            return ptr == p2.ptr;
         }
-        return ptr->eq(*(p2.ptr));
+        return ptr->eq(*p2.ptr);
     }
 }

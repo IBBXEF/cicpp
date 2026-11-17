@@ -12,8 +12,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (*(n)).dat = dat;
-    (*(n)).next = l;
+    (n)->dat = dat;
+    (n)->next = l;
     l = n;
   }
   dat_t pop(){
@@ -79,7 +79,7 @@ struct clist {
     int i;
     i = 0;
     while ((i) < (len())) {
-      (ret).push(ith((len()) - ((i) + (1))));
+      (ret).push(ith(((len()) - (i)) - (1)));
       i = (i) + (1);
     }
     return ret;
@@ -96,7 +96,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -107,7 +107,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
       return ret;
     }
   }
@@ -128,8 +128,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (*(n)).dat = dat;
-    (*(n)).next = l;
+    (n)->dat = dat;
+    (n)->next = l;
     l = n;
   }
   dat_t pop(){
@@ -195,7 +195,7 @@ struct clist {
     int i;
     i = 0;
     while ((i) < (len())) {
-      (ret).push(ith((len()) - ((i) + (1))));
+      (ret).push(ith(((len()) - (i)) - (1)));
       i = (i) + (1);
     }
     return ret;
@@ -212,7 +212,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -223,7 +223,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
       return ret;
     }
   }
@@ -309,8 +309,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (*(n)).dat = dat;
-    (*(n)).next = l;
+    (n)->dat = dat;
+    (n)->next = l;
     l = n;
   }
   dat_t pop(){
@@ -376,7 +376,7 @@ struct clist {
     int i;
     i = 0;
     while ((i) < (len())) {
-      (ret).push(ith((len()) - ((i) + (1))));
+      (ret).push(ith(((len()) - (i)) - (1)));
       i = (i) + (1);
     }
     return ret;
@@ -393,7 +393,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -404,7 +404,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
       return ret;
     }
   }
@@ -604,8 +604,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (*(n)).dat = dat;
-    (*(n)).next = l;
+    (n)->dat = dat;
+    (n)->next = l;
     l = n;
   }
   dat_t pop(){
@@ -671,7 +671,7 @@ struct clist {
     int i;
     i = 0;
     while ((i) < (len())) {
-      (ret).push(ith((len()) - ((i) + (1))));
+      (ret).push(ith(((len()) - (i)) - (1)));
       i = (i) + (1);
     }
     return ret;
@@ -688,7 +688,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -699,7 +699,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
       return ret;
     }
   }
@@ -717,7 +717,7 @@ int string_list_thingy(string_list* l, char* str){
   int i;
   i = string_list_find(*(l), str);
   if ((i) < (0)) {
-    (*(l)).append(str);
+    (l)->append(str);
     return ((l)->len()) - (1);
   }
   free(str);
@@ -754,8 +754,8 @@ struct gram_rule_t {
     void push(dat_t dat){
       _clist* n;
       n = (_clist*)malloc(sizeof(_clist));
-      (*(n)).dat = dat;
-      (*(n)).next = l;
+      (n)->dat = dat;
+      (n)->next = l;
       l = n;
     }
     dat_t pop(){
@@ -821,7 +821,7 @@ struct gram_rule_t {
       int i;
       i = 0;
       while ((i) < (len())) {
-        (ret).push(ith((len()) - ((i) + (1))));
+        (ret).push(ith(((len()) - (i)) - (1)));
         i = (i) + (1);
       }
       return ret;
@@ -838,7 +838,7 @@ struct gram_rule_t {
         clist tmp;
         tmp = tail();
         (tmp).append(dat);
-        (*(l)).next = (tmp).l;
+        (l)->next = (tmp).l;
       }
     }
     dat_t remove(int i){
@@ -849,7 +849,7 @@ struct gram_rule_t {
         tmp = tail();
         dat_t ret;
         ret = (tmp).remove((i) - (1));
-        (*(l)).next = (tmp).l;
+        (l)->next = (tmp).l;
         return ret;
       }
     }
@@ -937,8 +937,8 @@ struct gram_rule_t {
     void push(dat_t dat){
       _clist* n;
       n = (_clist*)malloc(sizeof(_clist));
-      (*(n)).dat = dat;
-      (*(n)).next = l;
+      (n)->dat = dat;
+      (n)->next = l;
       l = n;
     }
     dat_t pop(){
@@ -1004,7 +1004,7 @@ struct gram_rule_t {
       int i;
       i = 0;
       while ((i) < (len())) {
-        (ret).push(ith((len()) - ((i) + (1))));
+        (ret).push(ith(((len()) - (i)) - (1)));
         i = (i) + (1);
       }
       return ret;
@@ -1021,7 +1021,7 @@ struct gram_rule_t {
         clist tmp;
         tmp = tail();
         (tmp).append(dat);
-        (*(l)).next = (tmp).l;
+        (l)->next = (tmp).l;
       }
     }
     dat_t remove(int i){
@@ -1032,7 +1032,7 @@ struct gram_rule_t {
         tmp = tail();
         dat_t ret;
         ret = (tmp).remove((i) - (1));
-        (*(l)).next = (tmp).l;
+        (l)->next = (tmp).l;
         return ret;
       }
     }
@@ -1058,8 +1058,8 @@ struct gram_rule_t {
       void push(dat_t dat){
         _clist* n;
         n = (_clist*)malloc(sizeof(_clist));
-        (*(n)).dat = dat;
-        (*(n)).next = l;
+        (n)->dat = dat;
+        (n)->next = l;
         l = n;
       }
       dat_t pop(){
@@ -1125,7 +1125,7 @@ struct gram_rule_t {
         int i;
         i = 0;
         while ((i) < (len())) {
-          (ret).push(ith((len()) - ((i) + (1))));
+          (ret).push(ith(((len()) - (i)) - (1)));
           i = (i) + (1);
         }
         return ret;
@@ -1142,7 +1142,7 @@ struct gram_rule_t {
           clist tmp;
           tmp = tail();
           (tmp).append(dat);
-          (*(l)).next = (tmp).l;
+          (l)->next = (tmp).l;
         }
       }
       dat_t remove(int i){
@@ -1153,7 +1153,7 @@ struct gram_rule_t {
           tmp = tail();
           dat_t ret;
           ret = (tmp).remove((i) - (1));
-          (*(l)).next = (tmp).l;
+          (l)->next = (tmp).l;
           return ret;
         }
       }
@@ -1315,8 +1315,8 @@ struct gram_rule_t {
       void push(dat_t dat){
         _clist* n;
         n = (_clist*)malloc(sizeof(_clist));
-        (*(n)).dat = dat;
-        (*(n)).next = l;
+        (n)->dat = dat;
+        (n)->next = l;
         l = n;
       }
       dat_t pop(){
@@ -1382,7 +1382,7 @@ struct gram_rule_t {
         int i;
         i = 0;
         while ((i) < (len())) {
-          (ret).push(ith((len()) - ((i) + (1))));
+          (ret).push(ith(((len()) - (i)) - (1)));
           i = (i) + (1);
         }
         return ret;
@@ -1399,7 +1399,7 @@ struct gram_rule_t {
           clist tmp;
           tmp = tail();
           (tmp).append(dat);
-          (*(l)).next = (tmp).l;
+          (l)->next = (tmp).l;
         }
       }
       dat_t remove(int i){
@@ -1410,7 +1410,7 @@ struct gram_rule_t {
           tmp = tail();
           dat_t ret;
           ret = (tmp).remove((i) - (1));
-          (*(l)).next = (tmp).l;
+          (l)->next = (tmp).l;
           return ret;
         }
       }
@@ -1441,8 +1441,8 @@ struct gram_rule_t {
     void push(dat_t dat){
       _clist* n;
       n = (_clist*)malloc(sizeof(_clist));
-      (*(n)).dat = dat;
-      (*(n)).next = l;
+      (n)->dat = dat;
+      (n)->next = l;
       l = n;
     }
     dat_t pop(){
@@ -1508,7 +1508,7 @@ struct gram_rule_t {
       int i;
       i = 0;
       while ((i) < (len())) {
-        (ret).push(ith((len()) - ((i) + (1))));
+        (ret).push(ith(((len()) - (i)) - (1)));
         i = (i) + (1);
       }
       return ret;
@@ -1525,7 +1525,7 @@ struct gram_rule_t {
         clist tmp;
         tmp = tail();
         (tmp).append(dat);
-        (*(l)).next = (tmp).l;
+        (l)->next = (tmp).l;
       }
     }
     dat_t remove(int i){
@@ -1536,7 +1536,7 @@ struct gram_rule_t {
         tmp = tail();
         dat_t ret;
         ret = (tmp).remove((i) - (1));
-        (*(l)).next = (tmp).l;
+        (l)->next = (tmp).l;
         return ret;
       }
     }
@@ -1579,8 +1579,14 @@ struct gram_rule_t {
       i = (i) + (1);
     }
     if ((result_function) != ((r).result_function)) {
+      printf("WARNING: identical rules with different result functions, assuming they are identical\n");
+      exit(EXIT_FAILURE);
+      return false;
     }
     if ((func_bonus_dat) != ((r).func_bonus_dat)) {
+      printf("WARNING: identical rules with different bonus dat, assuming they are identical\n");
+      exit(EXIT_FAILURE);
+      return false;
     }
     return true;
   }
@@ -1615,7 +1621,7 @@ struct gram_rule_t {
       if (i) {
         printf(" ");
       }
-      ((pattern).ith(((pattern).len()) - ((i) + (1)))).print(nonterm_symbs);
+      ((pattern).ith((((pattern).len()) - (i)) - (1))).print(nonterm_symbs);
       i = (i) + (1);
     }
     printf("\n");
@@ -1653,8 +1659,8 @@ struct gram_rule_t {
       void push(dat_t dat){
         _clist* n;
         n = (_clist*)malloc(sizeof(_clist));
-        (*(n)).dat = dat;
-        (*(n)).next = l;
+        (n)->dat = dat;
+        (n)->next = l;
         l = n;
       }
       dat_t pop(){
@@ -1720,7 +1726,7 @@ struct gram_rule_t {
         int i;
         i = 0;
         while ((i) < (len())) {
-          (ret).push(ith((len()) - ((i) + (1))));
+          (ret).push(ith(((len()) - (i)) - (1)));
           i = (i) + (1);
         }
         return ret;
@@ -1737,7 +1743,7 @@ struct gram_rule_t {
           clist tmp;
           tmp = tail();
           (tmp).append(dat);
-          (*(l)).next = (tmp).l;
+          (l)->next = (tmp).l;
         }
       }
       dat_t remove(int i){
@@ -1748,7 +1754,7 @@ struct gram_rule_t {
           tmp = tail();
           dat_t ret;
           ret = (tmp).remove((i) - (1));
-          (*(l)).next = (tmp).l;
+          (l)->next = (tmp).l;
           return ret;
         }
       }

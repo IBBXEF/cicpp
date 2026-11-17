@@ -186,8 +186,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (*(n)).dat = dat;
-    (*(n)).next = l;
+    (n)->dat = dat;
+    (n)->next = l;
     l = n;
   }
   dat_t pop(){
@@ -253,7 +253,7 @@ struct clist {
     int i;
     i = 0;
     while ((i) < (len())) {
-      (ret).push(ith((len()) - ((i) + (1))));
+      (ret).push(ith(((len()) - (i)) - (1)));
       i = (i) + (1);
     }
     return ret;
@@ -270,7 +270,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -281,7 +281,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
       return ret;
     }
   }
@@ -302,8 +302,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (*(n)).dat = dat;
-    (*(n)).next = l;
+    (n)->dat = dat;
+    (n)->next = l;
     l = n;
   }
   dat_t pop(){
@@ -369,7 +369,7 @@ struct clist {
     int i;
     i = 0;
     while ((i) < (len())) {
-      (ret).push(ith((len()) - ((i) + (1))));
+      (ret).push(ith(((len()) - (i)) - (1)));
       i = (i) + (1);
     }
     return ret;
@@ -386,7 +386,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -397,7 +397,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
       return ret;
     }
   }
@@ -430,8 +430,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (*(n)).dat = dat;
-    (*(n)).next = l;
+    (n)->dat = dat;
+    (n)->next = l;
     l = n;
   }
   dat_t pop(){
@@ -497,7 +497,7 @@ struct clist {
     int i;
     i = 0;
     while ((i) < (len())) {
-      (ret).push(ith((len()) - ((i) + (1))));
+      (ret).push(ith(((len()) - (i)) - (1)));
       i = (i) + (1);
     }
     return ret;
@@ -514,7 +514,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -525,7 +525,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (*(l)).next = (tmp).l;
+      (l)->next = (tmp).l;
       return ret;
     }
   }

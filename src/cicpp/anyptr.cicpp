@@ -12,14 +12,14 @@ type anyptr {
     func void init(void* _ptr, void* -> void _free_func) {
         ptr = _ptr;
         free_func = _free_func;
-        n_refs = ((malloc(4)) as int*); // 4 = sizeof(int)
+        n_refs = malloc(4) as int*; // 4 = sizeof(int)
         *n_refs = 1;
     }
 
     func void init_view(void* _ptr) {
         ptr = _ptr;
         free_func = do_nothing;
-        n_refs = (malloc(4)) as int*; // 4 = sizeof(int)
+        n_refs = malloc(4) as int*; // 4 = sizeof(int)
         *n_refs = INT_MAX;
     }
 
@@ -32,8 +32,8 @@ type anyptr {
     func anyptr get_copy() {
         anyptr ret;
         ret = *this;
-        if (*n_refs) < INT_MAX {
-            *n_refs = (*n_refs) + 1;
+        if *n_refs < INT_MAX {
+            *n_refs = *n_refs + 1;
         }
         return ret;
     }
@@ -47,12 +47,12 @@ type anyptr {
     }
 
     func void del() {
-        *n_refs = (*n_refs) - 1;
+        *n_refs = *n_refs - 1;
         if !(*n_refs) {
             free_func(ptr);
             free(n_refs);
             ptr = nullptr;
-        } elif ((*n_refs) < 0) {
+        } elif *n_refs < 0 {
             printf("error: a freed shared pointer has been dereferenced\n");
             exit(-1);
         }
@@ -63,6 +63,6 @@ specialize clist<anyptr> as clist_anyptr
 
 func void clist_anyptr_free(clist_anyptr l) {
     while l.len() {
-        (l.pop()).del();
+        l.pop().del();
     }
 }
