@@ -132,7 +132,7 @@ anyptr gram_rule_func(clist_anyptr l) {
 }
 anyptr gram_rule_arglist_push(clist_anyptr l) {
     clist_voidptr* ret = (clist_voidptr*)l.ith(2).ptr;
-    ret->append(l.ith(0).ptr);
+    ret->push(l.ith(0).ptr);
 
     anyptr r;
     r.init_view(ret);
@@ -194,6 +194,15 @@ anyptr gram_rule_typ_ptr(clist_anyptr l) {
     r.init_view(ret);
     return r;
 }
+anyptr gram_rule_typeof(clist_anyptr l) {
+    typ* ret = (typ*)malloc(sizeof(typ));
+    ret->kind = typ::Typeof;
+    ret->dat.typeof_dat = (expr*)l.ith(2).ptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
 
 string_list nonterm_symbs;
 gram_rule_t::parsing_table expr_table_set;
@@ -206,8 +215,6 @@ gram_rule_t::gram_rules make_rules() {
     gram_rule_t::gram_rules ret;
     ret.init();
 
-    // the rules as they are a bit ugly and temporary
-
     ret.append( make_rule("$ExprAtom   -> @ident"                , gram_rule_var           , &nonterm_symbs) );
     ret.append( make_rule("$ExprAtom   -> ( $Expr )"             , gram_rule_elt_n1        , &nonterm_symbs) );
     ret.append( make_rule("$ExprAtom   -> @0"                    , gram_rule_int           , &nonterm_symbs) );
@@ -216,7 +223,7 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$ExprStru   -> $ExprAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$ExprStru   -> $ExprStru . @ident"    , gram_rule_dot           , &nonterm_symbs) );
     ret.append( make_rule("$ExprStru   -> $ExprStru -> @ident"   , gram_rule_arrow         , &nonterm_symbs) );
-    // ret.append( make_rule("$ExprStru   -> $ExprStru [ $Expr ]"   , gram_rule_array         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprStru   -> $ExprStru [ $Expr ]"   , gram_rule_array         , &nonterm_symbs) );
     ret.append( make_rule("$ExprStru   -> $ExprStru ( $arglist )", gram_rule_func          , &nonterm_symbs) );
 
     ret.append( make_rule("$ExprUnary  -> $ExprStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
@@ -233,7 +240,21 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$ExprAdd    -> $ExprAdd + $ExprMul"   , gram_rule_binop         , &nonterm_symbs) );
     ret.append( make_rule("$ExprAdd    -> $ExprAdd - $ExprMul"   , gram_rule_binop         , &nonterm_symbs) );
 
-    ret.append( make_rule("$Expr       -> $ExprAdd"              , gram_rule_elt_n0        , &nonterm_symbs) );
+    // Comparisons cannot be chained without parentheses
+    ret.append( make_rule("$ExprCmp    -> $ExprAdd"              , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$ExprCmp    -> $ExprAdd < $ExprAdd"   , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprCmp    -> $ExprAdd <= $ExprAdd"  , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprCmp    -> $ExprAdd > $ExprAdd"   , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprCmp    -> $ExprAdd >= $ExprAdd"  , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprCmp    -> $ExprAdd == $ExprAdd"  , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprCmp    -> $ExprAdd != $ExprAdd"  , gram_rule_binop         , &nonterm_symbs) );
+
+    // This order is a bit unoptimal, but results in much fewer rules in the parser. Eventually, optimisations in the parser will make the better order better.
+    ret.append( make_rule("$ExprLop    -> $ExprCmp"              , gram_rule_elt_n0        , &nonterm_symbs) );
+    ret.append( make_rule("$ExprLop    -> $ExprLop || $ExprCmp"  , gram_rule_binop         , &nonterm_symbs) );
+    ret.append( make_rule("$ExprLop    -> $ExprLop && $ExprCmp"  , gram_rule_binop         , &nonterm_symbs) );
+
+    ret.append( make_rule("$Expr       -> $ExprLop"              , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$Expr       -> $Expr as $Type"        , gram_rule_typecast      , &nonterm_symbs) );
 
     ret.append( make_rule("$arglist    -> $Expr , $arglist"      , gram_rule_arglist_push  , &nonterm_symbs) );
@@ -246,27 +267,28 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$Type       -> int"                   , gram_rule_typ_base      , &nonterm_symbs) );
     ret.append( make_rule("$Type       -> @ident"                , gram_rule_typ_base      , &nonterm_symbs) );
     ret.append( make_rule("$Type       -> $Type *"               , gram_rule_typ_ptr       , &nonterm_symbs) );
+    ret.append( make_rule("$Type       -> typeof ( $Expr )"      , gram_rule_typeof        , &nonterm_symbs) );
     // TODO: add a builtin bool type
 
-    printf("rules:\n");
-    for (int i = 0; i < ret.len(); i++) {
-        ret.ith(i)->print(nonterm_symbs);
-    }
+    // printf("rules:\n");
+    // for (int i = 0; i < ret.len(); i++) {
+    //     ret.ith(i)->print(nonterm_symbs);
+    // }
     // gram_rule_t::remove_direct_left_recursion(&ret, &nonterm_symbs);
     gram_rule_t::remove_all_left_recursion(&ret, &nonterm_symbs);
     gram_rule_t::remove_useless_rules(&ret, nonterm_symbs);
-    printf("with left recursion eliminated:\nrules:\n");
-    for (int i = 0; i < ret.len(); i++) {
-        ret.ith(i)->print(nonterm_symbs);
-    }
+    // printf("with left recursion eliminated:\nrules:\n");
+    // for (int i = 0; i < ret.len(); i++) {
+    //     ret.ith(i)->print(nonterm_symbs);
+    // }
     // gram_rule_t::apply_direct_left_factoring(&ret, &nonterm_symbs);
     gram_rule_t::fix_factoring_conflicts(&ret, &nonterm_symbs);
     // gram_rule_t::fuse_identical_nonterms(&ret, &nonterm_symbs);
     // gram_rule_t::remove_useless_rules(&ret, nonterm_symbs);
-    printf("with left factoring applied:\nrules:\n");
-    for (int i = 0; i < ret.len(); i++) {
-        ret.ith(i)->print(nonterm_symbs);
-    }
+    // printf("with left factoring applied:\nrules:\n");
+    // for (int i = 0; i < ret.len(); i++) {
+    //     ret.ith(i)->print(nonterm_symbs);
+    // }
 
     bool ignore_conflicts = false;
 
@@ -293,9 +315,9 @@ gram_rule_t::gram_rules make_rules() {
 gram_rule_t::gram_rules parsing_rules = make_rules();
 
 expr* parse_expr(toklist* toks, int end_tok_kind) {
-    printf("parsing rvalue ");
-    toks->ith(0).print();
-    printf("\n");
+    // printf("parsing rvalue ");
+    // toks->ith(0).print();
+    // printf("\n");
     int goal = string_list_find(nonterm_symbs, "Expr");
     gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     gram_rule_t::parsing_table table;
@@ -321,7 +343,7 @@ expr* parse_expr(toklist* toks, int end_tok_kind) {
         exit(-1);
     }
     free(ret.n_refs);
-    printf("parsed rvalue!\n");
+    // printf("parsed rvalue!\n");
     return (expr*)ret.ptr;
 }
 

@@ -171,6 +171,8 @@ type token {
             ((dat.Binop_dat).op).print();
         } elif kind == Unop {
             ((dat.Unop_dat).op).print();
+        } elif kind == Typeof {
+            printf("typeof");
         } else {
             printf("kind:%d", kind as int);
         }

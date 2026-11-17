@@ -12,8 +12,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (n[0]).dat = dat;
-    (n[0]).next = l;
+    (*(n)).dat = dat;
+    (*(n)).next = l;
     l = n;
   }
   dat_t pop(){
@@ -63,7 +63,7 @@ struct clist {
     return ret;
   }
   dat_t ith(int i){
-    return ith_ref(i)[0];
+    return *(ith_ref(i));
   }
   void reverse(){
     clist rev;
@@ -96,7 +96,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -107,7 +107,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
       return ret;
     }
   }
@@ -128,8 +128,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (n[0]).dat = dat;
-    (n[0]).next = l;
+    (*(n)).dat = dat;
+    (*(n)).next = l;
     l = n;
   }
   dat_t pop(){
@@ -179,7 +179,7 @@ struct clist {
     return ret;
   }
   dat_t ith(int i){
-    return ith_ref(i)[0];
+    return *(ith_ref(i));
   }
   void reverse(){
     clist rev;
@@ -212,7 +212,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -223,7 +223,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
       return ret;
     }
   }
@@ -258,13 +258,13 @@ struct anyptr {
     ptr = _ptr;
     free_func = _free_func;
     n_refs = (int*)malloc(4);
-    n_refs[0] = 1;
+    *(n_refs) = 1;
   }
   void init_view(void* _ptr){
     ptr = _ptr;
     free_func = do_nothing;
     n_refs = (int*)malloc(4);
-    n_refs[0] = INT_MAX;
+    *(n_refs) = INT_MAX;
   }
   anyptr get_view(){
     anyptr ret;
@@ -273,9 +273,9 @@ struct anyptr {
   }
   anyptr get_copy(){
     anyptr ret;
-    ret = this[0];
-    if ((n_refs[0]) < (INT_MAX)) {
-      n_refs[0] = (n_refs[0]) + (1);
+    ret = *(this);
+    if ((*(n_refs)) < (INT_MAX)) {
+      *(n_refs) = (*(n_refs)) + (1);
     }
     return ret;
   }
@@ -286,13 +286,13 @@ struct anyptr {
     return ptr;
   }
   void del(){
-    n_refs[0] = (n_refs[0]) - (1);
-    if (!(n_refs[0])) {
+    *(n_refs) = (*(n_refs)) - (1);
+    if (!(*(n_refs))) {
       free_func(ptr);
       free(n_refs);
       ptr = nullptr;
     } else
-    if ((n_refs[0]) < (0)) {
+    if ((*(n_refs)) < (0)) {
       printf("error: a freed shared pointer has been dereferenced\n");
       exit(-(1));
     }
@@ -309,8 +309,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (n[0]).dat = dat;
-    (n[0]).next = l;
+    (*(n)).dat = dat;
+    (*(n)).next = l;
     l = n;
   }
   dat_t pop(){
@@ -360,7 +360,7 @@ struct clist {
     return ret;
   }
   dat_t ith(int i){
-    return ith_ref(i)[0];
+    return *(ith_ref(i));
   }
   void reverse(){
     clist rev;
@@ -393,7 +393,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -404,7 +404,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
       return ret;
     }
   }

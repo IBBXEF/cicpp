@@ -12,8 +12,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (n[0]).dat = dat;
-    (n[0]).next = l;
+    (*(n)).dat = dat;
+    (*(n)).next = l;
     l = n;
   }
   dat_t pop(){
@@ -63,7 +63,7 @@ struct clist {
     return ret;
   }
   dat_t ith(int i){
-    return ith_ref(i)[0];
+    return *(ith_ref(i));
   }
   void reverse(){
     clist rev;
@@ -96,7 +96,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -107,7 +107,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
       return ret;
     }
   }
@@ -128,8 +128,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (n[0]).dat = dat;
-    (n[0]).next = l;
+    (*(n)).dat = dat;
+    (*(n)).next = l;
     l = n;
   }
   dat_t pop(){
@@ -179,7 +179,7 @@ struct clist {
     return ret;
   }
   dat_t ith(int i){
-    return ith_ref(i)[0];
+    return *(ith_ref(i));
   }
   void reverse(){
     clist rev;
@@ -212,7 +212,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -223,7 +223,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
       return ret;
     }
   }
@@ -258,13 +258,13 @@ struct anyptr {
     ptr = _ptr;
     free_func = _free_func;
     n_refs = (int*)malloc(4);
-    n_refs[0] = 1;
+    *(n_refs) = 1;
   }
   void init_view(void* _ptr){
     ptr = _ptr;
     free_func = do_nothing;
     n_refs = (int*)malloc(4);
-    n_refs[0] = INT_MAX;
+    *(n_refs) = INT_MAX;
   }
   anyptr get_view(){
     anyptr ret;
@@ -273,9 +273,9 @@ struct anyptr {
   }
   anyptr get_copy(){
     anyptr ret;
-    ret = this[0];
-    if ((n_refs[0]) < (INT_MAX)) {
-      n_refs[0] = (n_refs[0]) + (1);
+    ret = *(this);
+    if ((*(n_refs)) < (INT_MAX)) {
+      *(n_refs) = (*(n_refs)) + (1);
     }
     return ret;
   }
@@ -286,13 +286,13 @@ struct anyptr {
     return ptr;
   }
   void del(){
-    n_refs[0] = (n_refs[0]) - (1);
-    if (!(n_refs[0])) {
+    *(n_refs) = (*(n_refs)) - (1);
+    if (!(*(n_refs))) {
       free_func(ptr);
       free(n_refs);
       ptr = nullptr;
     } else
-    if ((n_refs[0]) < (0)) {
+    if ((*(n_refs)) < (0)) {
       printf("error: a freed shared pointer has been dereferenced\n");
       exit(-(1));
     }
@@ -309,8 +309,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (n[0]).dat = dat;
-    (n[0]).next = l;
+    (*(n)).dat = dat;
+    (*(n)).next = l;
     l = n;
   }
   dat_t pop(){
@@ -360,7 +360,7 @@ struct clist {
     return ret;
   }
   dat_t ith(int i){
-    return ith_ref(i)[0];
+    return *(ith_ref(i));
   }
   void reverse(){
     clist rev;
@@ -393,7 +393,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -404,7 +404,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
       return ret;
     }
   }
@@ -587,6 +587,9 @@ struct token {
     if ((kind) == (Unop)) {
       (((dat).Unop_dat).op).print();
     } else
+    if ((kind) == (Typeof)) {
+      printf("typeof");
+    } else
     printf("kind:%d", (int)kind);
   }
 };
@@ -601,8 +604,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (n[0]).dat = dat;
-    (n[0]).next = l;
+    (*(n)).dat = dat;
+    (*(n)).next = l;
     l = n;
   }
   dat_t pop(){
@@ -652,7 +655,7 @@ struct clist {
     return ret;
   }
   dat_t ith(int i){
-    return ith_ref(i)[0];
+    return *(ith_ref(i));
   }
   void reverse(){
     clist rev;
@@ -685,7 +688,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -696,7 +699,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
       return ret;
     }
   }
@@ -712,9 +715,9 @@ toklist lex_string(const char* str);
 #include <string.h>
 int string_list_thingy(string_list* l, char* str){
   int i;
-  i = string_list_find(l[0], str);
+  i = string_list_find(*(l), str);
   if ((i) < (0)) {
-    (l[0]).append(str);
+    (*(l)).append(str);
     return ((l)->len()) - (1);
   }
   free(str);
@@ -722,12 +725,12 @@ int string_list_thingy(string_list* l, char* str){
 }
 char* copy_string_until_char(const char** str, char c){
   const char* base;
-  base = str[0];
-  while ((str[0][0]) && ((str[0][0]) != (c))) {
-    str[0] = (str[0]) + (1);
+  base = *(str);
+  while ((*(*(str))) && ((*(*(str))) != (c))) {
+    *(str) = (*(str)) + (1);
   }
   int len;
-  len = (str[0]) - (base);
+  len = (*(str)) - (base);
   char* ret;
   ret = (char*)malloc((len) + (1));
   ret[len] = 0;
@@ -751,8 +754,8 @@ struct gram_rule_t {
     void push(dat_t dat){
       _clist* n;
       n = (_clist*)malloc(sizeof(_clist));
-      (n[0]).dat = dat;
-      (n[0]).next = l;
+      (*(n)).dat = dat;
+      (*(n)).next = l;
       l = n;
     }
     dat_t pop(){
@@ -802,7 +805,7 @@ struct gram_rule_t {
       return ret;
     }
     dat_t ith(int i){
-      return ith_ref(i)[0];
+      return *(ith_ref(i));
     }
     void reverse(){
       clist rev;
@@ -835,7 +838,7 @@ struct gram_rule_t {
         clist tmp;
         tmp = tail();
         (tmp).append(dat);
-        (l[0]).next = (tmp).l;
+        (*(l)).next = (tmp).l;
       }
     }
     dat_t remove(int i){
@@ -846,7 +849,7 @@ struct gram_rule_t {
         tmp = tail();
         dat_t ret;
         ret = (tmp).remove((i) - (1));
-        (l[0]).next = (tmp).l;
+        (*(l)).next = (tmp).l;
         return ret;
       }
     }
@@ -934,8 +937,8 @@ struct gram_rule_t {
     void push(dat_t dat){
       _clist* n;
       n = (_clist*)malloc(sizeof(_clist));
-      (n[0]).dat = dat;
-      (n[0]).next = l;
+      (*(n)).dat = dat;
+      (*(n)).next = l;
       l = n;
     }
     dat_t pop(){
@@ -985,7 +988,7 @@ struct gram_rule_t {
       return ret;
     }
     dat_t ith(int i){
-      return ith_ref(i)[0];
+      return *(ith_ref(i));
     }
     void reverse(){
       clist rev;
@@ -1018,7 +1021,7 @@ struct gram_rule_t {
         clist tmp;
         tmp = tail();
         (tmp).append(dat);
-        (l[0]).next = (tmp).l;
+        (*(l)).next = (tmp).l;
       }
     }
     dat_t remove(int i){
@@ -1029,7 +1032,7 @@ struct gram_rule_t {
         tmp = tail();
         dat_t ret;
         ret = (tmp).remove((i) - (1));
-        (l[0]).next = (tmp).l;
+        (*(l)).next = (tmp).l;
         return ret;
       }
     }
@@ -1055,8 +1058,8 @@ struct gram_rule_t {
       void push(dat_t dat){
         _clist* n;
         n = (_clist*)malloc(sizeof(_clist));
-        (n[0]).dat = dat;
-        (n[0]).next = l;
+        (*(n)).dat = dat;
+        (*(n)).next = l;
         l = n;
       }
       dat_t pop(){
@@ -1106,7 +1109,7 @@ struct gram_rule_t {
         return ret;
       }
       dat_t ith(int i){
-        return ith_ref(i)[0];
+        return *(ith_ref(i));
       }
       void reverse(){
         clist rev;
@@ -1139,7 +1142,7 @@ struct gram_rule_t {
           clist tmp;
           tmp = tail();
           (tmp).append(dat);
-          (l[0]).next = (tmp).l;
+          (*(l)).next = (tmp).l;
         }
       }
       dat_t remove(int i){
@@ -1150,7 +1153,7 @@ struct gram_rule_t {
           tmp = tail();
           dat_t ret;
           ret = (tmp).remove((i) - (1));
-          (l[0]).next = (tmp).l;
+          (*(l)).next = (tmp).l;
           return ret;
         }
       }
@@ -1189,7 +1192,7 @@ struct gram_rule_t {
         gram_symbol_t s2;
         s2 = ((table).ith(i)).s;
         if (((s2).includes(s)) || ((s).includes(s2))) {
-          if (!((r)->eq(((table).ith(i)).r[0]))) {
+          if (!((r)->eq(*(((table).ith(i)).r)))) {
             string_list empty;
             (empty).init();
             printf("conflicting entry in the parsing table for nonterm $%s and symbol ", nonterm_name);
@@ -1312,8 +1315,8 @@ struct gram_rule_t {
       void push(dat_t dat){
         _clist* n;
         n = (_clist*)malloc(sizeof(_clist));
-        (n[0]).dat = dat;
-        (n[0]).next = l;
+        (*(n)).dat = dat;
+        (*(n)).next = l;
         l = n;
       }
       dat_t pop(){
@@ -1363,7 +1366,7 @@ struct gram_rule_t {
         return ret;
       }
       dat_t ith(int i){
-        return ith_ref(i)[0];
+        return *(ith_ref(i));
       }
       void reverse(){
         clist rev;
@@ -1396,7 +1399,7 @@ struct gram_rule_t {
           clist tmp;
           tmp = tail();
           (tmp).append(dat);
-          (l[0]).next = (tmp).l;
+          (*(l)).next = (tmp).l;
         }
       }
       dat_t remove(int i){
@@ -1407,7 +1410,7 @@ struct gram_rule_t {
           tmp = tail();
           dat_t ret;
           ret = (tmp).remove((i) - (1));
-          (l[0]).next = (tmp).l;
+          (*(l)).next = (tmp).l;
           return ret;
         }
       }
@@ -1438,8 +1441,8 @@ struct gram_rule_t {
     void push(dat_t dat){
       _clist* n;
       n = (_clist*)malloc(sizeof(_clist));
-      (n[0]).dat = dat;
-      (n[0]).next = l;
+      (*(n)).dat = dat;
+      (*(n)).next = l;
       l = n;
     }
     dat_t pop(){
@@ -1489,7 +1492,7 @@ struct gram_rule_t {
       return ret;
     }
     dat_t ith(int i){
-      return ith_ref(i)[0];
+      return *(ith_ref(i));
     }
     void reverse(){
       clist rev;
@@ -1522,7 +1525,7 @@ struct gram_rule_t {
         clist tmp;
         tmp = tail();
         (tmp).append(dat);
-        (l[0]).next = (tmp).l;
+        (*(l)).next = (tmp).l;
       }
     }
     dat_t remove(int i){
@@ -1533,7 +1536,7 @@ struct gram_rule_t {
         tmp = tail();
         dat_t ret;
         ret = (tmp).remove((i) - (1));
-        (l[0]).next = (tmp).l;
+        (*(l)).next = (tmp).l;
         return ret;
       }
     }
@@ -1631,7 +1634,7 @@ struct gram_rule_t {
       if ((!(ptr)) || (!((p2).ptr))) {
         return (ptr) == ((p2).ptr);
       }
-      return (ptr)->eq((p2).ptr[0]);
+      return (ptr)->eq(*((p2).ptr));
     }
   };
   #undef dat_t
@@ -1650,8 +1653,8 @@ struct gram_rule_t {
       void push(dat_t dat){
         _clist* n;
         n = (_clist*)malloc(sizeof(_clist));
-        (n[0]).dat = dat;
-        (n[0]).next = l;
+        (*(n)).dat = dat;
+        (*(n)).next = l;
         l = n;
       }
       dat_t pop(){
@@ -1701,7 +1704,7 @@ struct gram_rule_t {
         return ret;
       }
       dat_t ith(int i){
-        return ith_ref(i)[0];
+        return *(ith_ref(i));
       }
       void reverse(){
         clist rev;
@@ -1734,7 +1737,7 @@ struct gram_rule_t {
           clist tmp;
           tmp = tail();
           (tmp).append(dat);
-          (l[0]).next = (tmp).l;
+          (*(l)).next = (tmp).l;
         }
       }
       dat_t remove(int i){
@@ -1745,7 +1748,7 @@ struct gram_rule_t {
           tmp = tail();
           dat_t ret;
           ret = (tmp).remove((i) - (1));
-          (l[0]).next = (tmp).l;
+          (*(l)).next = (tmp).l;
           return ret;
         }
       }
@@ -1868,10 +1871,10 @@ struct gram_rule_t {
             if ((oFi)->contains(epsilon)) {
               (tmp_ptr).init_null();
               (oFi)->remove(epsilon);
-              (addFi).union_with(oFi[0]);
+              (addFi).union_with(*(oFi));
               (oFi)->add(epsilon);
             } else {
-              (addFi).union_with(oFi[0]);
+              (addFi).union_with(*(oFi));
               j = -(2);
             }
           } else
@@ -1937,19 +1940,19 @@ struct gram_rule_t {
             term_set* oFo;
             oFo = (Fo) + ((((sy)->dat).NonTerm_dat).symb);
             if ((wFi).contains(epsilon)) {
-              not_finished = ((oFo)->union_with(cFo[0])) || (not_finished);
+              not_finished = ((oFo)->union_with(*(cFo))) || (not_finished);
             }
             not_finished = ((oFo)->union_with(wFi)) || (not_finished);
             term_set* oFi;
             oFi = (Fi) + ((((sy)->dat).NonTerm_dat).symb);
             if ((oFi)->contains(epsilon)) {
               (oFi)->remove(epsilon);
-              (wFi).union_with(oFi[0]);
+              (wFi).union_with(*(oFi));
               (oFi)->add(epsilon);
             } else {
               (wFi).del();
               (wFi).init();
-              (wFi).union_with(oFi[0]);
+              (wFi).union_with(*(oFi));
             }
           }
           j = (j) + (1);
@@ -1982,7 +1985,7 @@ struct gram_rule_t {
           while ((k) < (((tmp).elts).len())) {
             gram_symbol_t* s;
             s = (((tmp).elts).ith(k)).ptr;
-            (ret).add_entry(s[0], i, (rules).ith(j), ignore_conflicts, (nonterm_symbs).ith(i));
+            (ret).add_entry(*(s), i, (rules).ith(j), ignore_conflicts, (nonterm_symbs).ith(i));
             k = (k) + (1);
           }
         }
@@ -2037,7 +2040,7 @@ struct gram_rule_t {
           exit(EXIT_FAILURE);
         }
         (stacktop).update_tok_ast(inptop);
-        l[0] = (l)->tail();
+        *(l) = (l)->tail();
       } else {
         int nt;
         nt = ((((stacktop).sym).dat).NonTerm_dat).symb;
@@ -2116,7 +2119,7 @@ struct gram_rule_t {
     (tail_dat)->append(old_bonus_dat);
     (tail_dat)->push(prev_out);
     anyptr combined_out;
-    combined_out = old_res_func(tail_dat[0]);
+    combined_out = old_res_func(*(tail_dat));
     anyptr ret;
     ret = _gram_rule_ret_lrec_elim_nlrec_closure(combined_out, (decltype(tail_dat))(other_tail_dat).ptr);
     (tail_dat)->del();
@@ -2169,7 +2172,7 @@ struct gram_rule_t {
     (lcopy2).init();
     int i;
     i = 0;
-    while ((i) < (old1_len[0])) {
+    while ((i) < (*(old1_len))) {
       (lcopy1).append((l).ith(i));
       i = (i) + (1);
     }
@@ -2191,7 +2194,7 @@ struct gram_rule_t {
   anyptr _gram_rule_ret_factor_accu(clist_anyptr l){
     clist_anyptr* lcopy;
     lcopy = (clist_anyptr*)malloc(sizeof(clist_anyptr));
-    lcopy[0] = (l).deepcopy();
+    *(lcopy) = (l).deepcopy();
     anyptr ret;
     (ret).init_view(lcopy);
     return ret;
@@ -2256,7 +2259,7 @@ struct gram_rule_t {
       }
       if ((lrec_rules).len()) {
         char* new_nonterm_str;
-        new_nonterm_str = (char*)malloc((strlen((nonterm_symbs)->ith(i))) + ((1) + (50)));
+        new_nonterm_str = (char*)malloc(((strlen((nonterm_symbs)->ith(i))) + (1)) + (50));
         sprintf(new_nonterm_str, "tail%x_%s", (nonterm_symbs)->len(), (nonterm_symbs)->ith(i));
         int new_nonterm;
         new_nonterm = string_list_thingy(nonterm_symbs, new_nonterm_str);
@@ -2272,11 +2275,11 @@ struct gram_rule_t {
           rule = (nlrec_rules).ith(j);
           (rule)->add_nonterm(new_nonterm);
           void** tmp;
-          tmp = (void**)malloc((sizeof(tmp[0])) * (2));
+          tmp = (void**)malloc((sizeof(*(tmp))) * (2));
           tmp[0] = (void*)(rule)->result_function;
           tmp[1] = (rule)->func_bonus_dat;
-          (rule[0]).func_bonus_dat = (void*)tmp;
-          (rule[0]).result_function = _gram_rule_ret_lrec_elim_nlrec;
+          (rule)->func_bonus_dat = (void*)tmp;
+          (rule)->result_function = _gram_rule_ret_lrec_elim_nlrec;
           j = (j) + (1);
         }
         j = 0;
@@ -2286,12 +2289,12 @@ struct gram_rule_t {
           ((rule)->pattern).remove((((rule)->pattern).len()) - (1));
           (rule)->add_nonterm(new_nonterm);
           void** tmp;
-          tmp = (void**)malloc((sizeof(tmp[0])) * (2));
+          tmp = (void**)malloc((sizeof(*(tmp))) * (2));
           tmp[0] = (void*)(rule)->result_function;
           tmp[1] = (rule)->func_bonus_dat;
-          (rule[0]).func_bonus_dat = (void*)tmp;
-          (rule[0]).result = new_nonterm;
-          (rule[0]).result_function = _gram_rule_ret_lrec_elim_lrec;
+          (rule)->func_bonus_dat = (void*)tmp;
+          (rule)->result = new_nonterm;
+          (rule)->result_function = _gram_rule_ret_lrec_elim_lrec;
           j = (j) + (1);
         }
         gram_rule_t* epsrule;
@@ -2308,7 +2311,7 @@ struct gram_rule_t {
       i = (i) + (1);
     }
     (rules)->del();
-    rules[0] = new_rules;
+    *(rules) = new_rules;
   }
   static
   void inline_rule(gram_rule_t* rule1, gram_rule_t* rule2){
@@ -2320,17 +2323,17 @@ struct gram_rule_t {
     }
     ((rule2)->pattern).remove((((rule2)->pattern).len()) - (1));
     void** tmp;
-    tmp = (void**)malloc((sizeof(tmp[0])) * (5));
+    tmp = (void**)malloc((sizeof(*(tmp))) * (5));
     tmp[0] = (void*)(rule1)->result_function;
     tmp[1] = (void*)(rule1)->func_bonus_dat;
     tmp[2] = (void*)(rule2)->result_function;
     tmp[3] = (void*)(rule2)->func_bonus_dat;
     int* tmpint;
-    tmpint = (int*)malloc(sizeof(tmpint[0]));
-    tmpint[0] = ((rule1)->pattern).len();
+    tmpint = (int*)malloc(sizeof(*(tmpint)));
+    *(tmpint) = ((rule1)->pattern).len();
     tmp[4] = (void*)tmpint;
-    (rule2[0]).result_function = _gram_rule_ret_lrec_any_uninline;
-    (rule2[0]).func_bonus_dat = (void*)tmp;
+    (rule2)->result_function = _gram_rule_ret_lrec_any_uninline;
+    (rule2)->func_bonus_dat = (void*)tmp;
     int k;
     k = 0;
     while ((k) < (((rule1)->pattern).len())) {
@@ -2357,12 +2360,12 @@ struct gram_rule_t {
             j = 0;
             while ((j) < ((rules)->len())) {
               gram_rule_t rule2;
-              rule2 = (rules)->ith(j)[0];
+              rule2 = *((rules)->ith(j));
               if (((rule2).result) == ((((first_sym).dat).NonTerm_dat).symb)) {
                 gram_rule_t* newrule;
                 newrule = (gram_rule_t*)malloc(sizeof(gram_rule_t));
-                newrule[0] = rule[0];
-                (newrule[0]).pattern = ((rule)->pattern).deepcopy();
+                *(newrule) = *(rule);
+                (newrule)->pattern = ((rule)->pattern).deepcopy();
                 inline_rule(&(rule2), newrule);
                 (rules)->append(newrule);
               }
@@ -2412,7 +2415,7 @@ struct gram_rule_t {
       while ((j) < ((rules)->len())) {
         gram_rule_t* rule2;
         rule2 = (rules)->ith(j);
-        if ((rule1)->eq(rule2[0])) {
+        if ((rule1)->eq(*(rule2))) {
           (rules)->remove(j);
           (rule2)->del();
           free(rule2);
@@ -2428,7 +2431,7 @@ struct gram_rule_t {
       rule1 = (rules)->ith(i);
       symlist sl;
       sl = (rule1)->pattern;
-      if ((((sl).len()) == (1)) && ((((int)((sl).ith(0)).kind) == (2)) && ((((((sl).ith(0)).dat).NonTerm_dat).symb) == ((rule1)->result)))) {
+      if (((((sl).len()) == (1)) && (((int)((sl).ith(0)).kind) == (2))) && ((((((sl).ith(0)).dat).NonTerm_dat).symb) == ((rule1)->result))) {
         (rules)->remove(i);
         (rule1)->del();
         free(rule1);
@@ -2445,7 +2448,7 @@ struct gram_rule_t {
     i = 0;
     while ((i) < ((rules)->len())) {
       gram_rule_t rule1;
-      rule1 = (rules)->ith(i)[0];
+      rule1 = *((rules)->ith(i));
       if (((rule1).result) == (nt1)) {
         bool found_match;
         found_match = false;
@@ -2453,7 +2456,7 @@ struct gram_rule_t {
         j = (i) + (1);
         while ((j) < ((rules)->len())) {
           gram_rule_t rule2;
-          rule2 = (rules)->ith(j)[0];
+          rule2 = *((rules)->ith(j));
           if (((rule2).result) == (nt2)) {
             (rule2).pattern = ((rule2).pattern).deepcopy();
             int k;
@@ -2540,7 +2543,7 @@ struct gram_rule_t {
       i = (i) + (1);
     }
     (rules)->del();
-    rules[0] = new_rules;
+    *(rules) = new_rules;
   }
   static
   bool apply_direct_left_factoring(gram_rules* rules, string_list* nonterm_symbs, int max_iter = INT_MAX){
@@ -2577,7 +2580,7 @@ struct gram_rule_t {
           if (do_factorize) {
             changed = true;
             char* new_nonterm_str;
-            new_nonterm_str = (char*)malloc((strlen((nonterm_symbs)->ith(nt))) + ((1) + (10)));
+            new_nonterm_str = (char*)malloc(((strlen((nonterm_symbs)->ith(nt))) + (1)) + (10));
             sprintf(new_nonterm_str, "lf%x_%s", (nonterm_symbs)->len(), (nonterm_symbs)->ith(nt));
             int new_nonterm;
             new_nonterm = string_list_thingy(nonterm_symbs, new_nonterm_str);
@@ -2590,9 +2593,6 @@ struct gram_rule_t {
             (newrule)->init_bonus_func_data(nt, _gram_rule_ret_factor_join, nullptr);
             ((newrule)->pattern).push(((rule1)->pattern).ith((r1_pt_len) - (1)));
             (newrule)->add_nonterm(new_nonterm);
-            printf("factorizing $%s on ", (nonterm_symbs)->ith(nt));
-            (((rule1)->pattern).ith((r1_pt_len) - (1))).print(nonterm_symbs[0]);
-            printf("\n");
             int j;
             j = 0;
             while ((j) < ((rules)->len())) {
@@ -2603,12 +2603,12 @@ struct gram_rule_t {
               if ((((rule2)->result) == (nt)) && (((rule2)->pattern).len())) {
                 if ((((newrule)->pattern).ith(1)).eq(((rule2)->pattern).ith((r2_pt_len) - (1)))) {
                   void** tmp;
-                  tmp = (void**)malloc((sizeof(tmp[0])) * (2));
+                  tmp = (void**)malloc((sizeof(*(tmp))) * (2));
                   tmp[0] = (void*)(rule2)->result_function;
                   tmp[1] = (rule2)->func_bonus_dat;
-                  (rule2[0]).result = new_nonterm;
-                  (rule2[0]).result_function = _gram_rule_ret_factor_accu;
-                  (rule2[0]).func_bonus_dat = (void*)tmp;
+                  (rule2)->result = new_nonterm;
+                  (rule2)->result_function = _gram_rule_ret_factor_accu;
+                  (rule2)->func_bonus_dat = (void*)tmp;
                   ((rule2)->pattern).remove((r2_pt_len) - (1));
                 }
               }
@@ -2634,13 +2634,13 @@ struct gram_rule_t {
     max_iter = (max_iter) - (1);
     bool has_changed;
     has_changed = apply_direct_left_factoring(rules, nonterm_symbs, 1);
-    order_rules_by_nonterm(rules, nonterm_symbs[0]);
+    order_rules_by_nonterm(rules, *(nonterm_symbs));
     term_set* Fi;
-    Fi = compute_first_sets(rules[0], nonterm_symbs[0]);
+    Fi = compute_first_sets(*(rules), *(nonterm_symbs));
     term_set* Fi_rules;
     Fi_rules = (Fi) + ((nonterm_symbs)->len());
     term_set* Fi_direct;
-    Fi_direct = compute_first_sets(rules[0], nonterm_symbs[0], true);
+    Fi_direct = compute_first_sets(*(rules), *(nonterm_symbs), true);
     term_ptr epsilon;
     (epsilon).init_null();
     int last_nonterm;
@@ -2663,7 +2663,7 @@ struct gram_rule_t {
         if (((int)(first_sym).kind) == (2)) {
           if (((Fi_rules[i]).test_intersect(Fi_direct[(rule)->result])) || ((Fi_rules[i]).test_intersect(indirect_first))) {
             printf("inlining on ");
-            (rule)->print(nonterm_symbs[0]);
+            (rule)->print(*(nonterm_symbs));
             has_changed = true;
             (rules)->remove(i);
             int j;
@@ -2674,8 +2674,8 @@ struct gram_rule_t {
               if (((rule2)->result) == ((((first_sym).dat).NonTerm_dat).symb)) {
                 gram_rule_t* newrule;
                 newrule = (gram_rule_t*)malloc(sizeof(gram_rule_t));
-                newrule[0] = rule[0];
-                (newrule[0]).pattern = ((rule)->pattern).deepcopy();
+                *(newrule) = *(rule);
+                (newrule)->pattern = ((rule)->pattern).deepcopy();
                 inline_rule(rule2, newrule);
                 (rules)->append(newrule);
               }
@@ -2711,7 +2711,7 @@ gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_any
   str = (str) + (1);
   gram_rule_t ret;
   (ret).init(string_list_thingy(nonterm_symbs, copy_string_until_char(&(str), 32)), rule_result_function);
-  while ((str[0]) && ((str[0]) == (32))) {
+  while ((*(str)) && ((*(str)) == (32))) {
     str = (str) + (1);
   }
   if (((str[0]) != (45)) || ((str[1]) != (62))) {
@@ -2719,8 +2719,8 @@ gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_any
     exit(EXIT_FAILURE);
   }
   str = (str) + (2);
-  while (str[0]) {
-    while ((str[0]) && ((str[0]) == (32))) {
+  while (*(str)) {
+    while ((*(str)) && ((*(str)) == (32))) {
       str = (str) + (1);
     }
     if (((str[0]) == (36)) && ((str[1]) == (123))) {
@@ -2756,6 +2756,6 @@ gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_any
   }
   gram_rule_t* ptrret;
   ptrret = (gram_rule_t*)malloc(sizeof(gram_rule_t));
-  ptrret[0] = ret;
+  *(ptrret) = ret;
   return ptrret;
 }

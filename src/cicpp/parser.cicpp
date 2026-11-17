@@ -1170,9 +1170,9 @@ type gram_rule_t {
                         newrule->init_bonus_func_data(nt, _gram_rule_ret_factor_join, nullptr);
                         (newrule->pattern).push((rule1->pattern).ith(r1_pt_len-1));
                         newrule->add_nonterm(new_nonterm);
-                        printf("factorizing $%s on ", nonterm_symbs->ith(nt));
-                        ((rule1->pattern).ith(r1_pt_len-1)).print(*nonterm_symbs);
-                        printf("\n");
+                        // printf("factorizing $%s on ", nonterm_symbs->ith(nt));
+                        // ((rule1->pattern).ith(r1_pt_len-1)).print(*nonterm_symbs);
+                        // printf("\n");
 
                         int j;
                         j = 0;

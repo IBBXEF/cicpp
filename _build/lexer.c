@@ -167,6 +167,9 @@ struct token {
     if ((kind) == (Unop)) {
       (((dat).Unop_dat).op).print();
     } else
+    if ((kind) == (Typeof)) {
+      printf("typeof");
+    } else
     printf("kind:%d", (int)kind);
   }
 };
@@ -183,8 +186,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (n[0]).dat = dat;
-    (n[0]).next = l;
+    (*(n)).dat = dat;
+    (*(n)).next = l;
     l = n;
   }
   dat_t pop(){
@@ -234,7 +237,7 @@ struct clist {
     return ret;
   }
   dat_t ith(int i){
-    return ith_ref(i)[0];
+    return *(ith_ref(i));
   }
   void reverse(){
     clist rev;
@@ -267,7 +270,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -278,7 +281,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
       return ret;
     }
   }
@@ -299,8 +302,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (n[0]).dat = dat;
-    (n[0]).next = l;
+    (*(n)).dat = dat;
+    (*(n)).next = l;
     l = n;
   }
   dat_t pop(){
@@ -350,7 +353,7 @@ struct clist {
     return ret;
   }
   dat_t ith(int i){
-    return ith_ref(i)[0];
+    return *(ith_ref(i));
   }
   void reverse(){
     clist rev;
@@ -383,7 +386,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -394,7 +397,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
       return ret;
     }
   }
@@ -427,8 +430,8 @@ struct clist {
   void push(dat_t dat){
     _clist* n;
     n = (_clist*)malloc(sizeof(_clist));
-    (n[0]).dat = dat;
-    (n[0]).next = l;
+    (*(n)).dat = dat;
+    (*(n)).next = l;
     l = n;
   }
   dat_t pop(){
@@ -478,7 +481,7 @@ struct clist {
     return ret;
   }
   dat_t ith(int i){
-    return ith_ref(i)[0];
+    return *(ith_ref(i));
   }
   void reverse(){
     clist rev;
@@ -511,7 +514,7 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
     }
   }
   dat_t remove(int i){
@@ -522,7 +525,7 @@ struct clist {
       tmp = tail();
       dat_t ret;
       ret = (tmp).remove((i) - (1));
-      (l[0]).next = (tmp).l;
+      (*(l)).next = (tmp).l;
       return ret;
     }
   }

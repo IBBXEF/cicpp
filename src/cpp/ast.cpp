@@ -77,7 +77,6 @@ struct expr
         Unop,
         Fcall,
         Typecast,
-        Addr,
         Index
     } kind;
 
@@ -218,6 +217,8 @@ void expr::print_to_file(FILE* fptr) {
         fprintf(fptr, "%i", dat.int_dat);
     } else if (kind == String) {
         fprintf(fptr, "\"%s\"", dat.string_dat);
+    } else if (kind == Var) {
+        fprintf(fptr, "%s", dat.var_dat);
     } else if (kind == Field) {
         fprintf(fptr, "(");
         dat.field_dat.stru->print_to_file(fptr);
@@ -226,6 +227,11 @@ void expr::print_to_file(FILE* fptr) {
         fprintf(fptr, "(");
         dat.field_dat.stru->print_to_file(fptr);
         fprintf(fptr, ")->%s", dat.field_dat.field);
+    } else if (kind == Index) {
+        dat.ind_dat.arr->print_to_file(fptr);
+        fprintf(fptr, "[");
+        dat.ind_dat.ind->print_to_file(fptr);
+        fprintf(fptr, "]");
     } else if (kind == Typecast) {
         fprintf(fptr, "(");
         dat.typecast_dat.t->print_to_file(fptr, 0);
@@ -255,8 +261,8 @@ void expr::print_to_file(FILE* fptr) {
         }
         fprintf(fptr, ")");
     } else {
+        printf("invalid expression kind : %d\n", kind);
         exit(EXIT_FAILURE);
-        printf("invalid expression kind\n");
     }
 }
 
