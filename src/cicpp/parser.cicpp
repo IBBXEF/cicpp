@@ -592,6 +592,8 @@ type gram_rule_t {
                 if !stacktop.sym.match_tok(inptop) {
                     printf("failed to parse: got token ");
                     inptop.print();
+                    printf(" but expected ");
+                    stacktop.sym.print(nonterm_symbs);
                     printf("\n");
                     exit(EXIT_FAILURE);
                 }
@@ -1242,7 +1244,7 @@ type gram_rule_t {
                 indirect_first.del();
                 indirect_first.init();
             }
-            if rule->pattern.len() > 1 {
+            if rule->pattern.len() >= 1 {
                 gram_symbol_t first_sym;
                 first_sym = rule->pattern.ith(rule->pattern.len() - 1);
                 if (first_sym.kind as int) == 2 {

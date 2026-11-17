@@ -145,6 +145,10 @@ type token {
             printf("[");
         } elif kind == RSQUAR {
             printf("]");
+        } elif kind == LBRACK {
+            printf("{");
+        } elif kind == RBRACK {
+            printf("}");
         } elif kind == TInt {
             printf("int");
         } elif kind == TVoid {
@@ -153,14 +157,38 @@ type token {
             printf("char");
         } elif kind == Const {
             printf("const");
+        } elif kind == Static {
+            printf("static");
+        } elif kind == Func {
+            printf("func");
         } elif kind == As {
             printf("as");
+        } elif kind == Specialize {
+            printf("specialize");
+        } elif kind == Type {
+            printf("type");
+        } elif kind == While {
+            printf("while");
+        } elif kind == If {
+            printf("if");
+        } elif kind == Else {
+            printf("else");
+        } elif kind == Elif {
+            printf("elif");
+        } elif kind == Return {
+            printf("return");
+        } elif kind == Hashtag {
+            printf("#");
         } elif kind == Set {
             printf("=");
         } elif kind == Dot {
             printf(".");
+        } elif kind == Arrow {
+            printf("->");
         } elif kind == Comma {
             printf(",");
+        } elif kind == Semicol {
+            printf(";");
         } elif kind == Ident {
             printf("%s", dat.Ident_dat.str);
         } elif kind == VInt {
