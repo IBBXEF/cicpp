@@ -32,8 +32,6 @@ struct lval
     } dat;
 
     void print_to_file(FILE* fptr);
-    void del();
-    static void del_ptr(void* p);
 };
 
 
@@ -64,8 +62,6 @@ struct rval
     } dat;
 
     void print_to_file(FILE* fptr);
-    void del();
-    static void del_ptr(void*);
 };
 
 
@@ -118,8 +114,6 @@ struct typ
         }
     }
 
-    void del();
-    static void del_ptr(void* p);
 };
 
 
@@ -186,66 +180,6 @@ void rval::print_to_file(FILE* fptr) {
     }
 }
 
-void lval::del_ptr(void* p) {
-    ((lval*)p)->del();
-    free(p);
-    p = nullptr;
-}
-void lval::del() {
-    if (kind == Index) {
-        rval::del_ptr(dat.ind_dat.arr);
-        rval::del_ptr(dat.ind_dat.ind);
-    } else if (kind == Field) {
-        lval::del_ptr(dat.field_dat.stru);
-    }
-}
-void rval_free_clist_voidptr(void* varlist) { // varlist : clist_voidptr
-    clist_voidptr* l = (clist_voidptr*)varlist;
-    while (l->len()) { rval::del_ptr(l->pop()); } // we free each rval from the list
-    free(l);
-}
-void rval::del_ptr(void* p) {
-    ((rval*)p)->del();
-    free(p);
-    p = nullptr;
-}
-void rval::del() {
-    if (kind == Lval) {
-        lval::del_ptr(dat.lval_dat);
-    } else if (kind == Field) {
-        rval::del_ptr(dat.field_dat.stru);
-    } else if (kind == Binop) {
-        rval::del_ptr(dat.binop_dat.v1);
-        rval::del_ptr(dat.binop_dat.v2);
-    } else if (kind == rval::Addr) {
-        lval::del_ptr(dat.addr_dat.v);
-    } else if (kind == rval::Fcall) {
-        rval::del_ptr(dat.fcall_dat.func);
-        rval_free_clist_voidptr(dat.fcall_dat.args);
-    } else if (kind == rval::Typecast) {
-        rval::del_ptr(dat.typecast_dat.v);
-        typ::del_ptr(dat.typecast_dat.t);
-    } else if (kind == rval::Unop) {
-        rval::del_ptr(dat.unop_dat.v);
-    }
-}
-void typ::del_ptr(void* p) {
-    ((typ*)p)->del();
-    free(p);
-    p = nullptr;
-}
-void typ::del() {
-    if (kind == typ::TConst) {
-        typ::del_ptr(dat.const_dat);
-    } else if (kind == typ::Tfunptr) {
-        typ::del_ptr(dat.tfunptr_dat.ret_t);
-        // we do not free the argument list for now
-    } else if (kind == typ::TPtr) {
-        typ::del_ptr(dat.ptr_dat);
-    } else if (kind == typ::Typeof) {
-        rval::del_ptr(dat.typeof_dat);
-    }
-}
 
 struct ast;
 

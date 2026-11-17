@@ -31,7 +31,7 @@ anyptr gram_rule_binop(clist_anyptr l) {
     ret->dat.binop_dat.v1 = (rval*)l.ith(0).ptr;
     ret->dat.binop_dat.v2 = (rval*)l.ith(2).ptr;
     anyptr r;
-    r.init(ret, rval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_unop(clist_anyptr l) {
@@ -40,7 +40,7 @@ anyptr gram_rule_unop(clist_anyptr l) {
     ret->dat.unop_dat.op = ((token*)l.ith(0).ptr)->dat.Unop_dat.op;
     ret->dat.unop_dat.v = (rval*)l.ith(1).ptr;
     anyptr r;
-    r.init(ret, rval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_neg(clist_anyptr l) {
@@ -49,7 +49,7 @@ anyptr gram_rule_neg(clist_anyptr l) {
     ret->dat.unop_dat.op.kind = unop::Neg;
     ret->dat.unop_dat.v = (rval*)l.ith(1).ptr;
     anyptr r;
-    r.init(ret, rval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_Rval_of_Lval(clist_anyptr l) {
@@ -57,7 +57,7 @@ anyptr gram_rule_Rval_of_Lval(clist_anyptr l) {
     ret->kind = rval::Lval;
     ret->dat.lval_dat = (lval*)l.ith(0).ptr;
     anyptr r;
-    r.init(ret, rval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_lval_dot(clist_anyptr l) {
@@ -66,7 +66,7 @@ anyptr gram_rule_lval_dot(clist_anyptr l) {
     ret->dat.field_dat.stru = (lval*)l.ith(0).ptr;
     ret->dat.field_dat.field = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
     anyptr r;
-    r.init(ret, lval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_rval_dot(clist_anyptr l) {
@@ -75,7 +75,7 @@ anyptr gram_rule_rval_dot(clist_anyptr l) {
     ret->dat.field_dat.stru = (rval*)l.ith(0).ptr;
     ret->dat.field_dat.field = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
     anyptr r;
-    r.init(ret, rval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_arrow(clist_anyptr l) {
@@ -92,7 +92,7 @@ anyptr gram_rule_arrow(clist_anyptr l) {
     ret->dat.field_dat.stru = stru;
     ret->dat.field_dat.field = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
     anyptr r;
-    r.init(ret, lval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_ptr_lval(clist_anyptr l) {
@@ -104,7 +104,7 @@ anyptr gram_rule_ptr_lval(clist_anyptr l) {
     ret->dat.ind_dat.ind->kind = rval::Int;
     ret->dat.ind_dat.ind->dat.int_dat = 0;
     anyptr r;
-    r.init(ret, lval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_addr(clist_anyptr l) {
@@ -112,7 +112,7 @@ anyptr gram_rule_addr(clist_anyptr l) {
     ret->kind = rval::Addr;
     ret->dat.addr_dat.v = (lval*)l.ith(1).ptr;
     anyptr r;
-    r.init(ret, rval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_int(clist_anyptr l) {
@@ -120,7 +120,7 @@ anyptr gram_rule_int(clist_anyptr l) {
     ret->kind = rval::Int;
     ret->dat.int_dat = ((token*)l.ith(0).ptr)->dat.VInt_dat.dat;
     anyptr r;
-    r.init(ret, rval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_string(clist_anyptr l) {
@@ -128,7 +128,7 @@ anyptr gram_rule_string(clist_anyptr l) {
     ret->kind = rval::String;
     ret->dat.string_dat = ((token*)l.ith(0).ptr)->dat.VString_dat.str;
     anyptr r;
-    r.init(ret, rval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_var(clist_anyptr l) {
@@ -136,7 +136,7 @@ anyptr gram_rule_var(clist_anyptr l) {
     ret->kind = lval::Var;
     ret->dat.var_dat = ((token*)l.ith(0).ptr)->dat.Ident_dat.str;
     anyptr r;
-    r.init(ret, lval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_array(clist_anyptr l) {
@@ -145,7 +145,7 @@ anyptr gram_rule_array(clist_anyptr l) {
     ret->dat.ind_dat.arr = (rval*)l.ith(0).ptr;
     ret->dat.ind_dat.ind = (rval*)l.ith(2).ptr;
     anyptr r;
-    r.init(ret, lval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_func(clist_anyptr l) {
@@ -155,7 +155,7 @@ anyptr gram_rule_func(clist_anyptr l) {
     ret->dat.fcall_dat.args = (clist_voidptr*)l.ith(2).ptr;
 
     anyptr r;
-    r.init(ret, rval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_arglist_push(clist_anyptr l) {
@@ -163,7 +163,7 @@ anyptr gram_rule_arglist_push(clist_anyptr l) {
     ret->append(l.ith(0).ptr);
 
     anyptr r;
-    r.init(ret, rval_free_clist_voidptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_arglist_base(clist_anyptr l) {
@@ -172,14 +172,14 @@ anyptr gram_rule_arglist_base(clist_anyptr l) {
     ret->append(l.ith(0).ptr);
 
     anyptr r;
-    r.init(ret, rval_free_clist_voidptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_arglist_empty(clist_anyptr l) {
     clist_voidptr* ret = (clist_voidptr*)malloc(sizeof(clist_voidptr));
     ret->init();
     anyptr r;
-    r.init(ret, rval_free_clist_voidptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_typecast(clist_anyptr l) {
@@ -189,7 +189,7 @@ anyptr gram_rule_typecast(clist_anyptr l) {
     ret->dat.typecast_dat.t = (typ*)l.ith(2).ptr;
 
     anyptr r;
-    r.init(ret, rval::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_typ_base(clist_anyptr l) {
@@ -210,7 +210,7 @@ anyptr gram_rule_typ_base(clist_anyptr l) {
     }
 
     anyptr r;
-    r.init(ret, typ::del_ptr);
+    r.init_view(ret);
     return r;
 }
 anyptr gram_rule_typ_ptr(clist_anyptr l) {
@@ -219,7 +219,7 @@ anyptr gram_rule_typ_ptr(clist_anyptr l) {
     ret->dat.ptr_dat = (typ*)l.ith(0).ptr;
 
     anyptr r;
-    r.init(ret, typ::del_ptr);
+    r.init_view(ret);
     return r;
 }
 
@@ -241,7 +241,7 @@ gram_rule_t::gram_rules make_rules() {
 
     ret.append( make_rule("$LvalStru   -> $LvalAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$LvalStru   -> $LvalStru . @ident"    , gram_rule_lval_dot    , &nonterm_symbs) );
-    // ret.append( make_rule("$LvalStru   -> $RvalStru -> @ident"   , gram_rule_arrow         , &nonterm_symbs) );
+    // ret.append( make_rule("$LvalStru   -> $RvalAtom -> @ident"   , gram_rule_arrow         , &nonterm_symbs) );
 
     ret.append( make_rule("$Lval       -> $LvalStru"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$Lval       -> * $RvalStru"           , gram_rule_ptr_lval    , &nonterm_symbs) );
@@ -307,23 +307,25 @@ gram_rule_t::gram_rules make_rules() {
         ret.ith(i)->print(nonterm_symbs);
     }
 
+    bool ignore_conflicts = false;
+
     gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::Set;
     int goal = string_list_find(nonterm_symbs, "Lval");
-    lval_table = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, false);
+    lval_table = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
 
     end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::Semicol;
     goal = string_list_find(nonterm_symbs, "Rval");
-    rval_table_semicol = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, false);
+    rval_table_semicol = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
 
     end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::LBRACK;
-    rval_table_lbrack = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, false);
+    rval_table_lbrack = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
 
     end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     end.dat.Exact_dat.tok.kind = token::RPAREN;
-    rval_table_rparent = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, false);
+    rval_table_rparent = gram_rule_t::make_parsing_table(ret, nonterm_symbs, goal, end, ignore_conflicts);
 
     return ret;
 }
