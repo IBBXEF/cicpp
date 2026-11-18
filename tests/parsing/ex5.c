@@ -8,3 +8,10 @@ char b;
 #include "tests/parsing/ex4.c" // this corresponds to #include "ex4.c"
 
 void* c;
+
+type <par> truc {
+    par t;
+    par** t;
+}
+
+specialize truc<int> as trucint

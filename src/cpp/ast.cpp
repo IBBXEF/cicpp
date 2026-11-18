@@ -225,8 +225,8 @@ struct decl
                  clist_voidptr other_decls;               }  type_dat;
         struct { const char* file; }              include_dat;
         struct { decl* d; }              static_dat;
-        struct { decl* d; const char* param_name; const char* name; } templated_dat;
-        struct { const char* templated_t; typ* param; const char* newname; } specialize_dat;
+        struct { decl* d; string_list param_names; const char* name; } templated_dat;
+        struct { const char* templated_t; clist_voidptr params; const char* newname; } specialize_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end);
@@ -333,8 +333,8 @@ void decl::print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end =
             exit(-1);
         }
         print_n_spaces(ident * ident_lvl, fptr);
-        fprintf(fptr, "#define %s ", templated_decl->dat.templated_dat.param_name);
-        dat.specialize_dat.param->print_to_file(fptr, 0);
+        fprintf(fptr, "#define %s ", templated_decl->dat.templated_dat.param_names.ith(0));
+        ((typ*)dat.specialize_dat.params.ith(0))->print_to_file(fptr, 0);
         fprintf(fptr, "\n");
 
         print_n_spaces(ident * ident_lvl, fptr);
@@ -344,7 +344,7 @@ void decl::print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end =
         templated_decl->dat.templated_dat.d->print_to_file(fptr, ident, prog);
 
         print_n_spaces(ident * ident_lvl, fptr);
-        fprintf(fptr, "#undef %s\n", templated_decl->dat.templated_dat.param_name);
+        fprintf(fptr, "#undef %s\n", templated_decl->dat.templated_dat.param_names.ith(0));
         print_n_spaces(ident * ident_lvl, fptr);
         fprintf(fptr, "#undef %s\n", templated_decl->dat.templated_dat.name);
     } else if (kind == Include_C) {

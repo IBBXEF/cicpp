@@ -139,6 +139,23 @@ anyptr gram_rule_list_push_2nd(clist_anyptr l) {
     r.init_view(ret);
     return r;
 }
+anyptr gram_rule_strlist_push(clist_anyptr l) {
+    string_list* ret = (string_list*)l.ith(2).ptr;
+    ret->push(((token*)l.ith(0).ptr)->dat.VString_dat.str);
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_strlist_base(clist_anyptr l) {
+    string_list* ret = (string_list*)malloc(sizeof(string_list));
+    ret->init();
+    ret->push(((token*)l.ith(0).ptr)->dat.VString_dat.str);
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
 anyptr gram_rule_list_push_1st(clist_anyptr l) {
     clist_voidptr* ret = (clist_voidptr*)l.ith(1).ptr;
     ret->push(l.ith(0).ptr);
@@ -328,6 +345,46 @@ anyptr gram_rule_type(clist_anyptr l) {
     r.init_view(ret);
     return r;
 }
+anyptr gram_rule_type_templ(clist_anyptr l) {
+    decl* tdecl = (decl*)malloc(sizeof(decl));
+    tdecl->kind = decl::Type;
+    tdecl->dat.type_dat.name = ((token*)l.ith(4).ptr)->dat.Ident_dat.str;
+    clist_voidptr* tmp = (clist_voidptr*)l.ith(6).ptr;
+    tmp[0].reverse();
+    tmp[1].reverse();
+    tdecl->dat.type_dat.constrs = tmp[0];
+    tdecl->dat.type_dat.other_decls = tmp[1];
+    if (!tdecl->dat.type_dat.constrs.len()) {
+        decl::type_constr* unit = (decl::type_constr*)malloc(sizeof(decl::type_constr));
+        unit->fields.init();
+        unit->name = "_";
+        tdecl->dat.type_dat.constrs.push(unit);
+    }
+    decl* ret = (decl*)malloc(sizeof(decl));
+    ret->kind = decl::Templated;
+    ret->dat.templated_dat.d = tdecl;
+    ret->dat.templated_dat.name = tdecl->dat.type_dat.name;
+    ret->dat.templated_dat.param_names = *(string_list*)l.ith(2).ptr;
+    free(l.ith(2).ptr);
+    free(l.ith(2).n_refs);
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_specialize(clist_anyptr l) {
+    decl* ret = (decl*)malloc(sizeof(decl));
+    ret->kind = decl::Specialize;
+    ret->dat.specialize_dat.params = *(clist_voidptr*)l.ith(3).ptr;
+    ret->dat.specialize_dat.templated_t = ((token*)l.ith(1).ptr)->dat.VString_dat.str;
+    ret->dat.specialize_dat.newname = ((token*)l.ith(6).ptr)->dat.VString_dat.str;
+    free((clist_voidptr*)l.ith(3).ptr);
+    free((clist_voidptr*)l.ith(3).n_refs);
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
 anyptr gram_rule_locdecl_empty(clist_anyptr l) {
     clist_voidptr* ret = (clist_voidptr*)malloc(2*sizeof(clist_voidptr));
     ret[0].init();
@@ -481,10 +538,10 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$Decl       -> func $Type @ident \
                                    ( $FargDecl ) ;"              , gram_rule_funcprot      , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> type < $Targdcl > \
-                                           @ident { $LocDecls }" , nullptr                 , &nonterm_symbs) );    
+                                           @ident { $LocDecls }" , gram_rule_type_templ    , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> type @ident { $LocDecls }", gram_rule_type       , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> specialize @ident \
-                                        < $TargList > as @ident" , nullptr                 , &nonterm_symbs) );    
+                                        < $TargList > as @ident" , gram_rule_specialize    , &nonterm_symbs) );    
 
     ret.append( make_rule("$LocDecls   ->"                       , gram_rule_locdecl_empty , &nonterm_symbs) );    
     ret.append( make_rule("$LocDecls   -> $Decl $LocDecls"       , gram_rule_locdecl_decl  , &nonterm_symbs) );    
@@ -496,9 +553,9 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$DeclList   ->"                       , gram_rule_list_empty    , &nonterm_symbs) );    
     ret.append( make_rule("$DeclList   -> $Decl $DeclList"       , gram_rule_list_push_1st , &nonterm_symbs) );    
 
-    ret.append( make_rule("$Targdcl    -> @ident , $Targdcl"     , gram_rule_list_push_2nd , &nonterm_symbs) );
-    ret.append( make_rule("$Targdcl    -> @ident"                , gram_rule_list_base     , &nonterm_symbs) );
-    ret.append( make_rule("$Targdcl    ->"                       , gram_rule_list_empty    , &nonterm_symbs) );
+    ret.append( make_rule("$Targdcl    -> @ident , $Targdcl"     , gram_rule_strlist_push  , &nonterm_symbs) );
+    ret.append( make_rule("$Targdcl    -> @ident"                , gram_rule_strlist_base  , &nonterm_symbs) );
+    ret.append( make_rule("$Targdcl    ->"                       , gram_rule_list_empty    , &nonterm_symbs) ); // the function is technically incorrect, but clist_voidptr and string_list are basically identical so it works.
 
     ret.append( make_rule("$TargList   -> $Type , $TargList"     , gram_rule_list_push_2nd , &nonterm_symbs) );
     ret.append( make_rule("$TargList   -> $Type"                 , gram_rule_list_base     , &nonterm_symbs) );
@@ -626,36 +683,6 @@ ast parse_prog(toklist* toks) {
 //         n = toks->ith(0);
 //     }   
 //     return t;
-// }
-
-// decl* parse_var_decl(toklist* toks, bool check_semicolon) {
-//     decl* ret = (decl*)malloc(sizeof(decl));
-//     ret->kind = decl::Var;
-//     ret->dat.var_dat.t = parse_typ(toks);
-//     token n = toks->ith(0);
-//     if (n.kind != token::Ident) {
-//         printf("expected identifier after type in declaration\n");
-//         exit(-1);
-//     }
-//     *toks = toks->tail();
-//     ret->dat.var_dat.name = n.dat.Ident_dat.str;
-//     n = toks->ith(0);
-//     if (n.kind == token::Set) {
-//         *toks = toks->tail();
-//         ret->dat.var_dat.v = parse_expr(toks, token::Semicol); // we ignore that function declaration exists
-//     } else {
-//         ret->dat.var_dat.v = nullptr;
-//     }
-//     if (check_semicolon) {
-//         n = toks->ith(0);
-//         if (n.kind != token::Semicol) {
-//             printf("expected semicolon after declaration\n");
-//             exit(-1);
-//         }
-//         *toks = toks->tail();
-//     }
-//     printf("parsed declaration of variable %s.\n", ret->dat.var_dat.name);
-//     return ret;
 // }
 
 // decl* parse_decl(toklist* toks);
@@ -786,49 +813,6 @@ ast parse_prog(toklist* toks) {
 //     }
 //     printf("instruction not terminated by a semicolon\n");
 //     exit(-1);
-// }
-
-// decl* parse_fun_decl(toklist* toks) {
-//     decl* ret = (decl*)malloc(sizeof(decl));
-//     ret->kind = decl::Func;
-//     ret->dat.func_dat.ret_t = parse_typ(toks);
-//     ret->dat.func_dat.args_decls = old_clist::new_clist(sizeof(decl));
-//     token n = toks->ith(0);
-//     if (n.kind != token::Ident) {
-//         printf("expected identifier after type in function declaration");
-//         exit(-1);
-//     }
-//     *toks = toks->tail();
-//     ret->dat.func_dat.name = n.dat.Ident_dat.str;
-//     n = toks->ith(0);
-//     if (n.kind != token::LPAREN) {
-//         printf("expected identifier after type in function declaration");
-//         exit(-1);
-//     }
-//     *toks = toks->tail();
-//     n = toks->ith(0);
-//     while (n.kind != token::RPAREN)
-//     { // this is absolutely horrendous and will sometime parse nonsense, but it will parse correct function argument
-//         if (n.kind != token::Comma) {
-//             decl* arg = parse_var_decl(toks, false);
-//             ret->dat.func_dat.args_decls.push(arg);
-//             free(arg);
-//         } else {
-//             *toks = toks->tail();
-//         }
-//         n = toks->ith(0);
-//     }
-//     ret->dat.func_dat.args_decls.reverse();
-//     *toks = toks->tail();
-//     n = toks->ith(0);
-//     if (n.kind == token::Semicol) {
-//         *toks = toks->tail();
-//         ret->dat.func_dat.instrs = nullptr;
-//         return ret;
-//     }
-//     ret->dat.func_dat.instrs = (old_clist*)malloc(sizeof(old_clist));
-//     *ret->dat.func_dat.instrs = parse_instr_block(toks);
-//     return ret;
 // }
 
 // decl::type_constr parse_type_constructor(toklist* toks) {
