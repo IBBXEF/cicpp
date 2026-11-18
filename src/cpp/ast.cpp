@@ -2,7 +2,9 @@
 #pragma once
 
 #include <stdio.h>
+#include <string.h>
 #include "utils.cpp"
+#include "parser.c"
 
 const int ident_lvl = 2;
 void print_n_spaces(int n, FILE* fptr) {
@@ -148,70 +150,6 @@ struct typ
 
 };
 
-
-// void lval::print_to_file(FILE* fptr) {
-//     if (kind == Var) {
-//         fprintf(fptr, "%s", dat.var_dat);
-//     } else if (kind == Index) {
-//         dat.ind_dat.arr->print_to_file(fptr);
-//         fprintf(fptr, "[");
-//         dat.ind_dat.ind->print_to_file(fptr);
-//         fprintf(fptr, "]");
-//     } else if (kind == Field) {
-//         fprintf(fptr, "(");
-//         dat.field_dat.stru->print_to_file(fptr);
-//         fprintf(fptr, ").%s", dat.field_dat.field);
-//     }
-// }
-
-// void rval::print_to_file(FILE* fptr) {
-//     if (kind == Int) {
-//         fprintf(fptr, "%i", dat.int_dat);
-//     } else if (kind == String) {
-//         fprintf(fptr, "\"%s\"", dat.string_dat);
-//     } else if (kind == Field) {
-//         fprintf(fptr, "(");
-//         dat.field_dat.stru->print_to_file(fptr);
-//         fprintf(fptr, ").%s", dat.field_dat.field);
-//     } else if (kind == Typecast) {
-//         fprintf(fptr, "(");
-//         dat.typecast_dat.t->print_to_file(fptr, 0);
-//         fprintf(fptr, ")");
-//         dat.typecast_dat.v->print_to_file(fptr);
-//     } else if (kind == Lval) {
-//         dat.lval_dat->print_to_file(fptr);
-//     } else if (kind == Binop) {
-//         fprintf(fptr, "(");
-//         dat.binop_dat.v1->print_to_file(fptr);
-//         fprintf(fptr, ")");
-//         if (dat.binop_dat.op.kind == binop::Arrow) {
-//             fprintf(fptr, "->");
-//             dat.binop_dat.v2->print_to_file(fptr);
-//         } else {
-//             fprintf(fptr, " ");
-//             dat.binop_dat.op.fprint(fptr);
-//             fprintf(fptr, " (");
-//             dat.binop_dat.v2->print_to_file(fptr);
-//             fprintf(fptr, ")");
-//         }
-//     } else if (kind == Unop) {
-//         dat.unop_dat.op.fprint(fptr);
-//         fprintf(fptr, "(");
-//         dat.unop_dat.v->print_to_file(fptr);
-//         fprintf(fptr, ")");
-//     } else if (kind == Fcall) {
-//         dat.fcall_dat.func->print_to_file(fptr);
-//         fprintf(fptr, "(");
-//         for (int i = 0; i < dat.fcall_dat.args->len(); i++) {
-//             if (i) {
-//                 fprintf(fptr, ", ");
-//             }
-//             ((rval*)dat.fcall_dat.args->ith(i))->print_to_file(fptr);
-//         }
-//         fprintf(fptr, ")");
-//     }
-// }
-
 void expr::print_to_file(FILE* fptr) {
     if (kind == Int) {
         fprintf(fptr, "%i", dat.int_dat);
@@ -273,7 +211,7 @@ struct decl
 {
     struct type_constr {
         const char* name;
-        old_clist fields; // list of declarations
+        clist_voidptr fields; // list of declarations
     };
     
 
@@ -283,8 +221,8 @@ struct decl
         struct { const char* name; typ* t; expr* v; } var_dat;
         struct { const char* name; typ* ret_t;
                  old_clist args_decls; old_clist* instrs; }  func_dat; // if instrs is nullptr, it is a function prototype
-        struct { const char* name; old_clist constrs;
-                 old_clist other_decls;               }  type_dat;
+        struct { const char* name; clist_voidptr constrs;
+                 clist_voidptr other_decls;               }  type_dat;
         struct { const char* file; }              include_dat;
         struct { decl* d; }              static_dat;
         struct { decl* d; const char* param_name; const char* name; } templated_dat;
@@ -297,7 +235,7 @@ struct decl
 
 struct ast
 {
-    old_clist decls; // list of declarations
+    clist_voidptr decls; // list of declarations
     void print_to_file(FILE* fptr);
 };
 

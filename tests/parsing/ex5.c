@@ -5,6 +5,6 @@ int a;
 
 char b;
 
-#include_C "~/ex4.c" // this corresponds to #include "ex4.c"
+#include "tests/parsing/ex4.c" // this corresponds to #include "ex4.c"
 
 void* c;

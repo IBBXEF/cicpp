@@ -110,6 +110,16 @@ type <dat_t> clist {
         }
     }
 
+    func void fuse(clist other) {
+        if l == nullptr {
+            l = other.l;
+        } else {
+            clist tmp;
+            tmp = tail();
+            tmp.fuse(other);
+            l->next = tmp.l;
+        }
+    }
     
     func dat_t remove(int i) {
         if i == 0 {

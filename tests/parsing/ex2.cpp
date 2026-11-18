@@ -13,6 +13,6 @@ type coucou
     type sssi {char* i;}
 }
 
-type {int*** t;}
+// type {int*** t;}
 
 type araer{ E {char *a;}; K; R;}

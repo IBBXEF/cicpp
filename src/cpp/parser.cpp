@@ -5,7 +5,8 @@
 #include "ast.cpp"
 #include "lexer.cpp"
 
-typ* parse_typ(toklist* toks);
+ast parse_file(const char* path);
+string_list included_files;
 
 anyptr gram_rule_elt_n0(clist_anyptr l) {
     if (l.len() > 0) {
@@ -202,6 +203,15 @@ anyptr gram_rule_typ_ptr(clist_anyptr l) {
     r.init_view(ret);
     return r;
 }
+anyptr gram_rule_typ_cst(clist_anyptr l) {
+    typ* ret = (typ*)malloc(sizeof(typ));
+    ret->kind = typ::TConst;
+    ret->dat.const_dat = (typ*)l.ith(0).ptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
 anyptr gram_rule_typeof(clist_anyptr l) {
     typ* ret = (typ*)malloc(sizeof(typ));
     ret->kind = typ::Typeof;
@@ -211,6 +221,110 @@ anyptr gram_rule_typeof(clist_anyptr l) {
     r.init_view(ret);
     return r;
 }
+anyptr gram_rule_instr_decl(clist_anyptr l) {
+    instr* ret = (instr*)malloc(sizeof(instr));
+    ret->kind = instr::Decl;
+    ret->dat.decl_dat.d = (decl*)l.ith(0).ptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_vardecl(clist_anyptr l) {
+    decl* ret = (decl*)malloc(sizeof(decl));
+    ret->kind = decl::Var;
+    ret->dat.var_dat.name = ((token*)l.ith(1).ptr)->dat.Ident_dat.str;
+    ret->dat.var_dat.t = (typ*)l.ith(0).ptr;
+    ret->dat.var_dat.v = nullptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_vardecl_vlue(clist_anyptr l) {
+    decl* ret = (decl*)malloc(sizeof(decl));
+    ret->kind = decl::Var;
+    ret->dat.var_dat.name = ((token*)l.ith(1).ptr)->dat.Ident_dat.str;
+    ret->dat.var_dat.t = (typ*)l.ith(0).ptr;
+    ret->dat.var_dat.v = (expr*)l.ith(3).ptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_type(clist_anyptr l) {
+    decl* ret = (decl*)malloc(sizeof(decl));
+    ret->kind = decl::Type;
+    ret->dat.type_dat.name = ((token*)l.ith(1).ptr)->dat.Ident_dat.str;
+    clist_voidptr* tmp = (clist_voidptr*)l.ith(3).ptr;
+    tmp[0].reverse();
+    tmp[1].reverse();
+    ret->dat.type_dat.constrs = tmp[0];
+    ret->dat.type_dat.other_decls = tmp[1];
+    if (!ret->dat.type_dat.constrs.len()) {
+        decl::type_constr* unit = (decl::type_constr*)malloc(sizeof(decl::type_constr));
+        unit->fields.init();
+        unit->name = "_";
+        ret->dat.type_dat.constrs.push(unit);
+    }
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_locdecl_empty(clist_anyptr l) {
+    clist_voidptr* ret = (clist_voidptr*)malloc(2*sizeof(clist_voidptr));
+    ret[0].init();
+    ret[1].init();
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_locdecl_decl(clist_anyptr l) {
+    clist_voidptr* tmp = (clist_voidptr*)l.ith(1).ptr;
+    tmp[1].push((decl*)l.ith(0).ptr);
+    return l.ith(1);
+}
+anyptr gram_rule_locdecl_enum(clist_anyptr l) {
+    decl::type_constr* cstr = (decl::type_constr*)malloc(sizeof(decl::type_constr));
+    cstr->fields.init();
+    cstr->name = ((token*)l.ith(0).ptr)->dat.Ident_dat.str;
+    clist_voidptr* tmp = (clist_voidptr*)l.ith(2).ptr;
+    tmp[0].push(cstr);
+    return l.ith(2);
+}
+anyptr gram_rule_locdecl_cstr(clist_anyptr l) {
+    decl::type_constr* cstr = (decl::type_constr*)malloc(sizeof(decl::type_constr));
+    cstr->fields = *(clist_voidptr*)l.ith(2).ptr;
+    free(l.ith(2).ptr);
+    cstr->name = ((token*)l.ith(0).ptr)->dat.Ident_dat.str;
+    clist_voidptr* tmp = (clist_voidptr*)l.ith(5).ptr;
+    tmp[0].push(cstr);
+    return l.ith(5);
+}
+anyptr gram_rule_include_c(clist_anyptr l) {
+    decl* ret = (decl*)malloc(sizeof(decl));
+    ret->kind = decl::Include_C;
+    ret->dat.include_dat.file = ((token*)l.ith(2).ptr)->dat.VString_dat.str;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_include(clist_anyptr l) {
+    clist_voidptr* prog = (clist_voidptr*)l.ith(3).ptr;
+    const char* path = ((token*)l.ith(2).ptr)->dat.VString_dat.str;
+    if (string_list_find(included_files, path) < 0)
+    {
+        included_files.push(path);
+        ast included_ast = parse_file(path);
+        included_ast.decls.fuse(*prog);
+        *prog = included_ast.decls;
+    }
+    return l.ith(3);
+}
+
 
 string_list nonterm_symbs;
 gram_rule_t::parsing_table prog_table;
@@ -276,14 +390,14 @@ gram_rule_t::gram_rules make_rules() {
 
     ret.append( make_rule("$TypeNof    -> $TypeAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$TypeNof    -> $TypeNof *"            , gram_rule_typ_ptr       , &nonterm_symbs) );
-    ret.append( make_rule("$TypeNof    -> const $TypeAtom"       , nullptr                 , &nonterm_symbs) );
+    ret.append( make_rule("$TypeNof    -> const $TypeAtom"       , gram_rule_typ_cst       , &nonterm_symbs) );
     ret.append( make_rule("$TypeNof    -> const ( $Type )"       , nullptr                 , &nonterm_symbs) );
 
     ret.append( make_rule("$Type       -> $TypeNof"              , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$Type       -> $TypeNof => $TypeNof"  , nullptr                 , &nonterm_symbs) );
-    
-    
-    ret.append( make_rule("$Instr      -> $Decl"                 , nullptr                 , &nonterm_symbs) );
+    ret.append( make_rule("$Type       -> $TypeNof => $Type"     , nullptr                 , &nonterm_symbs) );
+
+
+    ret.append( make_rule("$Instr      -> $Decl"                 , gram_rule_instr_decl    , &nonterm_symbs) );
     ret.append( make_rule("$Instr      -> $ExprUnary = $Expr ;"  , nullptr                 , &nonterm_symbs) ); // not using full $Expr creates fewer rules and makes the conflict solver happy
     ret.append( make_rule("$Instr      -> $ExprStru ;"           , nullptr                 , &nonterm_symbs) );
     ret.append( make_rule("$Instr      -> return ;"              , nullptr                 , &nonterm_symbs) );
@@ -302,26 +416,26 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$InstrList  -> $Instr $InstrList"     , nullptr                 , &nonterm_symbs) );
 
 
-    ret.append( make_rule("$VarDecl    -> $Type @ident"          , nullptr                 , &nonterm_symbs) );    
-    ret.append( make_rule("$VarDecl    -> $Type @ident = $Expr"  , nullptr                 , &nonterm_symbs) );    
+    ret.append( make_rule("$VarDecl    -> $Type @ident"          , gram_rule_vardecl       , &nonterm_symbs) );    
+    ret.append( make_rule("$VarDecl    -> $Type @ident = $Expr"  , gram_rule_vardecl_vlue  , &nonterm_symbs) );    
 
-    ret.append( make_rule("$Decl       -> $VarDecl ;"            , nullptr                 , &nonterm_symbs) );    
+    ret.append( make_rule("$Decl       -> $VarDecl ;"            , gram_rule_elt_n0        , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> func $Type @ident \
                                    ( $FargDecl ) { $InstrList }" , nullptr                 , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> func $Type @ident \
                                    ( $FargDecl ) ;"              , nullptr                 , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> type < $Targdcl > \
                                            @ident { $LocDecls }" , nullptr                 , &nonterm_symbs) );    
-    ret.append( make_rule("$Decl       -> type @ident { $LocDecls }", nullptr              , &nonterm_symbs) );    
+    ret.append( make_rule("$Decl       -> type @ident { $LocDecls }", gram_rule_type       , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> specialize @ident \
                                         < $TargList > as @ident" , nullptr                 , &nonterm_symbs) );    
 
-    ret.append( make_rule("$LocDecls   ->"                       , nullptr                 , &nonterm_symbs) );    
-    ret.append( make_rule("$LocDecls   -> $Decl $LocDecls"       , nullptr                 , &nonterm_symbs) );    
+    ret.append( make_rule("$LocDecls   ->"                       , gram_rule_locdecl_empty , &nonterm_symbs) );    
+    ret.append( make_rule("$LocDecls   -> $Decl $LocDecls"       , gram_rule_locdecl_decl  , &nonterm_symbs) );    
     ret.append( make_rule("$LocDecls   -> static $Decl $LocDecls", nullptr                 , &nonterm_symbs) );    
-    ret.append( make_rule("$LocDecls   -> @ident ; $LocDecls"    , nullptr                 , &nonterm_symbs) );    
+    ret.append( make_rule("$LocDecls   -> @ident ; $LocDecls"    , gram_rule_locdecl_enum  , &nonterm_symbs) );    
     ret.append( make_rule("$LocDecls   -> @ident { $DeclList } ; \
-                                                   $LocDecls"    , nullptr                 , &nonterm_symbs) );    
+                                                   $LocDecls"    , gram_rule_locdecl_cstr  , &nonterm_symbs) );    
 
     ret.append( make_rule("$DeclList   ->"                       , gram_rule_list_empty    , &nonterm_symbs) );    
     ret.append( make_rule("$DeclList   -> $Decl $DeclList"       , gram_rule_list_push_1st , &nonterm_symbs) );    
@@ -339,11 +453,12 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$FargDecl   ->"                       , gram_rule_list_empty    , &nonterm_symbs) );
 
 
+    
     ret.append( make_rule("$Prog       ->"                       , gram_rule_list_empty    , &nonterm_symbs) );
     ret.append( make_rule("$Prog       -> $Decl $Prog"           , gram_rule_list_push_1st , &nonterm_symbs) );
-    ret.append( make_rule("$Prog       -> #include_C @\"string\" $Prog", nullptr           , &nonterm_symbs) );
-    ret.append( make_rule("$Prog       -> #include_c @\"string\" $Prog", nullptr           , &nonterm_symbs) );
-    ret.append( make_rule("$Prog       -> #include @\"string\" $Prog" , nullptr            , &nonterm_symbs) );
+    ret.append( make_rule("$Prog       -> $IncDecl $Prog"        , gram_rule_list_push_1st , &nonterm_symbs) );
+    ret.append( make_rule("$IncDecl    -> # @include_C @\"string\"", gram_rule_include_c   , &nonterm_symbs) );
+    ret.append( make_rule("$Prog       -> #include @\"string\" $Prog", gram_rule_include   , &nonterm_symbs) );
 
     // printf("rules:\n");
     // for (int i = 0; i < ret.len(); i++) {
@@ -376,20 +491,23 @@ gram_rule_t::gram_rules make_rules() {
 
 gram_rule_t::gram_rules parsing_rules = make_rules();
 
-ast* parse_prog(toklist* toks) {
+ast parse_prog(toklist* toks) {
     printf("parsing program\n");
     int goal = string_list_find(nonterm_symbs, "Prog");
     gram_rule_t::gram_symbol_t end = {.kind=gram_rule_t::gram_symbol_t::Exact};
     gram_rule_t::parsing_table table = prog_table;
     end.dat.Exact_dat.tok.kind = token::EndOfInput;
-    anyptr ret = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs, table);
-    if (!ret.ptr) {
+    anyptr ret_decls = gram_rule_t::parse_with_rules(toks, goal, end, parsing_rules, nonterm_symbs, table);
+    if (!ret_decls.ptr) {
         printf("failed to parse a program\n");
         exit(-1);
     }
     printf("parsed program!\n");
-    free(ret.n_refs);
-    return (ast*)ret.ptr;
+    ast ret;
+    ret.decls = *(clist_voidptr*)ret_decls.ptr;
+    free(ret_decls.ptr);
+    free(ret_decls.n_refs);
+    return ret;
 }
 
 // typ* parse_typ(toklist* toks) {
@@ -874,15 +992,14 @@ ast* parse_prog(toklist* toks) {
 //     }
 // }
 
-ast parse_file(const char* path);
-
 ast parse(toklist toks) {
-    ast ret = {.decls = old_clist::new_clist(sizeof(decl))};
-    string_list included_files;
     included_files.init();
-    ast* tmp = parse_prog(&toks);
-    ret = *tmp;
-    free(tmp);
+    ast ret = parse_prog(&toks);
     // parse_aux(toks, &ret, &included_files);
     return ret;
+}
+
+ast parse_file(const char* path) {
+    toklist l = lex_file(path);
+    return parse(l);
 }

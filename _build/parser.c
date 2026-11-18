@@ -99,6 +99,16 @@ struct clist {
       (l)->next = (tmp).l;
     }
   }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp;
+      tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
   dat_t remove(int i){
     if ((i) == (0)) {
       return pop();
@@ -212,6 +222,16 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp;
+      tmp = tail();
+      (tmp).fuse(other);
       (l)->next = (tmp).l;
     }
   }
@@ -393,6 +413,16 @@ struct clist {
       clist tmp;
       tmp = tail();
       (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp;
+      tmp = tail();
+      (tmp).fuse(other);
       (l)->next = (tmp).l;
     }
   }
@@ -736,6 +766,16 @@ struct clist {
       (l)->next = (tmp).l;
     }
   }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp;
+      tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
   dat_t remove(int i){
     if ((i) == (0)) {
       return pop();
@@ -883,6 +923,16 @@ struct gram_rule_t {
         clist tmp;
         tmp = tail();
         (tmp).append(dat);
+        (l)->next = (tmp).l;
+      }
+    }
+    void fuse(clist other){
+      if ((l) == (nullptr)) {
+        l = (other).l;
+      } else {
+        clist tmp;
+        tmp = tail();
+        (tmp).fuse(other);
         (l)->next = (tmp).l;
       }
     }
@@ -1069,6 +1119,16 @@ struct gram_rule_t {
         (l)->next = (tmp).l;
       }
     }
+    void fuse(clist other){
+      if ((l) == (nullptr)) {
+        l = (other).l;
+      } else {
+        clist tmp;
+        tmp = tail();
+        (tmp).fuse(other);
+        (l)->next = (tmp).l;
+      }
+    }
     dat_t remove(int i){
       if ((i) == (0)) {
         return pop();
@@ -1187,6 +1247,16 @@ struct gram_rule_t {
           clist tmp;
           tmp = tail();
           (tmp).append(dat);
+          (l)->next = (tmp).l;
+        }
+      }
+      void fuse(clist other){
+        if ((l) == (nullptr)) {
+          l = (other).l;
+        } else {
+          clist tmp;
+          tmp = tail();
+          (tmp).fuse(other);
           (l)->next = (tmp).l;
         }
       }
@@ -1447,6 +1517,16 @@ struct gram_rule_t {
           (l)->next = (tmp).l;
         }
       }
+      void fuse(clist other){
+        if ((l) == (nullptr)) {
+          l = (other).l;
+        } else {
+          clist tmp;
+          tmp = tail();
+          (tmp).fuse(other);
+          (l)->next = (tmp).l;
+        }
+      }
       dat_t remove(int i){
         if ((i) == (0)) {
           return pop();
@@ -1570,6 +1650,16 @@ struct gram_rule_t {
         clist tmp;
         tmp = tail();
         (tmp).append(dat);
+        (l)->next = (tmp).l;
+      }
+    }
+    void fuse(clist other){
+      if ((l) == (nullptr)) {
+        l = (other).l;
+      } else {
+        clist tmp;
+        tmp = tail();
+        (tmp).fuse(other);
         (l)->next = (tmp).l;
       }
     }
@@ -1788,6 +1878,16 @@ struct gram_rule_t {
           clist tmp;
           tmp = tail();
           (tmp).append(dat);
+          (l)->next = (tmp).l;
+        }
+      }
+      void fuse(clist other){
+        if ((l) == (nullptr)) {
+          l = (other).l;
+        } else {
+          clist tmp;
+          tmp = tail();
+          (tmp).fuse(other);
           (l)->next = (tmp).l;
         }
       }
