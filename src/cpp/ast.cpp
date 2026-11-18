@@ -117,7 +117,7 @@ struct typ
         typ* const_dat;
         const char* TIdent_dat;
         expr* typeof_dat;
-        struct { typ* ret_t; old_clist args_t; } tfunptr_dat;
+        struct { typ* ret_t; clist_voidptr args_t; } tfunptr_dat;
     } dat;
 
     void print_to_file(FILE* fptr, int ident) {
@@ -247,8 +247,8 @@ struct instr
     union {
         struct { expr* l; expr* r; }                      set_dat;
         struct { expr* v; }                               ret_dat;
-        struct { expr* b; old_clist truebrc; old_clist falsebrc; } if_dat;
-        struct { expr* b; old_clist instrs; }               while_dat;
+        struct { expr* b; clist_voidptr truebrc; clist_voidptr falsebrc; } if_dat;
+        struct { expr* b; clist_voidptr instrs; }               while_dat;
         struct { decl* d; }                              decl_dat;
         struct { expr* call; }                          fcall_dat;
     } dat;

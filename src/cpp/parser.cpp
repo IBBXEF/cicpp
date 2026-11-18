@@ -24,6 +24,14 @@ anyptr gram_rule_elt_n1(clist_anyptr l) {
     ret.init_null();
     return ret;
 }
+anyptr gram_rule_elt_n2(clist_anyptr l) {
+    if (l.len() > 2) {
+        return l.ith(2);
+    }
+    anyptr ret;
+    ret.init_null();
+    return ret;
+}
 anyptr gram_rule_binop(clist_anyptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
     ret->kind = expr::Binop;
@@ -220,10 +228,30 @@ anyptr gram_rule_typ_ptr(clist_anyptr l) {
     r.init_view(ret);
     return r;
 }
+anyptr gram_rule_typ_fptr(clist_anyptr l) {
+    typ* ret = (typ*)malloc(sizeof(typ));
+    ret->kind = typ::Tfunptr;
+    ret->dat.tfunptr_dat.ret_t = (typ*)l.ith(2).ptr;
+    ret->dat.tfunptr_dat.args_t.init();
+    ret->dat.tfunptr_dat.args_t.push((typ*)l.ith(0).ptr);
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
 anyptr gram_rule_typ_cst(clist_anyptr l) {
     typ* ret = (typ*)malloc(sizeof(typ));
     ret->kind = typ::TConst;
-    ret->dat.const_dat = (typ*)l.ith(0).ptr;
+    ret->dat.const_dat = (typ*)l.ith(1).ptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_typ_cstpar(clist_anyptr l) {
+    typ* ret = (typ*)malloc(sizeof(typ));
+    ret->kind = typ::TConst;
+    ret->dat.const_dat = (typ*)l.ith(2).ptr;
 
     anyptr r;
     r.init_view(ret);
@@ -271,6 +299,61 @@ anyptr gram_rule_instr_ret_no(clist_anyptr l) {
     ret->kind = instr::Return;
     ret->dat.ret_dat.v = nullptr;
 
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_instr_fcall(clist_anyptr l) {
+    instr* ret = (instr*)malloc(sizeof(instr));
+    ret->kind = instr::Fcall;
+    ret->dat.fcall_dat.call = (expr*)l.ith(0).ptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_instr_while(clist_anyptr l) {
+    instr* ret = (instr*)malloc(sizeof(instr));
+    ret->kind = instr::While;
+    ret->dat.while_dat.b = (expr*)l.ith(1).ptr;
+    ret->dat.while_dat.instrs = *(clist_voidptr*)l.ith(3).ptr;
+    free(l.ith(3).ptr);
+    free(l.ith(3).n_refs);
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_instr_if(clist_anyptr l) {
+    instr* ret = (instr*)malloc(sizeof(instr));
+    ret->kind = instr::If;
+    ret->dat.if_dat.b = (expr*)l.ith(1).ptr;
+    ret->dat.if_dat.truebrc = *(clist_voidptr*)l.ith(3).ptr;
+    free(l.ith(3).ptr);
+    free(l.ith(3).n_refs);
+    ret->dat.if_dat.falsebrc = *(clist_voidptr*)l.ith(5).ptr;
+    free(l.ith(5).ptr);
+    free(l.ith(5).n_refs);
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_instr_elif(clist_anyptr l) {
+    instr* instr_ret = (instr*)malloc(sizeof(instr));
+    instr_ret->kind = instr::If;
+    instr_ret->dat.if_dat.b = (expr*)l.ith(1).ptr;
+    instr_ret->dat.if_dat.truebrc = *(clist_voidptr*)l.ith(3).ptr;
+    free(l.ith(3).ptr);
+    free(l.ith(3).n_refs);
+    instr_ret->dat.if_dat.falsebrc = *(clist_voidptr*)l.ith(5).ptr;
+    free(l.ith(5).ptr);
+    free(l.ith(5).n_refs);
+
+    clist_voidptr* ret = (clist_voidptr*)malloc(sizeof(clist_voidptr));
+    ret->init();
+    ret->push(instr_ret);
+    
     anyptr r;
     r.init_view(ret);
     return r;
@@ -399,6 +482,14 @@ anyptr gram_rule_locdecl_decl(clist_anyptr l) {
     tmp[1].push((decl*)l.ith(0).ptr);
     return l.ith(1);
 }
+anyptr gram_rule_decl_static(clist_anyptr l) {
+    decl* d = (decl*)malloc(sizeof(decl));
+    d->kind = decl::Static;
+    d->dat.static_dat.d = (decl*)l.ith(1).ptr;
+    clist_voidptr* tmp = (clist_voidptr*)l.ith(2).ptr;
+    tmp[1].push(d);
+    return l.ith(2);
+}
 anyptr gram_rule_locdecl_enum(clist_anyptr l) {
     decl::type_constr* cstr = (decl::type_constr*)malloc(sizeof(decl::type_constr));
     cstr->fields.init();
@@ -504,25 +595,25 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$TypeNof    -> $TypeAtom"             , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$TypeNof    -> $TypeNof *"            , gram_rule_typ_ptr       , &nonterm_symbs) );
     ret.append( make_rule("$TypeNof    -> const $TypeAtom"       , gram_rule_typ_cst       , &nonterm_symbs) );
-    ret.append( make_rule("$TypeNof    -> const ( $Type )"       , nullptr                 , &nonterm_symbs) );
+    ret.append( make_rule("$TypeNof    -> const ( $Type )"       , gram_rule_typ_cstpar    , &nonterm_symbs) );
 
     ret.append( make_rule("$Type       -> $TypeNof"              , gram_rule_elt_n0        , &nonterm_symbs) );
-    ret.append( make_rule("$Type       -> $TypeNof => $Type"     , nullptr                 , &nonterm_symbs) );
+    ret.append( make_rule("$Type       -> $TypeNof => $Type"     , gram_rule_typ_fptr      , &nonterm_symbs) );
 
 
     ret.append( make_rule("$Instr      -> $Decl"                 , gram_rule_instr_decl    , &nonterm_symbs) );
     ret.append( make_rule("$Instr      -> $ExprUnary = $Expr ;"  , gram_rule_instr_assign  , &nonterm_symbs) ); // not using full $Expr creates fewer rules and makes the conflict solver happy
-    ret.append( make_rule("$Instr      -> $ExprStru ;"           , nullptr                 , &nonterm_symbs) );
+    ret.append( make_rule("$Instr      -> $ExprStru ;"           , gram_rule_instr_fcall   , &nonterm_symbs) );
     ret.append( make_rule("$Instr      -> return ;"              , gram_rule_instr_ret_no  , &nonterm_symbs) );
     ret.append( make_rule("$Instr      -> return $Expr ;"        , gram_rule_instr_ret_smth, &nonterm_symbs) );
-    ret.append( make_rule("$Instr      -> while $Expr { $InstrList }" , nullptr            , &nonterm_symbs) );
+    ret.append( make_rule("$Instr      -> while $Expr { $InstrList }" , gram_rule_instr_while, &nonterm_symbs) );
     ret.append( make_rule("$Instr      -> if $Expr { $InstrList } \
-                                                        $If_Tail", nullptr                , &nonterm_symbs) );
+                                                        $If_Tail", gram_rule_instr_if     , &nonterm_symbs) );
 
-    ret.append( make_rule("$If_Tail    ->"                       , nullptr                , &nonterm_symbs) );
+    ret.append( make_rule("$If_Tail    ->"                       , gram_rule_list_empty   , &nonterm_symbs) );
     ret.append( make_rule("$If_Tail    -> elif $Expr { $InstrList } \
-                                                        $If_Tail", nullptr                , &nonterm_symbs) );
-    ret.append( make_rule("$If_Tail    -> else { $InstrList }"   , nullptr                , &nonterm_symbs) );
+                                                        $If_Tail", gram_rule_instr_elif   , &nonterm_symbs) );
+    ret.append( make_rule("$If_Tail    -> else { $InstrList }"   , gram_rule_elt_n2       , &nonterm_symbs) );
 
 
     ret.append( make_rule("$InstrList  ->"                       , gram_rule_list_empty    , &nonterm_symbs) );
@@ -545,7 +636,7 @@ gram_rule_t::gram_rules make_rules() {
 
     ret.append( make_rule("$LocDecls   ->"                       , gram_rule_locdecl_empty , &nonterm_symbs) );    
     ret.append( make_rule("$LocDecls   -> $Decl $LocDecls"       , gram_rule_locdecl_decl  , &nonterm_symbs) );    
-    ret.append( make_rule("$LocDecls   -> static $Decl $LocDecls", nullptr                 , &nonterm_symbs) );    
+    ret.append( make_rule("$LocDecls   -> static $Decl $LocDecls", gram_rule_decl_static   , &nonterm_symbs) );    
     ret.append( make_rule("$LocDecls   -> @ident ; $LocDecls"    , gram_rule_locdecl_enum  , &nonterm_symbs) );    
     ret.append( make_rule("$LocDecls   -> @ident { $DeclList } ; \
                                                    $LocDecls"    , gram_rule_locdecl_cstr  , &nonterm_symbs) );    
@@ -622,94 +713,6 @@ ast parse_prog(toklist* toks) {
     free(ret_decls.n_refs);
     return ret;
 }
-
-// typ* parse_typ(toklist* toks) {
-//     token n = toks->ith(0);
-//     typ* t = (typ*)malloc(sizeof(typ));
-//     if (n.kind == token::TVoid) {
-//         t->kind = typ::TVoid;
-//         *toks = toks->tail();
-//     } else if (n.kind == token::TInt) {
-//         t->kind = typ::TInt;
-//         *toks = toks->tail();
-//     } else if (n.kind == token::TChar) {
-//         t->kind = typ::TChar;
-//         *toks = toks->tail();
-//     } else if (n.kind == token::Ident) {
-//         t->kind = typ::TIdent;
-//         t->dat.TIdent_dat = n.dat.Ident_dat.str;
-//         *toks = toks->tail();
-//     } else if (n.kind == token::Const) {
-//         t->kind = typ::TConst;
-//         *toks = toks->tail();
-//         t->dat.const_dat = parse_typ(toks);
-//     } else if (n.kind == token::Typeof) {
-//         t->kind = typ::Typeof;
-//         *toks = toks->tail();
-//         n = toks->ith(0);
-//         if (n.kind != token::LPAREN) {
-//             printf("expected '(' after typeof\n");
-//             exit(-1);
-//         }
-//         *toks = toks->tail();
-//         t->dat.typeof_dat = parse_expr(toks, token::RPAREN);
-//         n = toks->ith(0);
-//         if (n.kind != token::RPAREN) {
-//             printf("expected ')' after typeof\n");
-//             exit(-1);
-//         }
-//         *toks = toks->tail();
-//     } else {
-//         printf("invalid type identifier\n");
-//         exit(-1);
-//     }
-//     n = toks->ith(0);
-//     while (n.kind == token::Binop && n.dat.Binop_dat.op.kind == binop::Mul) {
-//         *toks = toks->tail();
-//         typ* p = (typ*)malloc(sizeof(typ));
-//         p->kind = typ::TPtr;
-//         p->dat.ptr_dat = t;
-//         t = p;
-//         n = toks->ith(0);
-//     }
-//     if (n.kind == token::Implies) {
-//         *toks = toks->tail();
-//         typ* p = (typ*)malloc(sizeof(typ));
-//         p->kind = typ::Tfunptr;
-//         p->dat.tfunptr_dat.args_t = old_clist::new_clist(sizeof(typ));
-//         p->dat.tfunptr_dat.ret_t = parse_typ(toks);
-//         p->dat.tfunptr_dat.args_t.push(t);
-//         t = p;
-//         n = toks->ith(0);
-//     }   
-//     return t;
-// }
-
-// decl* parse_decl(toklist* toks);
-
-// instr* parse_instr(toklist* toks);
-
-// old_clist parse_instr_block(toklist* toks) {
-//     old_clist ret = old_clist::new_clist(sizeof(instr));
-//     token n = toks->ith(0);
-//     if (n.kind != token::LBRACK) {
-//         printf("expected '{' to start a code block, got token id %d\n", (int)n.kind);
-//         exit(-1);
-//     }
-//     *toks = toks->tail();
-//     n = toks->ith(0);
-//     while (n.kind != token::RBRACK) {
-//         instr* instrs = parse_instr(toks);
-//         if (instrs) {
-//             ret.push(instrs);
-//             free(instrs);
-//         }
-//         n = toks->ith(0);
-//     }
-//     ret.reverse();
-//     *toks = toks->tail();
-//     return ret;
-// }
 
 
 // instr* parse_instr(toklist* toks) {
