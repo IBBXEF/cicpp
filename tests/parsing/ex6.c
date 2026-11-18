@@ -11,6 +11,7 @@ int c;
 
 func void one() {
     a = 0;
+    return;
 }
 
 int d;

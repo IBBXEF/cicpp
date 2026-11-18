@@ -220,7 +220,7 @@ struct decl
     union {
         struct { const char* name; typ* t; expr* v; } var_dat;
         struct { const char* name; typ* ret_t;
-                 old_clist args_decls; old_clist* instrs; }  func_dat; // if instrs is nullptr, it is a function prototype
+                 clist_voidptr args_decls; clist_voidptr* instrs; }  func_dat; // if instrs is nullptr, it is a function prototype
         struct { const char* name; clist_voidptr constrs;
                  clist_voidptr other_decls;               }  type_dat;
         struct { const char* file; }              include_dat;
@@ -262,8 +262,11 @@ struct instr
             fprintf(fptr, ";\n");
         } else if (kind == Return) {
             print_n_spaces(ident * ident_lvl, fptr);
-            fprintf(fptr, "return ");
-            dat.ret_dat.v->print_to_file(fptr);
+            fprintf(fptr, "return");
+            if (dat.ret_dat.v) {
+                fprintf(fptr, " ");
+                dat.ret_dat.v->print_to_file(fptr);
+            }
             fprintf(fptr, ";\n");
         } else if (kind == Decl) {
             dat.decl_dat.d->print_to_file(fptr, ident, prog, true);

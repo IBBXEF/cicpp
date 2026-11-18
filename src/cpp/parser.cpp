@@ -230,6 +230,34 @@ anyptr gram_rule_instr_decl(clist_anyptr l) {
     r.init_view(ret);
     return r;
 }
+anyptr gram_rule_instr_assign(clist_anyptr l) {
+    instr* ret = (instr*)malloc(sizeof(instr));
+    ret->kind = instr::Set;
+    ret->dat.set_dat.l = (expr*)l.ith(0).ptr;
+    ret->dat.set_dat.r = (expr*)l.ith(2).ptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_instr_ret_smth(clist_anyptr l) {
+    instr* ret = (instr*)malloc(sizeof(instr));
+    ret->kind = instr::Return;
+    ret->dat.ret_dat.v = (expr*)l.ith(1).ptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_instr_ret_no(clist_anyptr l) {
+    instr* ret = (instr*)malloc(sizeof(instr));
+    ret->kind = instr::Return;
+    ret->dat.ret_dat.v = nullptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
 anyptr gram_rule_vardecl(clist_anyptr l) {
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Var;
@@ -247,6 +275,34 @@ anyptr gram_rule_vardecl_vlue(clist_anyptr l) {
     ret->dat.var_dat.name = ((token*)l.ith(1).ptr)->dat.Ident_dat.str;
     ret->dat.var_dat.t = (typ*)l.ith(0).ptr;
     ret->dat.var_dat.v = (expr*)l.ith(3).ptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_funcdecl(clist_anyptr l) {
+    decl* ret = (decl*)malloc(sizeof(decl));
+    ret->kind = decl::Func;
+    ret->dat.func_dat.name = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
+    ret->dat.func_dat.ret_t = (typ*)l.ith(1).ptr;
+    ret->dat.func_dat.args_decls = *(clist_voidptr*)l.ith(4).ptr;
+    free((clist_voidptr*)l.ith(4).ptr);
+    free((clist_voidptr*)l.ith(4).n_refs);
+    ret->dat.func_dat.instrs = (clist_voidptr*)l.ith(7).ptr;
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_funcprot(clist_anyptr l) {
+    decl* ret = (decl*)malloc(sizeof(decl));
+    ret->kind = decl::Func;
+    ret->dat.func_dat.name = ((token*)l.ith(2).ptr)->dat.Ident_dat.str;
+    ret->dat.func_dat.ret_t = (typ*)l.ith(1).ptr;
+    ret->dat.func_dat.args_decls = *(clist_voidptr*)l.ith(4).ptr;
+    free((clist_voidptr*)l.ith(4).ptr);
+    free((clist_voidptr*)l.ith(4).n_refs);
+    ret->dat.func_dat.instrs = nullptr;
 
     anyptr r;
     r.init_view(ret);
@@ -398,10 +454,10 @@ gram_rule_t::gram_rules make_rules() {
 
 
     ret.append( make_rule("$Instr      -> $Decl"                 , gram_rule_instr_decl    , &nonterm_symbs) );
-    ret.append( make_rule("$Instr      -> $ExprUnary = $Expr ;"  , nullptr                 , &nonterm_symbs) ); // not using full $Expr creates fewer rules and makes the conflict solver happy
+    ret.append( make_rule("$Instr      -> $ExprUnary = $Expr ;"  , gram_rule_instr_assign  , &nonterm_symbs) ); // not using full $Expr creates fewer rules and makes the conflict solver happy
     ret.append( make_rule("$Instr      -> $ExprStru ;"           , nullptr                 , &nonterm_symbs) );
-    ret.append( make_rule("$Instr      -> return ;"              , nullptr                 , &nonterm_symbs) );
-    ret.append( make_rule("$Instr      -> return $Expr ;"        , nullptr                 , &nonterm_symbs) );
+    ret.append( make_rule("$Instr      -> return ;"              , gram_rule_instr_ret_no  , &nonterm_symbs) );
+    ret.append( make_rule("$Instr      -> return $Expr ;"        , gram_rule_instr_ret_smth, &nonterm_symbs) );
     ret.append( make_rule("$Instr      -> while $Expr { $InstrList }" , nullptr            , &nonterm_symbs) );
     ret.append( make_rule("$Instr      -> if $Expr { $InstrList } \
                                                         $If_Tail", nullptr                , &nonterm_symbs) );
@@ -412,8 +468,8 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$If_Tail    -> else { $InstrList }"   , nullptr                , &nonterm_symbs) );
 
 
-    ret.append( make_rule("$InstrList  ->"                       , nullptr                 , &nonterm_symbs) );
-    ret.append( make_rule("$InstrList  -> $Instr $InstrList"     , nullptr                 , &nonterm_symbs) );
+    ret.append( make_rule("$InstrList  ->"                       , gram_rule_list_empty    , &nonterm_symbs) );
+    ret.append( make_rule("$InstrList  -> $Instr $InstrList"     , gram_rule_list_push_1st , &nonterm_symbs) );
 
 
     ret.append( make_rule("$VarDecl    -> $Type @ident"          , gram_rule_vardecl       , &nonterm_symbs) );    
@@ -421,9 +477,9 @@ gram_rule_t::gram_rules make_rules() {
 
     ret.append( make_rule("$Decl       -> $VarDecl ;"            , gram_rule_elt_n0        , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> func $Type @ident \
-                                   ( $FargDecl ) { $InstrList }" , nullptr                 , &nonterm_symbs) );    
+                                   ( $FargDecl ) { $InstrList }" , gram_rule_funcdecl      , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> func $Type @ident \
-                                   ( $FargDecl ) ;"              , nullptr                 , &nonterm_symbs) );    
+                                   ( $FargDecl ) ;"              , gram_rule_funcprot      , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> type < $Targdcl > \
                                            @ident { $LocDecls }" , nullptr                 , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> type @ident { $LocDecls }", gram_rule_type       , &nonterm_symbs) );    
