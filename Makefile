@@ -4,6 +4,11 @@ SOURCE_FILES = src/cpp/ast.cpp src/cpp/lexer.cpp src/cpp/main.cpp src/cpp/parser
 TEMP_FILES = _build/test/clist.c _build/test/set.c _build/test/anyptr.c _build/test/lexer.c _build/test/parser.c
 TEMP_TEST_FILES = _build/test2/clist.c _build/test2/set.c _build/test2/anyptr.c _build/test2/lexer.c _build/test2/parser.c
 
+ifdef FAST
+TEMP_FILES = _build/test/parser.c
+TEMP_TEST_FILES = _build/test2/parser.c
+endif
+
 ifdef DEBUG
 GCC_ARGS = -Wall -Wpedantic -Wextra -g -std=c++20 -fsanitize=address
 else
