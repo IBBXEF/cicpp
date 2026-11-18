@@ -2604,77 +2604,79 @@ struct gram_rule_t {
     changed = false;
     int nt;
     nt = 0;
-    while ((nt) < ((nonterm_symbs)->len())) {
-      int i;
-      i = 0;
-      while ((i) < ((rules)->len())) {
-        gram_rule_t* rule1;
-        int r1_pt_len;
-        rule1 = (rules)->ith(i);
-        r1_pt_len = ((rule1)->pattern).len();
-        if ((((rule1)->result) == (nt)) && (((rule1)->pattern).len())) {
-          bool do_factorize;
-          do_factorize = false;
+    int rules_len;
+    rules_len = (rules)->len();
+    int i;
+    i = 0;
+    while ((i) < (rules_len)) {
+      gram_rule_t* rule1;
+      int r1_pt_len;
+      rule1 = (rules)->ith(i);
+      r1_pt_len = ((rule1)->pattern).len();
+      int nt;
+      nt = (rule1)->result;
+      if (((rule1)->pattern).len()) {
+        bool do_factorize;
+        do_factorize = false;
+        int j;
+        j = (i) + (1);
+        while (((j) < (rules_len)) && ((((rules)->ith(j))->result) == (nt))) {
+          gram_rule_t* rule2;
+          int r2_pt_len;
+          rule2 = (rules)->ith(j);
+          r2_pt_len = ((rule2)->pattern).len();
+          if (((rule2)->pattern).len()) {
+            if ((((rule1)->pattern).ith((r1_pt_len) - (1))).eq(((rule2)->pattern).ith((r2_pt_len) - (1)))) {
+              do_factorize = true;
+              j = (INT_MAX) - (1);
+            }
+          }
+          j = (j) + (1);
+        }
+        if (do_factorize) {
+          changed = true;
+          char* new_nonterm_str;
+          new_nonterm_str = (char*)malloc(((strlen((nonterm_symbs)->ith(nt))) + (1)) + (10));
+          sprintf(new_nonterm_str, "lf%x_%s", (nonterm_symbs)->len(), (nonterm_symbs)->ith(nt));
+          int new_nonterm;
+          new_nonterm = string_list_thingy(nonterm_symbs, new_nonterm_str);
+          if (((new_nonterm) + (1)) != ((nonterm_symbs)->len())) {
+            printf("name conflict!\n");
+            exit(EXIT_FAILURE);
+          }
+          gram_rule_t* newrule;
+          newrule = (gram_rule_t*)malloc(sizeof(gram_rule_t));
+          (newrule)->init_bonus_func_data(nt, _gram_rule_ret_factor_join, nullptr);
+          ((newrule)->pattern).push(((rule1)->pattern).ith((r1_pt_len) - (1)));
+          (newrule)->add_nonterm(new_nonterm);
           int j;
-          j = (i) + (1);
-          while ((j) < ((rules)->len())) {
+          j = i;
+          while (((j) < (rules_len)) && ((((rules)->ith(j))->result) == (nt))) {
             gram_rule_t* rule2;
             int r2_pt_len;
             rule2 = (rules)->ith(j);
             r2_pt_len = ((rule2)->pattern).len();
-            if ((((rule2)->result) == (nt)) && (((rule2)->pattern).len())) {
-              if ((((rule1)->pattern).ith((r1_pt_len) - (1))).eq(((rule2)->pattern).ith((r2_pt_len) - (1)))) {
-                do_factorize = true;
-                j = (INT_MAX) - (1);
+            if (((rule2)->pattern).len()) {
+              if ((((newrule)->pattern).ith(1)).eq(((rule2)->pattern).ith((r2_pt_len) - (1)))) {
+                void** tmp;
+                tmp = (void**)malloc((sizeof(*(tmp))) * (2));
+                tmp[0] = (void*)(rule2)->result_function;
+                tmp[1] = (rule2)->func_bonus_dat;
+                (rule2)->result = new_nonterm;
+                (rule2)->result_function = _gram_rule_ret_factor_accu;
+                (rule2)->func_bonus_dat = (void*)tmp;
+                ((rule2)->pattern).remove((r2_pt_len) - (1));
               }
             }
             j = (j) + (1);
           }
-          if (do_factorize) {
-            changed = true;
-            char* new_nonterm_str;
-            new_nonterm_str = (char*)malloc(((strlen((nonterm_symbs)->ith(nt))) + (1)) + (10));
-            sprintf(new_nonterm_str, "lf%x_%s", (nonterm_symbs)->len(), (nonterm_symbs)->ith(nt));
-            int new_nonterm;
-            new_nonterm = string_list_thingy(nonterm_symbs, new_nonterm_str);
-            if (((new_nonterm) + (1)) != ((nonterm_symbs)->len())) {
-              printf("name conflict!\n");
-              exit(EXIT_FAILURE);
-            }
-            gram_rule_t* newrule;
-            newrule = (gram_rule_t*)malloc(sizeof(gram_rule_t));
-            (newrule)->init_bonus_func_data(nt, _gram_rule_ret_factor_join, nullptr);
-            ((newrule)->pattern).push(((rule1)->pattern).ith((r1_pt_len) - (1)));
-            (newrule)->add_nonterm(new_nonterm);
-            int j;
-            j = 0;
-            while ((j) < ((rules)->len())) {
-              gram_rule_t* rule2;
-              int r2_pt_len;
-              rule2 = (rules)->ith(j);
-              r2_pt_len = ((rule2)->pattern).len();
-              if ((((rule2)->result) == (nt)) && (((rule2)->pattern).len())) {
-                if ((((newrule)->pattern).ith(1)).eq(((rule2)->pattern).ith((r2_pt_len) - (1)))) {
-                  void** tmp;
-                  tmp = (void**)malloc((sizeof(*(tmp))) * (2));
-                  tmp[0] = (void*)(rule2)->result_function;
-                  tmp[1] = (rule2)->func_bonus_dat;
-                  (rule2)->result = new_nonterm;
-                  (rule2)->result_function = _gram_rule_ret_factor_accu;
-                  (rule2)->func_bonus_dat = (void*)tmp;
-                  ((rule2)->pattern).remove((r2_pt_len) - (1));
-                }
-              }
-              j = (j) + (1);
-            }
-            (rules)->append(newrule);
-            i = (INT_MAX) - (1);
-          }
+          (rules)->append(newrule);
+          i = (j) - (1);
         }
-        i = (i) + (1);
       }
-      nt = (nt) + (1);
+      i = (i) + (1);
     }
+    order_rules_by_nonterm(rules, *(nonterm_symbs));
     if ((!(changed)) || ((max_iter) <= (1))) {
       return changed;
     } else {
@@ -2686,8 +2688,8 @@ struct gram_rule_t {
   void fix_factoring_conflicts(gram_rules* rules, string_list* nonterm_symbs, int max_iter = 50){
     max_iter = (max_iter) - (1);
     bool has_changed;
-    has_changed = apply_direct_left_factoring(rules, nonterm_symbs, 1);
     order_rules_by_nonterm(rules, *(nonterm_symbs));
+    has_changed = apply_direct_left_factoring(rules, nonterm_symbs, INT_MAX);
     term_set* Fi;
     Fi = compute_first_sets(*(rules), *(nonterm_symbs));
     term_set* Fi_rules;
@@ -2702,11 +2704,15 @@ struct gram_rule_t {
     (indirect_first).init();
     int i;
     i = 0;
-    while ((i) < ((rules)->len())) {
+    int rules_len;
+    rules_len = (rules)->len();
+    int start_of_nonterm;
+    while ((i) < (rules_len)) {
       gram_rule_t* rule;
       rule = (rules)->ith(i);
       if (((rule)->result) != (last_nonterm)) {
         last_nonterm = (rule)->result;
+        start_of_nonterm = i;
         (indirect_first).del();
         (indirect_first).init();
       }
@@ -2721,7 +2727,7 @@ struct gram_rule_t {
             (rules)->remove(i);
             int j;
             j = 0;
-            while ((j) < ((rules)->len())) {
+            while ((j) < (rules_len)) {
               gram_rule_t* rule2;
               rule2 = (rules)->ith(j);
               if (((rule2)->result) == ((((first_sym).dat).NonTerm_dat).symb)) {
