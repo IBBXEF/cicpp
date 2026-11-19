@@ -17,13 +17,14 @@ endif
 
 help:
 	@echo "usage:"
-	@echo " - make clean       : delete temporary files"
-	@echo " - make build_first : build project without recompiling cicpp files, using aldready available files"
-	@echo " - make build       : build project normally"
-	@echo " - make tests       : tests that the project works correctly, notably that it can correctly compile itself"
-	@echo " - make help        : display this message"
-	@echo " - make replacelib  : replace the reference compiled cicpp files with the newly compiled ones"
-	@echo " - make replace     : replace the main executable with the newly compiled one (also runs replacelib)"
+	@echo " - make clean            : delete temporary files"
+	@echo " - make build_first      : build project without recompiling cicpp files, using aldready available files"
+	@echo " - make build            : build project normally"
+	@echo " - make tests            : tests that the project works correctly, notably that it can correctly compile itself"
+	@echo " - make test_continuity  : tests that the new code does compiles to itself"
+	@echo " - make help             : display this message"
+	@echo " - make replacelib       : replace the reference compiled cicpp files with the newly compiled ones"
+	@echo " - make replace          : replace the main executable with the newly compiled one (also runs replacelib)"
 
 clean:
 	rm -fr _build/test
@@ -53,7 +54,9 @@ build_first: $(SOURCE_FILES)
 	rm -fr _build/test
 	make $(TEMP_FILES)
 
-build_test: $(SOURCE_FILES) $(TEMP_TEST_FILES)
+build_test: $(SOURCE_FILES)
+	rm -fr _build/test2
+	make $(TEMP_TEST_FILES)
 	mkdir -p _build
 	mkdir -p _build/test
 	mkdir -p _build/test2
@@ -84,5 +87,9 @@ tests: build
 	./test tests/parsing/ex9.c
 	cd tests/runtime && make test
 
+	make test_continuity
+
+test_continuity:
 	make build_test
 	diff test _build/_test
+

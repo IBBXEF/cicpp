@@ -68,6 +68,7 @@ type token {
     TVoid;
     TInt;
     TChar;
+    TBool;
 
     If;
     Elif;
@@ -156,6 +157,8 @@ type token {
             printf("void");
         } elif kind == TChar {
             printf("char");
+        } elif kind == TBool {
+            printf("bool");
         } elif kind == Const {
             printf("const");
         } elif kind == Static {

@@ -106,6 +106,7 @@ struct typ
         TInt,
         TChar,
         TPtr,
+        TBool,
         TConst,
         TIdent,
         Typeof,
@@ -130,6 +131,9 @@ struct typ
         } else if (kind == TVoid) {
             print_n_spaces(ident * ident_lvl, fptr);
             fprintf(fptr, "void");
+        } else if (kind == TBool) {
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "bool");
         } else if (kind == TPtr) {
             dat.ptr_dat->print_to_file(fptr, ident);
             fprintf(fptr, "*");
@@ -141,6 +145,7 @@ struct typ
         } else if (kind == TIdent) {
             print_n_spaces(ident * ident_lvl, fptr);
             fprintf(fptr, "%s", dat.TIdent_dat);
+            // fprintf(fptr, "struct %s", dat.TIdent_dat);
         } else if (kind == TConst) {
             print_n_spaces(ident * ident_lvl, fptr);
             fprintf(fptr, "const ");

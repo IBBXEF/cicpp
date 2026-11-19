@@ -19,6 +19,8 @@ void pop_token_stack(int* cou, toklist* l, char* str) {
         tok.kind = token::TInt;
     } else if (!strncmp("char", str, *cou) && *cou == 4) {
         tok.kind = token::TChar;
+    } else if (!strncmp("bool", str, *cou) && *cou == 4) {
+        tok.kind = token::TBool;
     } else if (!strncmp("if", str, *cou) && *cou == 2) {
         tok.kind = token::If;
     } else if (!strncmp("elif", str, *cou) && *cou == 4) {

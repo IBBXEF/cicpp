@@ -73,7 +73,7 @@ struct unop {
   }
 };
 struct token {
-  enum { TVoid, TInt, TChar, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, Arrow, Implies, VInt, VString, Ident, EndOfInput } kind;
+  enum { TVoid, TInt, TChar, TBool, If, Elif, Else, Return, While, Const, Typeof, As, Type, Func, Static, Specialize, Include, Include_C, LPAREN, RPAREN, LSQUAR, RSQUAR, LBRACK, RBRACK, Binop, Unop, Comma, Semicol, Set, Colon, TwoColon, Hashtag, Dot, Arrow, Implies, VInt, VString, Ident, EndOfInput } kind;
   union {
     struct {
       binop op;
@@ -142,6 +142,9 @@ struct token {
     } else
     if ((kind) == (TChar)) {
       printf("char");
+    } else
+    if ((kind) == (TBool)) {
+      printf("bool");
     } else
     if ((kind) == (Const)) {
       printf("const");

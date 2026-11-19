@@ -142,10 +142,8 @@ anyptr gram_rule_func(clist_anyptr l) {
 anyptr gram_rule_list_push_2nd(clist_anyptr l) {
     clist_voidptr* ret = (clist_voidptr*)l.ith(2).ptr;
     ret->push(l.ith(0).ptr);
-
-    anyptr r;
-    r.init_view(ret);
-    return r;
+    free(l.ith(0).n_refs);
+    return l.ith(2);
 }
 anyptr gram_rule_strlist_push(clist_anyptr l) {
     string_list* ret = (string_list*)l.ith(2).ptr;
@@ -167,10 +165,8 @@ anyptr gram_rule_strlist_base(clist_anyptr l) {
 anyptr gram_rule_list_push_1st(clist_anyptr l) {
     clist_voidptr* ret = (clist_voidptr*)l.ith(1).ptr;
     ret->push(l.ith(0).ptr);
-
-    anyptr r;
-    r.init_view(ret);
-    return r;
+    free(l.ith(0).n_refs);
+    return l.ith(1);
 }
 anyptr gram_rule_list_base(clist_anyptr l) {
     clist_voidptr* ret = (clist_voidptr*)malloc(sizeof(clist_voidptr));
@@ -207,6 +203,8 @@ anyptr gram_rule_typ_base(clist_anyptr l) {
         ret->kind = typ::TInt;
     } else if (n.kind == token::TChar) {
         ret->kind = typ::TChar;
+    } else if (n.kind == token::TBool) {
+        ret->kind = typ::TBool;
     } else if (n.kind == token::Ident) {
         ret->kind = typ::TIdent;
         ret->dat.TIdent_dat = n.dat.Ident_dat.str;
@@ -413,8 +411,6 @@ anyptr gram_rule_type(clist_anyptr l) {
     ret->kind = decl::Type;
     ret->dat.type_dat.name = ((token*)l.ith(1).ptr)->dat.Ident_dat.str;
     clist_voidptr* tmp = (clist_voidptr*)l.ith(3).ptr;
-    tmp[0].reverse();
-    tmp[1].reverse();
     ret->dat.type_dat.constrs = tmp[0];
     ret->dat.type_dat.other_decls = tmp[1];
     if (!ret->dat.type_dat.constrs.len()) {
@@ -433,8 +429,6 @@ anyptr gram_rule_type_templ(clist_anyptr l) {
     tdecl->kind = decl::Type;
     tdecl->dat.type_dat.name = ((token*)l.ith(4).ptr)->dat.Ident_dat.str;
     clist_voidptr* tmp = (clist_voidptr*)l.ith(6).ptr;
-    tmp[0].reverse();
-    tmp[1].reverse();
     tdecl->dat.type_dat.constrs = tmp[0];
     tdecl->dat.type_dat.other_decls = tmp[1];
     if (!tdecl->dat.type_dat.constrs.len()) {
@@ -480,6 +474,7 @@ anyptr gram_rule_locdecl_empty(clist_anyptr l) {
 anyptr gram_rule_locdecl_decl(clist_anyptr l) {
     clist_voidptr* tmp = (clist_voidptr*)l.ith(1).ptr;
     tmp[1].push((decl*)l.ith(0).ptr);
+    free(l.ith(0).n_refs);
     return l.ith(1);
 }
 anyptr gram_rule_decl_static(clist_anyptr l) {
@@ -502,6 +497,7 @@ anyptr gram_rule_locdecl_cstr(clist_anyptr l) {
     decl::type_constr* cstr = (decl::type_constr*)malloc(sizeof(decl::type_constr));
     cstr->fields = *(clist_voidptr*)l.ith(2).ptr;
     free(l.ith(2).ptr);
+    free(l.ith(2).n_refs);
     cstr->name = ((token*)l.ith(0).ptr)->dat.Ident_dat.str;
     clist_voidptr* tmp = (clist_voidptr*)l.ith(5).ptr;
     tmp[0].push(cstr);
@@ -589,6 +585,7 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$TypeAtom   -> void"                  , gram_rule_typ_base      , &nonterm_symbs) );
     ret.append( make_rule("$TypeAtom   -> char"                  , gram_rule_typ_base      , &nonterm_symbs) );
     ret.append( make_rule("$TypeAtom   -> int"                   , gram_rule_typ_base      , &nonterm_symbs) );
+    ret.append( make_rule("$TypeAtom   -> bool"                  , gram_rule_typ_base      , &nonterm_symbs) );
     ret.append( make_rule("$TypeAtom   -> @ident"                , gram_rule_typ_base      , &nonterm_symbs) );
     ret.append( make_rule("$TypeAtom   -> typeof ( $Expr )"      , gram_rule_typeof        , &nonterm_symbs) );
 
@@ -715,222 +712,6 @@ ast parse_prog(toklist* toks) {
 }
 
 
-// instr* parse_instr(toklist* toks) {
-//     token n = toks->ith(0);
-//     if (n.kind == token::Return) {
-//         *toks = toks->tail();
-//         instr* ret = (instr*)malloc(sizeof(instr));
-//         ret->kind = instr::Return;
-//         ret->dat.ret_dat.v = parse_expr(toks, token::Semicol);
-//         n = toks->ith(0);
-//         if (n.kind != token::Semicol) {
-//             printf("expected ';' after return instruction; got token %i\n", (int)n.kind);
-//             exit(-1);
-//         }
-//         *toks = toks->tail();
-//         return ret;
-//     } else if (n.kind == token::If) {
-//         *toks = toks->tail();
-//         instr* ret = (instr*)malloc(sizeof(instr));
-//         ret->kind = instr::If;
-//         ret->dat.if_dat.b = parse_expr(toks, token::LBRACK);
-//         ret->dat.if_dat.truebrc = parse_instr_block(toks);
-//         ret->dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
-//         instr* curr = ret;
-//         n = toks->ith(0);
-//         while (n.kind == token::Elif) {
-//             *toks = toks->tail();
-//             instr cif;
-//             cif.kind = instr::If;
-//             cif.dat.if_dat.b = parse_expr(toks, token::LBRACK);
-//             cif.dat.if_dat.truebrc = parse_instr_block(toks);
-//             cif.dat.if_dat.falsebrc = old_clist::new_clist(sizeof(instr));
-//             curr->dat.if_dat.falsebrc.push(&cif);
-//             curr = (instr*)curr->dat.if_dat.falsebrc.ith(0);
-//             n = toks->ith(0);
-//         }
-//         if (n.kind == token::Else) {
-//             *toks = toks->tail();
-//             old_clist block = parse_instr_block(toks);
-//             curr->dat.if_dat.falsebrc.del();
-//             curr->dat.if_dat.falsebrc = block;
-//         }
-//         return ret;
-//     } else if (n.kind == token::While) {
-//         *toks = toks->tail();
-//         instr* ret = (instr*)malloc(sizeof(instr));
-//         ret->kind = instr::While;
-//         ret->dat.while_dat.b = parse_expr(toks, token::LBRACK);
-//         ret->dat.while_dat.instrs = parse_instr_block(toks);
-//         return ret;
-//     }
-//     toklist left = *toks;
-//     toklist base = *toks;
-//     bool found_par = false;
-//     while (toks->len()) {
-//         n = toks->ith(0);
-//         if (n.kind == token::Semicol) {
-//             if (left.l == toks->l) {
-//                 return nullptr; // empty intruction
-//             } else if (found_par) { // found parentheses and no '=', so a function call
-//                 *toks = left;
-//                 // we parse function calls as an rvalue
-//                 instr* ist = (instr*)malloc(sizeof(instr));
-//                 ist->kind = instr::Fcall;
-//                 ist->dat.fcall_dat.call = parse_expr(toks, token::Semicol);
-//                 n = toks->ith(0);
-//                 if (n.kind != token::Semicol) {
-//                     printf("expected ';' after instruction; got token %i\n", (int)n.kind);
-//                     exit(-1);
-//                 }
-//                 *toks = toks->tail();
-//                 return ist;
-//             }
-//             // we have found neither '=' or '(' tokens in our instruction, to it is a declaration
-//             instr* ist = (instr*)malloc(sizeof(instr));
-//             ist->kind = instr::Decl;
-//             ist->dat.decl_dat.d = parse_var_decl(&left, true);
-//             *toks = left;
-//             return ist;
-//         } else if (n.kind == token::Set) { // we have an '=' in our instruction, so it is a set operation (not always true but almost)
-//             instr* ist = (instr*)malloc(sizeof(instr));
-//             ist->kind = instr::Set;
-//             ist->dat.set_dat.l = parse_expr(&left, token::Set);
-//             if (left.len() != toks->len()) {
-//                 printf("impossible to parse lval for assignment operation (able to parse %d/%d tokens)\n", (int)(base.len() - left.len()), (int)(base.len() - toks->len()));
-//                 exit(-1);
-//             }
-//             *toks = toks->tail();
-//             ist->dat.set_dat.r = parse_expr(toks, token::Semicol);
-//             n = toks->ith(0);
-//             if (n.kind != token::Semicol) {
-//                 printf("expected ';' after instruction; got token %i\n", (int)n.kind);
-//                 exit(-1);
-//             }
-//             *toks = toks->tail();
-//             return ist;
-//         } else if (n.kind == token::LPAREN) {
-//             found_par = true;
-//         }
-//         *toks = toks->tail();
-//     }
-//     printf("instruction not terminated by a semicolon\n");
-//     exit(-1);
-// }
-
-// decl::type_constr parse_type_constructor(toklist* toks) {
-//     decl::type_constr ret;
-//     ret.fields = old_clist::new_clist(sizeof(decl));
-//     token n = toks->ith(0);
-//     if (n.kind != token::Ident) {
-//         printf("expected identifier for type constructor declaration\n");
-//         exit(-1);
-//     }
-//     ret.name = n.dat.Ident_dat.str;
-//     *toks = toks->tail();
-//     n = toks->ith(0);
-//     if (n.kind == token::Semicol) {
-//         *toks = toks->tail();
-//         return ret;
-//     }
-//     if (n.kind != token::LBRACK) {
-//         printf("expected '{' for type constructor declaration\n");
-//         exit(-1);
-//     }
-//     *toks = toks->tail();
-//     n = toks->ith(0);
-//     while (toks->ith(0).kind != token::RBRACK)
-//     {
-//         n = toks->ith(0);
-//         decl* d = parse_decl(toks);
-//         ret.fields.push(d);
-//         free(d);
-//         n = toks->ith(0);
-//     }
-//     *toks = toks->tail();
-//     n = toks->ith(0);
-//     if (n.kind != token::Semicol) {
-//         printf("expected ';' at end of type constructor declaration\n");
-//         exit(-1);
-//     }
-//     *toks = toks->tail();
-//     ret.fields.reverse();
-//     return ret;
-// }
-
-// decl* parse_type_decl(toklist* toks) {
-//     decl* ret = (decl*)malloc(sizeof(decl));
-//     ret->kind = decl::Type;
-//     ret->dat.type_dat.constrs = old_clist::new_clist(sizeof(decl::type_constr));
-//     ret->dat.type_dat.other_decls = old_clist::new_clist(sizeof(decl));
-//     token n = toks->ith(0);
-//     if (n.kind == token::Ident) {
-//         ret->dat.type_dat.name = n.dat.Ident_dat.str;
-//         *toks = toks->tail();
-//     } else if (n.kind == token::Binop && n.dat.Binop_dat.op.kind == binop::Lt) {
-//         // declaration is a templated type
-//         *toks = toks->tail();
-//         ret->kind = decl::Templated;
-//         n = toks->ith(0);
-//         if (n.kind != token::Ident) {
-//             printf("expected identifier as template parameter, got token id %d\n", (int)n.kind);
-//             exit(-1);
-//         }
-//         ret->dat.templated_dat.param_name = n.dat.Ident_dat.str;
-//         *toks = toks->tail();
-//         n = toks->ith(0);
-//         if (!(n.kind == token::Binop && n.dat.Binop_dat.op.kind == binop::Gt)) {
-//             printf("expected '>' after template parameter, got token id %d\n", (int)n.kind);
-//             exit(-1);
-//         }
-//         *toks = toks->tail();
-//         ret->dat.templated_dat.d = parse_type_decl(toks);
-//         if (ret->dat.templated_dat.d->kind == decl::Type) {
-//             ret->dat.templated_dat.name = ret->dat.templated_dat.d->dat.type_dat.name;
-//         } else if (ret->dat.templated_dat.d->kind == decl::Templated) {
-//             ret->dat.templated_dat.name = ret->dat.templated_dat.d->dat.templated_dat.name;
-//         } else {
-//             printf("kind of templated type unsupported (id %d)\n", (int)ret->dat.templated_dat.d->kind);
-//             exit(-1);
-//         }
-//         printf("templated type %s parsed\n", ret->dat.templated_dat.name);
-//         return ret;
-//     } else {
-//         ret->dat.type_dat.name = nullptr;
-//     }
-//     n = toks->ith(0);
-//     if (n.kind != token::LBRACK) {
-//         printf("expected '{' for type declaration\n");
-//         exit(-1);
-//     }
-//     *toks = toks->tail();
-//     n = toks->ith(0);
-//     while (toks->ith(0).kind != token::RBRACK)
-//     {
-//         n = toks->ith(0);
-//         token n2 = toks->ith(1);
-//         if (n2.kind != token::Semicol && n2.kind != token::LBRACK) { // declaration inside our type
-//             decl* d = parse_decl(toks);
-//             ret->dat.type_dat.other_decls.push(d);
-//             free(d);
-//         } else {
-//             decl::type_constr constr = parse_type_constructor(toks);
-//             ret->dat.type_dat.constrs.push(&constr);
-//         }
-//         n = toks->ith(0);
-//     }
-//     *toks = toks->tail();
-//     ret->dat.type_dat.constrs.reverse();
-//     ret->dat.type_dat.other_decls.reverse();
-//     if (!ret->dat.type_dat.constrs.len()) {
-//         decl::type_constr unit;
-//         unit.fields = old_clist::new_clist(sizeof(decl));
-//         unit.name = "_";
-//         ret->dat.type_dat.constrs.push(&unit);
-//     }
-//     return ret;
-// }
-
 // decl* parse_decl(toklist* toks) {
 //     token n = toks->ith(0);
 //     if (n.kind == token::Static) {
@@ -1035,8 +816,11 @@ ast parse_prog(toklist* toks) {
 //     }
 // }
 
-ast parse(toklist toks) {
+void parser_init() {
     included_files.init();
+}
+
+ast parse(toklist toks) {
     ast ret = parse_prog(&toks);
     // parse_aux(toks, &ret, &included_files);
     return ret;

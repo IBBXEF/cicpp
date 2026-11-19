@@ -18,6 +18,7 @@ int main(int argc, char const *argv[])
 
     // print_tokens(toks);
     
+    parser_init();
     ast a = parse(toks);
 
     if (argc >= 4 && !strcmp(argv[argc-2], "-o")) {
