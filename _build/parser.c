@@ -265,7 +265,7 @@ int string_list_find(string_list l, const char* str){
   }
   return -(1);
 }
-#include <climits>
+#include <limits.h>
 struct anyptr {
   void* ptr;
   void (*free_func)(void*);
