@@ -32,3 +32,11 @@ func bool try_match_regex(regex_match_state* state, const char* string) {
     }
     return -1;
 }
+
+// func void test_match() {
+//     int a = 0;
+//     match a : int with
+//     | 1 -> {}
+//     | 2 -> {}
+//     | _ -> {}
+// }
