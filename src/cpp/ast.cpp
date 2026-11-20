@@ -375,19 +375,16 @@ void decl::print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end =
                 t->print_to_file(fptr, 0);
             }
             fprintf(fptr, ")");
-            if (print_decl_end) {
-                fprintf(fptr, ";\n");
-            }
         } else {
             dat.var_dat.t->print_to_file(fptr, ident);
             fprintf(fptr, " %s", dat.var_dat.name);
-            if (dat.var_dat.v) {
-                fprintf(fptr, " = ");
-                dat.var_dat.v->print_to_file(fptr);
-            }
-            if (print_decl_end) {
-                fprintf(fptr, ";\n");
-            }
+        }
+        if (dat.var_dat.v) {
+            fprintf(fptr, " = ");
+            dat.var_dat.v->print_to_file(fptr);
+        }
+        if (print_decl_end) {
+            fprintf(fptr, ";\n");
         }
     } else if (kind == Func) {
         print_n_spaces(ident * ident_lvl, fptr);
