@@ -232,17 +232,14 @@ struct clist {
   };
   _clist* l;
   void push(dat_t dat){
-    _clist* n;
-    n = (_clist*)malloc(sizeof(_clist));
+    _clist* n = (_clist*)malloc(sizeof(_clist));
     (n)->dat = dat;
     (n)->next = l;
     l = n;
   }
   dat_t pop(){
-    dat_t ret;
-    ret = (l)->dat;
-    _clist* tmp;
-    tmp = (l)->next;
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
     free(l);
     l = tmp;
     return ret;
@@ -253,8 +250,7 @@ struct clist {
     }
   }
   int len(){
-    int ret;
-    ret = 0;
+    int ret = 0;
     _clist* t;
     t = l;
     while (t) {
@@ -264,10 +260,8 @@ struct clist {
     return ret;
   }
   dat_t* ith_ref(int ind){
-    _clist* t;
-    t = l;
-    int i;
-    i = ind;
+    _clist* t = l;
+    int i = ind;
     while ((i) > (0)) {
       if (!(t)) {
         printf("out of range in list: index %d while len is %d\n", ind, len());
@@ -280,8 +274,7 @@ struct clist {
       printf("out of range in list: index %d while len is %d\n", ind, len());
       exit(-(1));
     }
-    dat_t* ret;
-    ret = &((t)->dat);
+    dat_t* ret = &((t)->dat);
     return ret;
   }
   dat_t ith(int i){
@@ -298,8 +291,7 @@ struct clist {
   clist deepcopy(){
     clist ret;
     (ret).init();
-    int i;
-    i = 0;
+    int i = 0;
     while ((i) < (len())) {
       (ret).push(ith(((len()) - (i)) - (1)));
       i = (i) + (1);
@@ -315,8 +307,7 @@ struct clist {
     if ((l) == (nullptr)) {
       push(dat);
     } else {
-      clist tmp;
-      tmp = tail();
+      clist tmp = tail();
       (tmp).append(dat);
       (l)->next = (tmp).l;
     }
@@ -325,8 +316,7 @@ struct clist {
     if ((l) == (nullptr)) {
       l = (other).l;
     } else {
-      clist tmp;
-      tmp = tail();
+      clist tmp = tail();
       (tmp).fuse(other);
       (l)->next = (tmp).l;
     }
@@ -335,10 +325,8 @@ struct clist {
     if ((i) == (0)) {
       return pop();
     } else {
-      clist tmp;
-      tmp = tail();
-      dat_t ret;
-      ret = (tmp).remove((i) - (1));
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
       (l)->next = (tmp).l;
       return ret;
     }
@@ -358,17 +346,14 @@ struct clist {
   };
   _clist* l;
   void push(dat_t dat){
-    _clist* n;
-    n = (_clist*)malloc(sizeof(_clist));
+    _clist* n = (_clist*)malloc(sizeof(_clist));
     (n)->dat = dat;
     (n)->next = l;
     l = n;
   }
   dat_t pop(){
-    dat_t ret;
-    ret = (l)->dat;
-    _clist* tmp;
-    tmp = (l)->next;
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
     free(l);
     l = tmp;
     return ret;
@@ -379,8 +364,7 @@ struct clist {
     }
   }
   int len(){
-    int ret;
-    ret = 0;
+    int ret = 0;
     _clist* t;
     t = l;
     while (t) {
@@ -390,10 +374,8 @@ struct clist {
     return ret;
   }
   dat_t* ith_ref(int ind){
-    _clist* t;
-    t = l;
-    int i;
-    i = ind;
+    _clist* t = l;
+    int i = ind;
     while ((i) > (0)) {
       if (!(t)) {
         printf("out of range in list: index %d while len is %d\n", ind, len());
@@ -406,8 +388,7 @@ struct clist {
       printf("out of range in list: index %d while len is %d\n", ind, len());
       exit(-(1));
     }
-    dat_t* ret;
-    ret = &((t)->dat);
+    dat_t* ret = &((t)->dat);
     return ret;
   }
   dat_t ith(int i){
@@ -424,8 +405,7 @@ struct clist {
   clist deepcopy(){
     clist ret;
     (ret).init();
-    int i;
-    i = 0;
+    int i = 0;
     while ((i) < (len())) {
       (ret).push(ith(((len()) - (i)) - (1)));
       i = (i) + (1);
@@ -441,8 +421,7 @@ struct clist {
     if ((l) == (nullptr)) {
       push(dat);
     } else {
-      clist tmp;
-      tmp = tail();
+      clist tmp = tail();
       (tmp).append(dat);
       (l)->next = (tmp).l;
     }
@@ -451,8 +430,7 @@ struct clist {
     if ((l) == (nullptr)) {
       l = (other).l;
     } else {
-      clist tmp;
-      tmp = tail();
+      clist tmp = tail();
       (tmp).fuse(other);
       (l)->next = (tmp).l;
     }
@@ -461,10 +439,8 @@ struct clist {
     if ((i) == (0)) {
       return pop();
     } else {
-      clist tmp;
-      tmp = tail();
-      dat_t ret;
-      ret = (tmp).remove((i) - (1));
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
       (l)->next = (tmp).l;
       return ret;
     }
@@ -477,8 +453,7 @@ struct clist {
 #undef clist
 #include <string.h>
 int string_list_find(string_list l, const char* str){
-  int i;
-  i = 0;
+  int i = 0;
   while ((i) < ((l).len())) {
     if (!(strcmp((l).ith(i), str))) {
       return i;
@@ -496,17 +471,14 @@ struct clist {
   };
   _clist* l;
   void push(dat_t dat){
-    _clist* n;
-    n = (_clist*)malloc(sizeof(_clist));
+    _clist* n = (_clist*)malloc(sizeof(_clist));
     (n)->dat = dat;
     (n)->next = l;
     l = n;
   }
   dat_t pop(){
-    dat_t ret;
-    ret = (l)->dat;
-    _clist* tmp;
-    tmp = (l)->next;
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
     free(l);
     l = tmp;
     return ret;
@@ -517,8 +489,7 @@ struct clist {
     }
   }
   int len(){
-    int ret;
-    ret = 0;
+    int ret = 0;
     _clist* t;
     t = l;
     while (t) {
@@ -528,10 +499,8 @@ struct clist {
     return ret;
   }
   dat_t* ith_ref(int ind){
-    _clist* t;
-    t = l;
-    int i;
-    i = ind;
+    _clist* t = l;
+    int i = ind;
     while ((i) > (0)) {
       if (!(t)) {
         printf("out of range in list: index %d while len is %d\n", ind, len());
@@ -544,8 +513,7 @@ struct clist {
       printf("out of range in list: index %d while len is %d\n", ind, len());
       exit(-(1));
     }
-    dat_t* ret;
-    ret = &((t)->dat);
+    dat_t* ret = &((t)->dat);
     return ret;
   }
   dat_t ith(int i){
@@ -562,8 +530,7 @@ struct clist {
   clist deepcopy(){
     clist ret;
     (ret).init();
-    int i;
-    i = 0;
+    int i = 0;
     while ((i) < (len())) {
       (ret).push(ith(((len()) - (i)) - (1)));
       i = (i) + (1);
@@ -579,8 +546,7 @@ struct clist {
     if ((l) == (nullptr)) {
       push(dat);
     } else {
-      clist tmp;
-      tmp = tail();
+      clist tmp = tail();
       (tmp).append(dat);
       (l)->next = (tmp).l;
     }
@@ -589,8 +555,7 @@ struct clist {
     if ((l) == (nullptr)) {
       l = (other).l;
     } else {
-      clist tmp;
-      tmp = tail();
+      clist tmp = tail();
       (tmp).fuse(other);
       (l)->next = (tmp).l;
     }
@@ -599,10 +564,8 @@ struct clist {
     if ((i) == (0)) {
       return pop();
     } else {
-      clist tmp;
-      tmp = tail();
-      dat_t ret;
-      ret = (tmp).remove((i) - (1));
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
       (l)->next = (tmp).l;
       return ret;
     }

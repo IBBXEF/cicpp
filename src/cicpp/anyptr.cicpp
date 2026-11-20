@@ -30,8 +30,7 @@ type anyptr {
     }
 
     func anyptr get_copy() {
-        anyptr ret;
-        ret = *this;
+        anyptr ret = *this;
         if *n_refs < INT_MAX {
             *n_refs = *n_refs + 1;
         }

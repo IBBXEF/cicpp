@@ -12,8 +12,7 @@ type <set_dat_t> set {
         elts.del();
     }
     func bool contains(set_dat_t s) {
-        int i;
-        i = 0;
+        int i = 0;
         while i < elts.len() {
             if s.eq(elts.ith(i)) {
                 return true;
@@ -23,8 +22,7 @@ type <set_dat_t> set {
         return false;
     }
     func bool remove(set_dat_t s) {
-        int i;
-        i = 0;
+        int i = 0;
         while i < elts.len() {
             if s.eq(elts.ith(i)) {
                 elts.remove(i);
@@ -42,10 +40,8 @@ type <set_dat_t> set {
         return false;
     }
     func bool union_with(set other) {
-        bool ret;
-        ret = false;
-        int i;
-        i = 0;
+        bool ret = false;
+        int i = 0;
         while i < other.elts.len() {
             ret = add(other.elts.ith(i)) || ret;
             i = i + 1;
@@ -53,8 +49,7 @@ type <set_dat_t> set {
         return ret;
     }
     func bool test_intersect(set other) {
-        int i;
-        i = 0;
+        int i = 0;
         while i < elts.len() {
             if other.contains(elts.ith(i)) {
                 return true;
