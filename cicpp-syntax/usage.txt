@@ -1,0 +1,2 @@
+
+to use this vscode extension, simply copy it into the folder /.vscode/extensions (probably in your user folder)

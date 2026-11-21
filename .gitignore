@@ -2,7 +2,6 @@
 main
 test
 .vscode/**
-cicpp-syntax/**
 
 out.c
 

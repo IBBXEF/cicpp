@@ -1,0 +1,25 @@
+{
+  "name": "cicpp-syntax",
+  "displayName": "CI/CPP Syntax Highlighting",
+  "description": "Syntax highlighting for the CI/CPP programming language",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "cicpp",
+      "aliases": ["CICPP", "cicpp"],
+      "extensions": [".cicpp"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "cicpp",
+      "scopeName": "source.cicpp",
+      "path": "./syntaxes/cicpp.tmLanguage.json"
+    }]
+  }
+}
