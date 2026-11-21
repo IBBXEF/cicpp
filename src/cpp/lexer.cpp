@@ -58,7 +58,7 @@ void pop_token_stack(int* cou, toklist* l, char* str) {
     } else if (*str >= '0' && *str <= '9') {
         tok.kind = token::VInt;
         char* end;
-        tok.dat.VInt_dat.dat = strtol(str, &end, 10);
+        tok.dat.VInt_dat.i = strtol(str, &end, 10);
         if (end != str + *cou) {
             printf("invalid integer: %s\n", str);
             exit(-1);
@@ -127,7 +127,7 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
             }
             
             token tok {.kind=token::VInt}; // we lex chars as ints
-            tok.dat.VInt_dat.dat = last_buffer[0];
+            tok.dat.VInt_dat.i = last_buffer[0];
 
             ret->append(tok);
 
@@ -149,13 +149,13 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
             token tok {.kind=token::VInt}; // we lex chars as ints
 
             if (last_buffer[0] == 'n') {
-                tok.dat.VInt_dat.dat = '\n';
+                tok.dat.VInt_dat.i = '\n';
             } else if (last_buffer[0] == 't') {
-                tok.dat.VInt_dat.dat = '\t';
+                tok.dat.VInt_dat.i = '\t';
             } else if (last_buffer[0] == '0') {
-                tok.dat.VInt_dat.dat = '\0';
+                tok.dat.VInt_dat.i = '\0';
             } else {
-                tok.dat.VInt_dat.dat = last_buffer[0];
+                tok.dat.VInt_dat.i = last_buffer[0];
             }
 
             ret->append(tok);
@@ -401,7 +401,7 @@ void print_tokens(toklist toks) {
         if (tok.kind == token::Ident) {
             printf("    identifier: %s\n", tok.dat.Ident_dat.str);
         } else if (tok.kind == token::VInt) {
-            printf("    integer: %d\n", tok.dat.VInt_dat.dat);
+            printf("    integer: %d\n", tok.dat.VInt_dat.i);
         } else if (tok.kind == token::VString) {
             printf("    string: %s\n", tok.dat.VString_dat.str);
         }

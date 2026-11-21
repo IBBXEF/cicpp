@@ -99,7 +99,7 @@ anyptr gram_rule_addr(clist_anyptr l) {
 anyptr gram_rule_int(clist_anyptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
     ret->kind = expr::Int;
-    ret->dat.int_dat = ((token*)l.ith(0).ptr)->dat.VInt_dat.dat;
+    ret->dat.int_dat = ((token*)l.ith(0).ptr)->dat.VInt_dat.i;
     anyptr r;
     r.init_view(ret);
     return r;

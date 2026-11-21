@@ -82,7 +82,7 @@ struct token {
       unop op;
     } Unop_dat;
     struct {
-      int dat;
+      int i;
     } VInt_dat;
     struct {
       const char* str;
@@ -98,133 +98,153 @@ struct token {
     if ((kind) != ((b).kind)) {
       return false;
     }
-    if ((kind) == (Binop)) {
-      return ((((dat).Binop_dat).op).kind) == (((((b).dat).Binop_dat).op).kind);
-    } else
-    if ((kind) == (Unop)) {
-      return ((((dat).Unop_dat).op).kind) == (((((b).dat).Unop_dat).op).kind);
-    } else
-    if ((kind) == (VInt)) {
-      return (((dat).VInt_dat).dat) == ((((b).dat).VInt_dat).dat);
-    } else
-    if ((kind) == (VString)) {
+    auto _unique_0 = *(this);
+    switch (_unique_0.kind) {
+    case token::Binop : {
+      auto op = _unique_0.dat.Binop_dat.op;
+      return ((op).kind) == (((((b).dat).Binop_dat).op).kind);
+      break;}
+    case token::Unop : {
+      auto op = _unique_0.dat.Unop_dat.op;
+      return ((op).kind) == (((((b).dat).Unop_dat).op).kind);
+      break;}
+    case token::VInt : {
+      auto i = _unique_0.dat.VInt_dat.i;
+      return (i) == ((((b).dat).VInt_dat).i);
+      break;}
+    case token::VString : {
+      auto str = _unique_0.dat.VString_dat.str;
       return !(strcmp(((dat).VString_dat).str, (((b).dat).VString_dat).str));
-    } else
-    if ((kind) == (Ident)) {
+      break;}
+    case token::Ident : {
+      auto str = _unique_0.dat.Ident_dat.str;
       return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
+      break;}
+    default: {
+      return true;
+      break;}
     }
-    return true;
   }
   void print(){
-    if ((kind) == (LPAREN)) {
+    auto _unique_1 = *(this);
+    switch (_unique_1.kind) {
+    case token::LPAREN : {
       printf("(");
-    } else
-    if ((kind) == (RPAREN)) {
+      break;}
+    case token::RPAREN : {
       printf(")");
-    } else
-    if ((kind) == (LSQUAR)) {
+      break;}
+    case token::LSQUAR : {
       printf("[");
-    } else
-    if ((kind) == (RSQUAR)) {
+      break;}
+    case token::RSQUAR : {
       printf("]");
-    } else
-    if ((kind) == (LBRACK)) {
+      break;}
+    case token::LBRACK : {
       printf("{");
-    } else
-    if ((kind) == (RBRACK)) {
+      break;}
+    case token::RBRACK : {
       printf("}");
-    } else
-    if ((kind) == (TInt)) {
+      break;}
+    case token::TInt : {
       printf("int");
-    } else
-    if ((kind) == (TVoid)) {
+      break;}
+    case token::TVoid : {
       printf("void");
-    } else
-    if ((kind) == (TChar)) {
+      break;}
+    case token::TChar : {
       printf("char");
-    } else
-    if ((kind) == (TBool)) {
+      break;}
+    case token::TBool : {
       printf("bool");
-    } else
-    if ((kind) == (Const)) {
+      break;}
+    case token::Const : {
       printf("const");
-    } else
-    if ((kind) == (Static)) {
+      break;}
+    case token::Static : {
       printf("static");
-    } else
-    if ((kind) == (Func)) {
+      break;}
+    case token::Func : {
       printf("func");
-    } else
-    if ((kind) == (As)) {
+      break;}
+    case token::As : {
       printf("as");
-    } else
-    if ((kind) == (Specialize)) {
+      break;}
+    case token::Specialize : {
       printf("specialize");
-    } else
-    if ((kind) == (Type)) {
+      break;}
+    case token::Type : {
       printf("type");
-    } else
-    if ((kind) == (While)) {
+      break;}
+    case token::While : {
       printf("while");
-    } else
-    if ((kind) == (If)) {
+      break;}
+    case token::If : {
       printf("if");
-    } else
-    if ((kind) == (Else)) {
+      break;}
+    case token::Else : {
       printf("else");
-    } else
-    if ((kind) == (Elif)) {
+      break;}
+    case token::Elif : {
       printf("elif");
-    } else
-    if ((kind) == (Match)) {
+      break;}
+    case token::Match : {
       printf("match");
-    } else
-    if ((kind) == (With)) {
+      break;}
+    case token::With : {
       printf("match");
-    } else
-    if ((kind) == (Return)) {
+      break;}
+    case token::Return : {
       printf("return");
-    } else
-    if ((kind) == (Hashtag)) {
+      break;}
+    case token::Hashtag : {
       printf("#");
-    } else
-    if ((kind) == (Set)) {
+      break;}
+    case token::Set : {
       printf("=");
-    } else
-    if ((kind) == (Dot)) {
+      break;}
+    case token::Dot : {
       printf(".");
-    } else
-    if ((kind) == (Arrow)) {
+      break;}
+    case token::Arrow : {
       printf("->");
-    } else
-    if ((kind) == (Implies)) {
+      break;}
+    case token::Implies : {
       printf("=>");
-    } else
-    if ((kind) == (Comma)) {
+      break;}
+    case token::Comma : {
       printf(",");
-    } else
-    if ((kind) == (Semicol)) {
+      break;}
+    case token::Semicol : {
       printf(";");
-    } else
-    if ((kind) == (Ident)) {
-      printf("%s", ((dat).Ident_dat).str);
-    } else
-    if ((kind) == (VInt)) {
-      printf("%d", ((dat).VInt_dat).dat);
-    } else
-    if ((kind) == (VString)) {
-      printf("\"%s\"", ((dat).VString_dat).str);
-    } else
-    if ((kind) == (Binop)) {
-      (((dat).Binop_dat).op).print();
-    } else
-    if ((kind) == (Unop)) {
-      (((dat).Unop_dat).op).print();
-    } else
-    if ((kind) == (Typeof)) {
+      break;}
+    case token::Ident : {
+      auto str = _unique_1.dat.Ident_dat.str;
+      printf("%s", str);
+      break;}
+    case token::VInt : {
+      auto i = _unique_1.dat.VInt_dat.i;
+      printf("%d", i);
+      break;}
+    case token::VString : {
+      auto str = _unique_1.dat.VString_dat.str;
+      printf("\"%s\"", str);
+      break;}
+    case token::Binop : {
+      auto op = _unique_1.dat.Binop_dat.op;
+      (op).print();
+      break;}
+    case token::Unop : {
+      auto op = _unique_1.dat.Unop_dat.op;
+      (op).print();
+      break;}
+    case token::Typeof : {
       printf("typeof");
-    } else
-    printf("kind:%d", (int)kind);
+      break;}
+    default: {
+      printf("kind:%d", (int)kind);
+      break;}
+    }
   }
 };
 #include <stdlib.h>

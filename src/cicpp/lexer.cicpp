@@ -110,7 +110,7 @@ type token {
     Arrow;
     Implies;
 
-    VInt {int dat;};
+    VInt {int i;};
     VString {const char* str;};
 
     Ident {const char* str;};
@@ -126,96 +126,54 @@ type token {
         if kind != b.kind {
             return false;
         }
-        if kind == Binop {
-            return dat.Binop_dat.op.kind == b.dat.Binop_dat.op.kind;
-        } elif kind == Unop {
-            return dat.Unop_dat.op.kind == b.dat.Unop_dat.op.kind;
-        } elif kind == VInt {
-            return dat.VInt_dat.dat == b.dat.VInt_dat.dat;
-        } elif kind == VString {
-            return !strcmp(dat.VString_dat.str, b.dat.VString_dat.str);
-        } elif kind == Ident {
-            return !strcmp(dat.Ident_dat.str, b.dat.Ident_dat.str);
-        }
-        return true;
+        match *this : token with
+        | Binop (op)    -> { return op.kind == b.dat.Binop_dat.op.kind; }
+        | Unop (op)     -> { return op.kind == b.dat.Unop_dat.op.kind; }
+        | VInt (i)      -> { return i == b.dat.VInt_dat.i; }
+        | VString (str) -> { return !strcmp(dat.VString_dat.str, b.dat.VString_dat.str); }
+        | Ident (str)   -> { return !strcmp(dat.Ident_dat.str, b.dat.Ident_dat.str); }
+        | _             -> { return true; }
     }
 
     func void print() {
-        if kind == LPAREN {
-            printf("(");
-        } elif kind == RPAREN {
-            printf(")");
-        } elif kind == LSQUAR {
-            printf("[");
-        } elif kind == RSQUAR {
-            printf("]");
-        } elif kind == LBRACK {
-            printf("{");
-        } elif kind == RBRACK {
-            printf("}");
-        } elif kind == TInt {
-            printf("int");
-        } elif kind == TVoid {
-            printf("void");
-        } elif kind == TChar {
-            printf("char");
-        } elif kind == TBool {
-            printf("bool");
-        } elif kind == Const {
-            printf("const");
-        } elif kind == Static {
-            printf("static");
-        } elif kind == Func {
-            printf("func");
-        } elif kind == As {
-            printf("as");
-        } elif kind == Specialize {
-            printf("specialize");
-        } elif kind == Type {
-            printf("type");
-        } elif kind == While {
-            printf("while");
-        } elif kind == If {
-            printf("if");
-        } elif kind == Else {
-            printf("else");
-        } elif kind == Elif {
-            printf("elif");
-        } elif kind == Match {
-            printf("match");
-        } elif kind == With {
-            printf("match");
-        } elif kind == Return {
-            printf("return");
-        } elif kind == Hashtag {
-            printf("#");
-        } elif kind == Set {
-            printf("=");
-        } elif kind == Dot {
-            printf(".");
-        } elif kind == Arrow {
-            printf("->");
-        } elif kind == Implies {
-            printf("=>");
-        } elif kind == Comma {
-            printf(",");
-        } elif kind == Semicol {
-            printf(";");
-        } elif kind == Ident {
-            printf("%s", dat.Ident_dat.str);
-        } elif kind == VInt {
-            printf("%d", dat.VInt_dat.dat);
-        } elif kind == VString {
-            printf("\"%s\"", dat.VString_dat.str);
-        } elif kind == Binop {
-            dat.Binop_dat.op.print();
-        } elif kind == Unop {
-            dat.Unop_dat.op.print();
-        } elif kind == Typeof {
-            printf("typeof");
-        } else {
-            printf("kind:%d", kind as int);
-        }
+        match *this : token with
+        | LPAREN       -> { printf("("); }
+        | RPAREN       -> { printf(")"); }
+        | LSQUAR       -> { printf("["); }
+        | RSQUAR       -> { printf("]"); }
+        | LBRACK       -> { printf("{"); }
+        | RBRACK       -> { printf("}"); }
+        | TInt         -> { printf("int"); }
+        | TVoid        -> { printf("void"); }
+        | TChar        -> { printf("char"); }
+        | TBool        -> { printf("bool"); }
+        | Const        -> { printf("const"); }
+        | Static       -> { printf("static"); }
+        | Func         -> { printf("func"); }
+        | As           -> { printf("as"); }
+        | Specialize   -> { printf("specialize"); }
+        | Type         -> { printf("type"); }
+        | While        -> { printf("while"); }
+        | If           -> { printf("if"); }
+        | Else         -> { printf("else"); }
+        | Elif         -> { printf("elif"); }
+        | Match        -> { printf("match"); }
+        | With         -> { printf("match"); }
+        | Return       -> { printf("return"); }
+        | Hashtag      -> { printf("#"); }
+        | Set          -> { printf("="); }
+        | Dot          -> { printf("."); }
+        | Arrow        -> { printf("->"); }
+        | Implies      -> { printf("=>"); }
+        | Comma        -> { printf(","); }
+        | Semicol      -> { printf(";"); }
+        | Ident(str)   -> { printf("%s", str); }
+        | VInt(i)      -> { printf("%d", i); }
+        | VString(str) -> { printf("\"%s\"", str); }
+        | Binop(op)    -> { op.print(); }
+        | Unop(op)     -> { op.print(); }
+        | Typeof       -> { printf("typeof"); }
+        | _            -> { printf("kind:%d", kind as int); }
     }
 }
 
