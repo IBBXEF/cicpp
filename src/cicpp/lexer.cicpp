@@ -75,6 +75,8 @@ type token {
     Else;
     Return;
     While;
+    Match;
+    With;
     
     Const;
     Typeof;
@@ -179,6 +181,10 @@ type token {
             printf("else");
         } elif kind == Elif {
             printf("elif");
+        } elif kind == Match {
+            printf("match");
+        } elif kind == With {
+            printf("match");
         } elif kind == Return {
             printf("return");
         } elif kind == Hashtag {

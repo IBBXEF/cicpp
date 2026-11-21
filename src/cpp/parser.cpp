@@ -356,6 +356,43 @@ anyptr gram_rule_instr_elif(clist_anyptr l) {
     r.init_view(ret);
     return r;
 }
+anyptr gram_rule_instr_match(clist_anyptr l) {
+    instr* ret = (instr*)malloc(sizeof(instr));
+    ret->kind = instr::Match;
+    ret->dat.match_dat.e = (expr*)l.ith(1).ptr;
+    ret->dat.match_dat.t = (typ*)l.ith(3).ptr;
+    ret->dat.match_dat.branches = *(clist_voidptr*)l.ith(5).ptr;
+    free(l.ith(5).ptr);
+    free(l.ith(5).n_refs);
+
+    anyptr r;
+    r.init_view(ret);
+    return r;
+}
+anyptr gram_rule_instr_match_tl(clist_anyptr l) {
+    instr::match_branch* brch = (instr::match_branch*)malloc(sizeof(instr::match_branch));
+    brch->fields.init();
+    brch->matched_symb = ((token*)l.ith(1).ptr)->dat.Ident_dat.str;
+    brch->instrs = *(clist_voidptr*)l.ith(4).ptr;
+    free(l.ith(4).ptr);
+    free(l.ith(4).n_refs);
+
+    ((clist_voidptr*)l.ith(6).ptr)->push(brch);
+    return l.ith(6);
+}
+anyptr gram_rule_instr_match_tl2(clist_anyptr l) {
+    instr::match_branch* brch = (instr::match_branch*)malloc(sizeof(instr::match_branch));
+    brch->matched_symb = ((token*)l.ith(1).ptr)->dat.Ident_dat.str;
+    brch->fields = *(string_list*)l.ith(3).ptr;
+    free(l.ith(3).ptr);
+    free(l.ith(3).n_refs);
+    brch->instrs = *(clist_voidptr*)l.ith(7).ptr;
+    free(l.ith(7).ptr);
+    free(l.ith(7).n_refs);
+
+    ((clist_voidptr*)l.ith(9).ptr)->push(brch);
+    return l.ith(9);
+}
 anyptr gram_rule_vardecl(clist_anyptr l) {
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Var;
@@ -612,6 +649,15 @@ gram_rule_t::gram_rules make_rules() {
                                                         $If_Tail", gram_rule_instr_elif   , &nonterm_symbs) );
     ret.append( make_rule("$If_Tail    -> else { $InstrList }"   , gram_rule_elt_n2       , &nonterm_symbs) );
 
+    ret.append( make_rule("$Instr      -> match $Expr : $Type with \
+                                                    $Match_Tail" , gram_rule_instr_match   , &nonterm_symbs) );
+
+    ret.append( make_rule("$Match_Tail -> | @ident -> \
+                                   { $InstrList } $Match_Tail"   , gram_rule_instr_match_tl, &nonterm_symbs) );
+    ret.append( make_rule("$Match_Tail -> | @ident ( $IdtList ) -> \
+                                   { $InstrList } $Match_Tail"   ,gram_rule_instr_match_tl2, &nonterm_symbs) );
+    ret.append( make_rule("$Match_Tail ->"                       , gram_rule_list_empty    , &nonterm_symbs) );
+    
 
     ret.append( make_rule("$InstrList  ->"                       , gram_rule_list_empty    , &nonterm_symbs) );
     ret.append( make_rule("$InstrList  -> $Instr $InstrList"     , gram_rule_list_push_1st , &nonterm_symbs) );
@@ -625,7 +671,7 @@ gram_rule_t::gram_rules make_rules() {
                                    ( $FargDecl ) { $InstrList }" , gram_rule_funcdecl      , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> func $Type @ident \
                                    ( $FargDecl ) ;"              , gram_rule_funcprot      , &nonterm_symbs) );    
-    ret.append( make_rule("$Decl       -> type < $Targdcl > \
+    ret.append( make_rule("$Decl       -> type < $IdtList > \
                                            @ident { $LocDecls }" , gram_rule_type_templ    , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> type @ident { $LocDecls }", gram_rule_type       , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> specialize @ident \
@@ -641,9 +687,9 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$DeclList   ->"                       , gram_rule_list_empty    , &nonterm_symbs) );    
     ret.append( make_rule("$DeclList   -> $Decl $DeclList"       , gram_rule_list_push_1st , &nonterm_symbs) );    
 
-    ret.append( make_rule("$Targdcl    -> @ident , $Targdcl"     , gram_rule_strlist_push  , &nonterm_symbs) );
-    ret.append( make_rule("$Targdcl    -> @ident"                , gram_rule_strlist_base  , &nonterm_symbs) );
-    ret.append( make_rule("$Targdcl    ->"                       , gram_rule_list_empty    , &nonterm_symbs) ); // the function is technically incorrect, but clist_voidptr and string_list are basically identical so it works.
+    ret.append( make_rule("$IdtList    -> @ident , $IdtList"     , gram_rule_strlist_push  , &nonterm_symbs) );
+    ret.append( make_rule("$IdtList    -> @ident"                , gram_rule_strlist_base  , &nonterm_symbs) );
+    ret.append( make_rule("$IdtList    ->"                       , gram_rule_list_empty    , &nonterm_symbs) ); // the function is technically incorrect, but clist_voidptr and string_list are basically identical so it works.
 
     ret.append( make_rule("$TargList   -> $Type , $TargList"     , gram_rule_list_push_2nd , &nonterm_symbs) );
     ret.append( make_rule("$TargList   -> $Type"                 , gram_rule_list_base     , &nonterm_symbs) );

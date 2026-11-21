@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "utils.cpp"
 #include "parser.c"
 
@@ -13,58 +14,7 @@ void print_n_spaces(int n, FILE* fptr) {
     }
 }
 
-
-
-struct rval;
 struct typ;
-
-struct lval
-{
-    enum {
-        Var,
-        Index,
-        Field
-    } kind;
-
-    union
-    {
-        const char* var_dat;
-        struct { rval* arr; rval* ind; } ind_dat;
-        struct { lval* stru; const char* field; } field_dat;
-    } dat;
-
-    void print_to_file(FILE* fptr);
-};
-
-
-struct rval
-{
-    enum {
-        Lval,
-        Int,
-        Field,
-        String,
-        Binop,
-        Unop,
-        Fcall,
-        Typecast,
-        Addr
-    } kind;
-
-    union {
-        lval* lval_dat;
-        int int_dat;
-        const char* string_dat;
-        struct { rval* stru; const char* field; } field_dat;
-        struct { rval* v1; binop op; rval* v2; } binop_dat;
-        struct { unop op; rval* v; } unop_dat;
-        struct { rval* func; clist_voidptr* args; } fcall_dat;
-        struct { typ* t; rval* v; } typecast_dat;
-        struct { lval* v; } addr_dat;
-    } dat;
-
-    void print_to_file(FILE* fptr);
-};
 
 
 struct expr
@@ -244,16 +194,30 @@ struct ast
     void print_to_file(FILE* fptr);
 };
 
+int unique_name_count = 0;
+const char* new_unique_name() {
+    char* ret = (char*)malloc(sizeof(char)*(9+log10(unique_name_count+1)+1));
+    sprintf(ret, "_unique_%d", unique_name_count++);
+    return ret;
+}
 
 struct instr
 {
-    enum { Set, Return, If, While, Decl, Fcall } kind;
+    struct match_branch
+    {
+        const char* matched_symb;
+        clist_voidptr instrs;
+        string_list fields;
+    };
+
+    enum { Set, Return, If, While, Match, Decl, Fcall } kind;
 
     union {
         struct { expr* l; expr* r; }                      set_dat;
         struct { expr* v; }                               ret_dat;
         struct { expr* b; clist_voidptr truebrc; clist_voidptr falsebrc; } if_dat;
         struct { expr* b; clist_voidptr instrs; }               while_dat;
+        struct { expr* e; clist_voidptr branches; typ* t; }     match_dat;
         struct { decl* d; }                              decl_dat;
         struct { expr* call; }                          fcall_dat;
     } dat;
@@ -312,6 +276,51 @@ struct instr
             for (int i = 0; i < dat.while_dat.instrs.len(); i++) {
                 instr* ist = (instr*)dat.while_dat.instrs.ith(i);
                 ist->print_to_file(fptr, ident+1, prog);
+            }
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "}\n");
+        } else if (kind == Match) {
+            const char* matched_name = new_unique_name();
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "auto %s = ", matched_name);
+            dat.match_dat.e->print_to_file(fptr);
+            fprintf(fptr, ";\n");
+            print_n_spaces(ident * ident_lvl, fptr);
+            fprintf(fptr, "switch (%s.kind) {\n", matched_name);
+            bool has_default_branch = false;
+            for (int j = 0; j < dat.match_dat.branches.len(); j++)
+            {
+                match_branch b = *(match_branch*)dat.match_dat.branches.ith(j);
+                print_n_spaces(ident * ident_lvl, fptr);
+                if (!strcmp(b.matched_symb, "_")) {
+                    has_default_branch = true;
+                    fprintf(fptr, "default: {\n");
+                } else {
+                    fprintf(fptr, "case ");
+                    dat.match_dat.t->print_to_file(fptr, 0);
+                    fprintf(fptr, "::%s : {\n", b.matched_symb);
+                }
+
+                for (int j = 0; j < b.fields.len(); j++) {
+                    print_n_spaces(ident * (ident_lvl+1), fptr);
+                    fprintf(fptr, "auto %s = %s.dat.%s_dat.%s;\n",
+                        b.fields.ith(j), matched_name, b.matched_symb, b.fields.ith(j));
+                }
+                    
+                for (int i = 0; i < b.instrs.len(); i++) {
+                    instr* ist = (instr*)b.instrs.ith(i);
+                    ist->print_to_file(fptr, ident+1, prog);
+                }
+                print_n_spaces(ident * (ident_lvl+1), fptr);
+                fprintf(fptr, "break;}\n");
+            }
+            if (!has_default_branch) {
+                print_n_spaces(ident * ident_lvl, fptr);
+                fprintf(fptr, "default:\n");
+                print_n_spaces(ident * (ident_lvl+1), fptr);
+                fprintf(fptr, "printf(\"error: no valid match branch at line %%d of file %%s\", __LINE__, __FILE__);\n");
+                print_n_spaces(ident * (ident_lvl+1), fptr);
+                fprintf(fptr, "exit(EXIT_FAILURE);\n");
             }
             print_n_spaces(ident * ident_lvl, fptr);
             fprintf(fptr, "}\n");

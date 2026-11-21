@@ -31,6 +31,10 @@ void pop_token_stack(int* cou, toklist* l, char* str) {
         tok.kind = token::Return;
     } else if (!strncmp("while", str, *cou) && *cou == 5) {
         tok.kind = token::While;
+    } else if (!strncmp("match", str, *cou) && *cou == 5) {
+        tok.kind = token::Match;
+    } else if (!strncmp("with", str, *cou) && *cou == 4) {
+        tok.kind = token::With;
     } else if (!strncmp("type", str, *cou) && *cou == 4) {
         tok.kind = token::Type;
     } else if (!strncmp("func", str, *cou) && *cou == 4) {

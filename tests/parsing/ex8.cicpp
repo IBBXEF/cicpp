@@ -33,10 +33,14 @@ func bool try_match_regex(regex_match_state* state, const char* string) {
     return -1;
 }
 
-// func void test_match() {
-//     int a = 0;
-//     match a : int with
-//     | 1 -> {}
-//     | 2 -> {}
-//     | _ -> {}
-// }
+func void test_match() {
+    int a = 0;
+    match a : int with
+    | a1 -> {}
+    | a2 -> {}
+    | a (va, vb) -> {}
+    // | b (v1=va) -> {}
+    | _ -> {}
+    match b : int with
+    int no_match_branch_lol;
+}

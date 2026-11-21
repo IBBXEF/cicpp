@@ -40,7 +40,7 @@
       "patterns": [
         {
           "name": "keyword.control.cicpp",
-          "match": "\\b(if|elif|else|while|return)\\b"
+          "match": "\\b(if|elif|else|while|return|match|with)\\b"
         },
         {
           "name": "keyword.other.cicpp",
