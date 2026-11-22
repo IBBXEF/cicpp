@@ -7,29 +7,29 @@ type anyptr {
     void* => void free_func;
     int* n_refs;
 
-    static func void do_nothing(void* p) { p = p; }
+    static fun void do_nothing(void* p) { p = p; }
 
-    func void init(void* _ptr, void* => void _free_func) {
+    fun void init(void* _ptr, void* => void _free_func) {
         ptr = _ptr;
         free_func = _free_func;
         n_refs = malloc(4) as int*; // 4 = sizeof(int)
         *n_refs = 1;
     }
 
-    func void init_view(void* _ptr) {
+    fun void init_view(void* _ptr) {
         ptr = _ptr;
         free_func = do_nothing;
         n_refs = malloc(4) as int*; // 4 = sizeof(int)
         *n_refs = INT_MAX;
     }
 
-    func anyptr get_view() {
+    fun anyptr get_view() {
         anyptr ret;
         ret.init_view(ptr);
         return ret;
     }
 
-    func anyptr get_copy() {
+    fun anyptr get_copy() {
         anyptr ret = *this;
         if *n_refs < INT_MAX {
             *n_refs = *n_refs + 1;
@@ -37,15 +37,15 @@ type anyptr {
         return ret;
     }
 
-    func void init_null() {
+    fun void init_null() {
         init_view(nullptr);
     }
 
-    func void* get() {
+    fun void* get() {
         return ptr;
     }
 
-    func void del() {
+    fun void del() {
         *n_refs = *n_refs - 1;
         if !(*n_refs) {
             free_func(ptr);
@@ -60,7 +60,7 @@ type anyptr {
 
 specialize clist<anyptr> as clist_anyptr
 
-func void clist_anyptr_free(clist_anyptr l) {
+fun void clist_anyptr_free(clist_anyptr l) {
     while l.len() {
         l.pop().del();
     }

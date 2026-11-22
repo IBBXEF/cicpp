@@ -533,9 +533,9 @@ gram_rule_t::gram_rules make_rules() {
     ret.append( make_rule("$VarDecl    -> $Type @ident = $Expr"  , gram_rule_vardecl_vlue  , &nonterm_symbs) );    
 
     ret.append( make_rule("$Decl       -> $VarDecl ;"            , gram_rule_elt_n0        , &nonterm_symbs) );    
-    ret.append( make_rule("$Decl       -> func $Type @ident \
+    ret.append( make_rule("$Decl       -> fun $Type @ident \
                                    ( $FargDecl ) { $InstrList }" , gram_rule_funcdecl      , &nonterm_symbs) );    
-    ret.append( make_rule("$Decl       -> func $Type @ident \
+    ret.append( make_rule("$Decl       -> fun $Type @ident \
                                    ( $FargDecl ) ;"              , gram_rule_funcprot      , &nonterm_symbs) );    
     ret.append( make_rule("$Decl       -> type < $IdtList > \
                                            @ident { $LocDecls }" , gram_rule_type_templ    , &nonterm_symbs) );    

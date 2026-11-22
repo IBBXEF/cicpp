@@ -1,22 +1,22 @@
 
 int a;
 
-func void empty() {}
+fun void empty() {}
 
 int b;
 
-func void one_arg(int arg) {}
+fun void one_arg(int arg) {}
 
 int c;
 
-func void one() {
+fun void one() {
     a = 0;
     return;
 }
 
 int d;
 
-func void*** buffet(int a, char* b, void*** ppptr) {
+fun void*** buffet(int a, char* b, void*** ppptr) {
     d = a;
     a = c;
     ppptr = b;

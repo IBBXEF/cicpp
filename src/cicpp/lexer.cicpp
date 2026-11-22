@@ -7,7 +7,7 @@
 type binop {
     Add; Mul; Sub; Div; Band; Bor; Land; Lor; Eq; Leq; Lt; Neq; Geq; Gt;
 
-    func void fprint(FILE* fptr) {
+    fun void fprint(FILE* fptr) {
         if (kind == Eq) {
             fprintf(fptr, "==");
         } elif (kind == Neq) {
@@ -38,7 +38,7 @@ type binop {
             fprintf(fptr, "+");
         }
     }
-    func void print() {
+    fun void print() {
         fprint(stdout);
     }
 }
@@ -48,7 +48,7 @@ type unop {
     Neg;
     Addr;
     Deref;
-    func void fprint(FILE* fptr) {
+    fun void fprint(FILE* fptr) {
         if (kind == Lnot) {
             fprintf(fptr, "!");
         } elif (kind == Neg) {
@@ -59,7 +59,7 @@ type unop {
             fprintf(fptr, "*");
         }
     }
-    func void print() {
+    fun void print() {
         fprint(stdout);
     }
 }
@@ -83,7 +83,7 @@ type token {
     As;
 
     Type;
-    Func;
+    Fun;
     Static;
     Specialize;
 
@@ -117,12 +117,12 @@ type token {
 
     EndOfInput;
 
-    func void init_EOI() {
+    fun void init_EOI() {
         kind = EndOfInput;
     }
 
 
-    func bool eq(token b) {
+    fun bool eq(token b) {
         if kind != b.kind {
             return false;
         }
@@ -135,7 +135,7 @@ type token {
         | _             -> { return true; }
     }
 
-    func void print() {
+    fun void print() {
         match *this : token with
         | LPAREN       -> { printf("("); }
         | RPAREN       -> { printf(")"); }
@@ -149,7 +149,7 @@ type token {
         | TBool        -> { printf("bool"); }
         | Const        -> { printf("const"); }
         | Static       -> { printf("static"); }
-        | Func         -> { printf("func"); }
+        | Fun          -> { printf("fun"); }
         | As           -> { printf("as"); }
         | Specialize   -> { printf("specialize"); }
         | Type         -> { printf("type"); }
@@ -181,4 +181,4 @@ type token {
 
 specialize clist<token> as toklist
 
-func toklist lex_string(const char* str);
+fun toklist lex_string(const char* str);

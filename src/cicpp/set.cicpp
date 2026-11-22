@@ -5,13 +5,13 @@ type <set_dat_t> set {
     specialize clist<set_dat_t> as datlist
     datlist elts;
 
-    func void init() {
+    fun void init() {
         elts.init();
     }
-    func void del() {
+    fun void del() {
         elts.del();
     }
-    func bool contains(set_dat_t s) {
+    fun bool contains(set_dat_t s) {
         int i = 0;
         while i < elts.len() {
             if s.eq(elts.ith(i)) {
@@ -21,7 +21,7 @@ type <set_dat_t> set {
         }
         return false;
     }
-    func bool remove(set_dat_t s) {
+    fun bool remove(set_dat_t s) {
         int i = 0;
         while i < elts.len() {
             if s.eq(elts.ith(i)) {
@@ -32,14 +32,14 @@ type <set_dat_t> set {
         }
         return false;
     }
-    func bool add(set_dat_t s) {
+    fun bool add(set_dat_t s) {
         if !contains(s) {
             elts.push(s);
             return true;
         }
         return false;
     }
-    func bool union_with(set other) {
+    fun bool union_with(set other) {
         bool ret = false;
         int i = 0;
         while i < other.elts.len() {
@@ -48,7 +48,7 @@ type <set_dat_t> set {
         }
         return ret;
     }
-    func bool test_intersect(set other) {
+    fun bool test_intersect(set other) {
         int i = 0;
         while i < elts.len() {
             if other.contains(elts.ith(i)) {
@@ -62,13 +62,13 @@ type <set_dat_t> set {
 
 type <dat_t> comparable_ptr {
     dat_t* ptr;
-    func void init_null() {
+    fun void init_null() {
         ptr = nullptr;
     }
-    func void init_ptr(dat_t* p) {
+    fun void init_ptr(dat_t* p) {
         ptr = p;
     }
-    func bool eq(comparable_ptr p2) {
+    fun bool eq(comparable_ptr p2) {
         if !ptr || !p2.ptr {
             return ptr == p2.ptr;
         }

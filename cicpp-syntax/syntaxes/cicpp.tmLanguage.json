@@ -44,7 +44,7 @@
         },
         {
           "name": "keyword.other.cicpp",
-          "match": "\\b(type|func|specialize|as|const|static|typeof)\\b"
+          "match": "\\b(type|fun|specialize|as|const|static|typeof)\\b"
         }
       ]
     },

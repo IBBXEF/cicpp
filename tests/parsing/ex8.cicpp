@@ -6,7 +6,7 @@ type regex_match_state {
     clist pos_pos; // possible positions
 }
 
-func bool try_match_regex(regex_match_state* state, const char* string) {
+fun bool try_match_regex(regex_match_state* state, const char* string) {
     clist newlist;
     // newlist = clist::new_clist(sizeof(int));
     int i;
@@ -33,7 +33,7 @@ func bool try_match_regex(regex_match_state* state, const char* string) {
     return -1;
 }
 
-func void test_match() {
+fun void test_match() {
     int a = 0;
     match a : int with
     | a1 -> {}
