@@ -29,7 +29,8 @@ struct expr
         Unop,
         Fcall,
         Typecast,
-        Index
+        Index,
+        Constr
     } kind;
 
     union {
@@ -43,6 +44,7 @@ struct expr
         struct { expr* func; clist_voidptr* args; } fcall_dat;
         struct { typ* t; expr* v; } typecast_dat;
         struct { expr* arr; expr* ind; } ind_dat;
+        struct { typ* t; const char* constr; string_list args; } constr_dat;
     } dat;
 
     void print_to_file(FILE* fptr);
@@ -153,6 +155,23 @@ void expr::print_to_file(FILE* fptr) {
             ((expr*)dat.fcall_dat.args->ith(i))->print_to_file(fptr);
         }
         fprintf(fptr, ")");
+    } else if (kind == Constr) {
+        fprintf(fptr, "(");
+        dat.constr_dat.t->print_to_file(fptr, 0);
+        fprintf(fptr, "){.kind=");
+        dat.constr_dat.t->print_to_file(fptr, 0);
+        fprintf(fptr, "::%s", dat.constr_dat.constr);
+        if (dat.constr_dat.args.len()) {
+            fprintf(fptr, ", .dat={.%s_dat={", dat.constr_dat.constr);
+            for (int i = 0; i < dat.constr_dat.args.len(); i++) {
+                if (i) {
+                    fprintf(fptr, ", ");
+                }
+                fprintf(fptr, ".%s=%s", dat.constr_dat.args.ith(i), dat.constr_dat.args.ith(i));
+            }
+            fprintf(fptr, "}}");
+        }
+        fprintf(fptr, "}");
     } else {
         printf("invalid expression kind : %d\n", kind);
         exit(EXIT_FAILURE);

@@ -43,5 +43,8 @@ fun void test_match() {
     | _ -> {}
     match b : int with
     int no_match_branch_lol;
-    // int => int f = fun a => a + 3;
+    // int => int f = fun (int a) => {return a + 3;} : int;
+    int f = {int Constr1 : a};
+    int f = {int Constr0 :};
+    int f = {int Constr0b};
 }

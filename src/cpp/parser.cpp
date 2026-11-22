@@ -148,6 +148,30 @@ void* gram_rule_typecast(clist_voidptr l) {
     ret->dat.typecast_dat.t = (typ*)l.ith(2);
     return ret;
 }
+void* gram_rule_lambda(clist_voidptr l) {
+    // expr* ret = (expr*)malloc(sizeof(expr));
+    // ret->kind = expr::Typecast;
+    // ret->dat.typecast_dat.v = (expr*)l.ith(0);
+    // ret->dat.typecast_dat.t = (typ*)l.ith(2);
+    return nullptr;
+}
+void* gram_rule_constr0(clist_voidptr l) {
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Constr;
+    ret->dat.constr_dat.t = (typ*)l.ith(1);
+    ret->dat.constr_dat.constr = ((token*)l.ith(2))->dat.Ident_dat.str;
+    ret->dat.constr_dat.args.init();
+    return ret;
+}
+void* gram_rule_constr(clist_voidptr l) {
+    expr* ret = (expr*)malloc(sizeof(expr));
+    ret->kind = expr::Constr;
+    ret->dat.constr_dat.t = (typ*)l.ith(1);
+    ret->dat.constr_dat.constr = ((token*)l.ith(2))->dat.Ident_dat.str;
+    ret->dat.constr_dat.args = *(string_list*)l.ith(4);
+    free(l.ith(4));
+    return ret;
+}
 void* gram_rule_typ_base(clist_voidptr l) {
     typ* ret = (typ*)malloc(sizeof(typ));
     token n = *(token*)l.ith(0);
@@ -478,6 +502,10 @@ gram_rule_t::gram_rules make_rules() {
 
     ret.append( make_rule("$Expr       -> $ExprLop"              , gram_rule_elt_n0        , &nonterm_symbs) );
     ret.append( make_rule("$Expr       -> $Expr as $Type"        , gram_rule_typecast      , &nonterm_symbs) );
+    ret.append( make_rule("$Expr       -> fun ( $FargDecl ) => \
+                                  { $InstrList } : $Type"        , gram_rule_lambda        , &nonterm_symbs) );
+    ret.append( make_rule("$Expr       -> { $Type @ident : $IdtList }", gram_rule_constr   , &nonterm_symbs) );
+    ret.append( make_rule("$Expr       -> { $Type @ident }"      , gram_rule_constr0       , &nonterm_symbs) );
 
     ret.append( make_rule("$Arglist    -> $Expr , $Arglist"      , gram_rule_list_push_2nd , &nonterm_symbs) );
     ret.append( make_rule("$Arglist    -> $Expr"                 , gram_rule_list_base     , &nonterm_symbs) );
