@@ -43,4 +43,5 @@ func void test_match() {
     | _ -> {}
     match b : int with
     int no_match_branch_lol;
+    // int => int f = fun a => a + 3;
 }

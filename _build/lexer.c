@@ -114,11 +114,11 @@ struct token {
       break;}
     case token::VString : {
       auto str = _unique_0.dat.VString_dat.str;
-      return !(strcmp(((dat).VString_dat).str, (((b).dat).VString_dat).str));
+      return !(strcmp(str, (((b).dat).VString_dat).str));
       break;}
     case token::Ident : {
       auto str = _unique_0.dat.Ident_dat.str;
-      return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
+      return !(strcmp(str, (((b).dat).Ident_dat).str));
       break;}
     default: {
       return true;

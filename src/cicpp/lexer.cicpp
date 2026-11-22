@@ -130,8 +130,8 @@ type token {
         | Binop (op)    -> { return op.kind == b.dat.Binop_dat.op.kind; }
         | Unop (op)     -> { return op.kind == b.dat.Unop_dat.op.kind; }
         | VInt (i)      -> { return i == b.dat.VInt_dat.i; }
-        | VString (str) -> { return !strcmp(dat.VString_dat.str, b.dat.VString_dat.str); }
-        | Ident (str)   -> { return !strcmp(dat.Ident_dat.str, b.dat.Ident_dat.str); }
+        | VString (str) -> { return !strcmp(str, b.dat.VString_dat.str); }
+        | Ident (str)   -> { return !strcmp(str, b.dat.Ident_dat.str); }
         | _             -> { return true; }
     }
 

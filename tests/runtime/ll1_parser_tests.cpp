@@ -60,7 +60,7 @@
 namespace {
 
 using RuleList = gram_rule_t::gram_rules;
-using Join = anyptr (*)(clist_anyptr);
+using Join = void* (*)(clist_voidptr tr);
 
 typedef decltype(token{}.kind) TokenKind;
 
@@ -107,7 +107,7 @@ void free_int(void* p) {
     std::free(p);
 }
 
-anyptr make_int(int value) {
+void* make_int(int value) {
     int* p = static_cast<int*>(std::malloc(sizeof(int)));
 
     if (p == nullptr)
@@ -115,40 +115,37 @@ anyptr make_int(int value) {
 
     *p = value;
 
-    anyptr result;
-    result.init(p, free_int);
-
-    return result;
+    return p;
 }
 
-int int_arg(clist_anyptr args, int index) {
-    anyptr p = args.ith(index);
-    return *static_cast<int*>(p.get());
+int int_arg(clist_voidptr args, int index) {
+    void* p = args.ith(index);
+    return *static_cast<int*>(p);
 }
 
-token* token_arg(clist_anyptr args, int index) {
-    anyptr p = args.ith(index);
-    return static_cast<token*>(p.get());
+token* token_arg(clist_voidptr args, int index) {
+    void*p = args.ith(index);
+    return static_cast<token*>(p);
 }
 
 // ------------------------------------------------------------
 // Semantic callbacks
 // ------------------------------------------------------------
 
-anyptr return_one(clist_anyptr) {
+void*return_one(clist_voidptr) {
     return make_int(1);
 }
 
-anyptr return_zero(clist_anyptr) {
+void*return_zero(clist_voidptr) {
     return make_int(0);
 }
 
-anyptr return_two(clist_anyptr) {
+void*return_two(clist_voidptr) {
     return make_int(2);
 }
 
 // Checks that AST children are evaluated in source order.
-anyptr evaluate_wrapped_identifier(clist_anyptr args) {
+void*evaluate_wrapped_identifier(clist_voidptr args) {
 
     token* open = token_arg(args, 0);
     token* value = token_arg(args, 1);
@@ -166,7 +163,7 @@ anyptr evaluate_wrapped_identifier(clist_anyptr args) {
 }
 
 // Start -> OptionalA b
-anyptr evaluate_optional_sequence(clist_anyptr args) {
+void*evaluate_optional_sequence(clist_voidptr args) {
     return make_int(int_arg(args, 0));
 }
 
@@ -251,19 +248,17 @@ int parse_int(
     string_list nonterminals
 ) {
     gram_rule_t::parsing_table table = gram_rule_t::make_parsing_table(rules, nonterminals, goal, stop, false);
-    anyptr result =
+    void*result =
         gram_rule_t::parse_with_rules(
             &input,
             goal,
             stop,
-            rules,
             nonterminals,
             table
         );
 
-    int value = *static_cast<int*>(result.get());
-
-    result.del();
+    int value = *static_cast<int*>(result);
+    free(result);
 
     return value;
 }
@@ -565,7 +560,6 @@ void test_invalid_input_rejected() {
             &input,
             0,
             eoi,
-            rules,
             names,
             table
         );
@@ -634,7 +628,6 @@ void test_ambiguous_grammar_rejected() {
             &input,
             0,
             eoi,
-            rules,
             names,
             table
         );
@@ -778,15 +771,13 @@ void lr_free(void* ptr) {
   std::free(node);
 }
 
-anyptr lr_return(LeftRecAst* node) {
-  anyptr result;
-  result.init(node, lr_free);
-  return result;
+void* lr_return(LeftRecAst* node) {
+  return node;
 }
 
-LeftRecAst* lr_ast_arg(clist_anyptr args, int index) {
-  anyptr value = args.ith(index);
-  return static_cast<LeftRecAst*>(value.get());
+LeftRecAst* lr_ast_arg(clist_voidptr args, int index) {
+  void*value = args.ith(index);
+  return static_cast<LeftRecAst*>(value);
 }
 
 token lr_op_token(bool addition) {
@@ -796,31 +787,31 @@ token lr_op_token(bool addition) {
   return t;
 }
 
-anyptr lr_identifier(clist_anyptr args) {
+void* lr_identifier(clist_voidptr args) {
   token* t = token_arg(args, 0);
   printf("identifier parse kind %d\n", t->kind);
   return lr_return(lr_number(std::atoi(t->dat.Ident_dat.str)));
 }
 
-anyptr lr_passthrough(clist_anyptr args) {
+void* lr_passthrough(clist_voidptr args) {
   return lr_return(lr_clone(lr_ast_arg(args, 0)));
 }
 
-anyptr lr_add(clist_anyptr args) {
+void* lr_add(clist_voidptr args) {
   return lr_return(lr_binary(
       LeftRecAst::Add,
       lr_clone(lr_ast_arg(args, 0)),
       lr_clone(lr_ast_arg(args, 2))));
 }
 
-anyptr lr_multiply(clist_anyptr args) {
+void* lr_multiply(clist_voidptr args) {
   return lr_return(lr_binary(
       LeftRecAst::Multiply,
       lr_clone(lr_ast_arg(args, 0)),
       lr_clone(lr_ast_arg(args, 2))));
 }
 
-anyptr lr_parenthesized(clist_anyptr args) {
+void* lr_parenthesized(clist_voidptr args) {
   return lr_return(lr_clone(lr_ast_arg(args, 1)));
 }
 
@@ -843,11 +834,10 @@ std::string lr_parse_ast(RuleList rules, string_list names,
       exact_stop(punctuation(token::EndOfInput));
 
   gram_rule_t::parsing_table table = gram_rule_t::make_parsing_table(rules, names, 0, stop, false);
-  anyptr result = gram_rule_t::parse_with_rules(
+  void*result = gram_rule_t::parse_with_rules(
         &input,
         0,
         stop,
-        rules,
         names,
         table
     );
@@ -855,9 +845,9 @@ std::string lr_parse_ast(RuleList rules, string_list names,
   CHECK(input.len() == 0);
 
   std::string rendered =
-      lr_ast_string(static_cast<LeftRecAst*>(result.get()));
+      lr_ast_string(static_cast<LeftRecAst*>(result));
 
-  result.del();
+  free(result);
   input.del();
   return rendered;
 }

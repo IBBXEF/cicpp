@@ -77,16 +77,16 @@ replace: $(SOURCE_FILES)
 tests: build
 	cp _build/main test
 	
-	./test tests/parsing/ex1.c
-	./test tests/parsing/ex2.cpp
-	./test tests/parsing/ex3.cpp
-	./test tests/parsing/ex4.c
-	./test tests/parsing/ex5.c
-	./test tests/parsing/ex6.c
-	./test tests/parsing/ex7.c
-	./test tests/parsing/ex8.c
-	./test tests/parsing/ex9.c
-	cd tests/runtime && make test
+	./test tests/parsing/ex1.cicpp
+	./test tests/parsing/ex2.cicpp
+	./test tests/parsing/ex3.cicpp
+	./test tests/parsing/ex4.cicpp
+	./test tests/parsing/ex5.cicpp
+	./test tests/parsing/ex6.cicpp
+	./test tests/parsing/ex7.cicpp
+	./test tests/parsing/ex8.cicpp
+	./test tests/parsing/ex9.cicpp
+	cd tests/runtime && make test_test
 
 	make test_continuity
 

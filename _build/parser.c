@@ -285,11 +285,11 @@ struct token {
       break;}
     case token::VString : {
       auto str = _unique_0.dat.VString_dat.str;
-      return !(strcmp(((dat).VString_dat).str, (((b).dat).VString_dat).str));
+      return !(strcmp(str, (((b).dat).VString_dat).str));
       break;}
     case token::Ident : {
       auto str = _unique_0.dat.Ident_dat.str;
-      return !(strcmp(((dat).Ident_dat).str, (((b).dat).Ident_dat).str));
+      return !(strcmp(str, (((b).dat).Ident_dat).str));
       break;}
     default: {
       return true;
@@ -1289,7 +1289,7 @@ struct gram_rule_t {
   };
   symlist pattern;
   int result;
-  anyptr (*result_function)(clist_anyptr);
+  void* (*result_function)(clist_voidptr);
   void* func_bonus_dat;
   struct parsed_ast {
     enum { Leaf, Node, Unknown } kind;
@@ -1320,14 +1320,14 @@ struct gram_rule_t {
     void append_child(parsed_ast* child){
       (((dat).Node_dat).childrens).append(child);
     }
-    anyptr evaluate_ast(){
-      anyptr ret;
+    void* evaluate_ast(){
+      void* ret;
       if ((kind) == (Leaf)) {
-        (ret).init_view(&(((dat).Leaf_dat).t));
+        ret = &(((dat).Leaf_dat).t);
         return ret;
       } else
       if ((kind) == (Node)) {
-        clist_anyptr args;
+        clist_voidptr args;
         (args).init();
         int i = 0;
         clist_voidptr kids;
@@ -1338,10 +1338,9 @@ struct gram_rule_t {
           (args).append((child)->evaluate_ast());
           i = (i) + (1);
         }
-        anyptr tmp;
-        (tmp).init_view((((dat).Node_dat).origin_rule)->func_bonus_dat);
+        void* tmp = (((dat).Node_dat).origin_rule)->func_bonus_dat;
         (args).append(tmp);
-        anyptr res;
+        void* res;
         res = (((dat).Node_dat).origin_rule)->result_function(args);
         (args).del();
         return res;
@@ -1590,13 +1589,13 @@ struct gram_rule_t {
   };
   #undef dat_t
   #undef clist
-  void init(int rule_result, anyptr (*rule_result_function)(clist_anyptr)){
+  void init(int rule_result, void* (*rule_result_function)(clist_voidptr)){
     result = rule_result;
     result_function = rule_result_function;
     func_bonus_dat = nullptr;
     (pattern).init();
   }
-  void init_bonus_func_data(int rule_result, anyptr (*rule_result_function)(clist_anyptr), void* result_func_bonus_dat){
+  void init_bonus_func_data(int rule_result, void* (*rule_result_function)(clist_voidptr), void* result_func_bonus_dat){
     init(rule_result, rule_result_function);
     func_bonus_dat = result_func_bonus_dat;
   }
@@ -2021,7 +2020,7 @@ struct gram_rule_t {
     return ret;
   }
   static
-  anyptr parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, gram_rules rules, string_list nonterm_symbs, parsing_table table){
+  void* parse_with_rules(toklist* l, int goal_nonterm, gram_symbol_t stop_symbol, string_list nonterm_symbs, parsing_table table){
     if (((int)(stop_symbol).kind) == (2)) {
       printf("invalid stop symbol: it is Nonterminal\n");
       exit(EXIT_FAILURE);
@@ -2082,24 +2081,19 @@ struct gram_rule_t {
         }
       }
     }
-    anyptr final_res = (ast).evaluate_ast();
-    return final_res;
+    return (ast).evaluate_ast();
   }
   static
-  anyptr _gram_rule_ret_lrec_elim_notail(clist_anyptr l){
-    anyptr r;
-    (r).init_null();
-    return r;
+  void* _gram_rule_ret_lrec_elim_notail(clist_voidptr l){
+    return nullptr;
   }
   static
-  anyptr _gram_rule_ret_lrec_elim_lrec(clist_anyptr l){
-    void** tmp = (void**)((l).remove(((l).len()) - (1))).ptr;
-    anyptr old_bonus_dat;
-    anyptr old_res_func;
-    (old_res_func).init_view(tmp[0]);
-    (old_bonus_dat).init_view(tmp[1]);
-    anyptr tail_dat = (l).remove(((l).len()) - (1));
-    clist_anyptr* lcopy = (clist_anyptr*)malloc(sizeof(clist_anyptr));
+  void* _gram_rule_ret_lrec_elim_lrec(clist_voidptr l){
+    void** tmp = (void**)(l).remove(((l).len()) - (1));
+    void* old_res_func = tmp[0];
+    void* old_bonus_dat = tmp[1];
+    void* tail_dat = (l).remove(((l).len()) - (1));
+    clist_voidptr* lcopy = (clist_voidptr*)malloc(sizeof(clist_voidptr));
     (lcopy)->init();
     int i = 0;
     while ((i) < ((l).len())) {
@@ -2109,59 +2103,54 @@ struct gram_rule_t {
     (lcopy)->append(old_bonus_dat);
     (lcopy)->append(old_res_func);
     (lcopy)->append(tail_dat);
-    anyptr ret;
-    (ret).init_view(lcopy);
+    void* ret = lcopy;
     return ret;
   }
   static
-  anyptr _gram_rule_ret_lrec_elim_nlrec_closure(anyptr prev_out, clist_anyptr* tail_dat){
+  void* _gram_rule_ret_lrec_elim_nlrec_closure(void* prev_out, clist_voidptr* tail_dat){
     if (!(tail_dat)) {
       return prev_out;
     }
-    anyptr other_tail_dat = (tail_dat)->remove(((tail_dat)->len()) - (1));
-    anyptr (*old_res_func)(clist_anyptr) = (decltype(old_res_func))((tail_dat)->remove(((tail_dat)->len()) - (1))).ptr;
-    anyptr old_bonus_dat = (tail_dat)->remove(((tail_dat)->len()) - (1));
+    void* other_tail_dat = (tail_dat)->remove(((tail_dat)->len()) - (1));
+    void* (*old_res_func)(clist_voidptr) = (decltype(old_res_func))(tail_dat)->remove(((tail_dat)->len()) - (1));
+    void* old_bonus_dat = (tail_dat)->remove(((tail_dat)->len()) - (1));
     (tail_dat)->append(old_bonus_dat);
     (tail_dat)->push(prev_out);
-    anyptr combined_out = old_res_func(*(tail_dat));
-    anyptr ret = _gram_rule_ret_lrec_elim_nlrec_closure(combined_out, (decltype(tail_dat))(other_tail_dat).ptr);
-    (tail_dat)->del();
+    void* combined_out = old_res_func(*(tail_dat));
+    void* ret = _gram_rule_ret_lrec_elim_nlrec_closure(combined_out, (decltype(tail_dat))other_tail_dat);
     free(tail_dat);
     return ret;
   }
   static
-  anyptr _gram_rule_ret_lrec_elim_nlrec(clist_anyptr l){
-    clist_anyptr lcopy;
+  void* _gram_rule_ret_lrec_elim_nlrec(clist_voidptr l){
+    clist_voidptr lcopy;
     (lcopy).init();
     int i = 0;
     while ((i) < ((l).len())) {
       (lcopy).append((l).ith(i));
       i = (i) + (1);
     }
-    void** tmp = (void**)((lcopy).remove(((lcopy).len()) - (1))).ptr;
-    clist_anyptr* tail_dat = (clist_anyptr*)((lcopy).remove(((lcopy).len()) - (1))).ptr;
-    anyptr (*old_res_func)(clist_anyptr) = (decltype(old_res_func))tmp[0];
-    anyptr old_bonus_dat;
-    (old_bonus_dat).init_view(tmp[1]);
+    void** tmp = (void**)(lcopy).remove(((lcopy).len()) - (1));
+    clist_voidptr* tail_dat = (clist_voidptr*)(lcopy).remove(((lcopy).len()) - (1));
+    void* (*old_res_func)(clist_voidptr) = (decltype(old_res_func))tmp[0];
+    void* old_bonus_dat = tmp[1];
     (lcopy).append(old_bonus_dat);
-    anyptr normal_output = old_res_func(lcopy);
+    void* normal_output = old_res_func(lcopy);
     (lcopy).del();
-    anyptr ret = _gram_rule_ret_lrec_elim_nlrec_closure(normal_output, tail_dat);
+    void* ret = _gram_rule_ret_lrec_elim_nlrec_closure(normal_output, tail_dat);
     return ret;
   }
   static
-  anyptr _gram_rule_ret_lrec_any_uninline(clist_anyptr l){
-    void** tmp = (void**)((l).remove(((l).len()) - (1))).ptr;
-    anyptr (*old_res_func1)(clist_anyptr) = (decltype(old_res_func1))tmp[0];
-    anyptr old_bonus_dat1;
-    (old_bonus_dat1).init_view(tmp[1]);
-    anyptr (*old_res_func2)(clist_anyptr) = (decltype(old_res_func2))tmp[2];
-    anyptr old_bonus_dat2;
-    (old_bonus_dat2).init_view(tmp[3]);
+  void* _gram_rule_ret_lrec_any_uninline(clist_voidptr l){
+    void** tmp = (void**)(l).remove(((l).len()) - (1));
+    void* (*old_res_func1)(clist_voidptr) = (decltype(old_res_func1))tmp[0];
+    void* old_bonus_dat1 = tmp[1];
+    void* (*old_res_func2)(clist_voidptr) = (decltype(old_res_func2))tmp[2];
+    void* old_bonus_dat2 = tmp[3];
     int* old1_len = (int*)tmp[4];
-    clist_anyptr lcopy1;
+    clist_voidptr lcopy1;
     (lcopy1).init();
-    clist_anyptr lcopy2;
+    clist_voidptr lcopy2;
     (lcopy2).init();
     int i = 0;
     while ((i) < (*(old1_len))) {
@@ -2173,7 +2162,7 @@ struct gram_rule_t {
       i = (i) + (1);
     }
     (lcopy1).append(old_bonus_dat1);
-    anyptr res1 = old_res_func1(lcopy1);
+    void* res1 = old_res_func1(lcopy1);
     (lcopy1).del();
     (lcopy2).push(res1);
     (lcopy2).append(old_bonus_dat2);
@@ -2182,30 +2171,27 @@ struct gram_rule_t {
     return res1;
   }
   static
-  anyptr _gram_rule_ret_factor_accu(clist_anyptr l){
-    clist_anyptr* lcopy = (clist_anyptr*)malloc(sizeof(clist_anyptr));
+  void* _gram_rule_ret_factor_accu(clist_voidptr l){
+    clist_voidptr* lcopy = (clist_voidptr*)malloc(sizeof(clist_voidptr));
     *(lcopy) = (l).deepcopy();
-    anyptr ret;
-    (ret).init_view(lcopy);
-    return ret;
+    return lcopy;
   }
   static
-  anyptr _gram_rule_ret_factor_join(clist_anyptr l){
-    if (((l).remove(((l).len()) - (1))).ptr) {
+  void* _gram_rule_ret_factor_join(clist_voidptr l){
+    if ((l).remove(((l).len()) - (1))) {
       printf("Impossible error: join bonus data not null\n");
       exit(EXIT_FAILURE);
     }
-    clist_anyptr* acc = (clist_anyptr*)((l).remove(((l).len()) - (1))).ptr;
+    clist_voidptr* acc = (clist_voidptr*)(l).remove(((l).len()) - (1));
     while ((acc)->len()) {
       (l).append((acc)->pop());
     }
     free(acc);
-    void** tmp = (void**)((l).remove(((l).len()) - (1))).ptr;
-    anyptr (*old_res_func)(clist_anyptr) = (decltype(old_res_func))tmp[0];
-    anyptr old_bonus_dat;
-    (old_bonus_dat).init_view(tmp[1]);
+    void** tmp = (void**)(l).remove(((l).len()) - (1));
+    void* (*old_res_func)(clist_voidptr) = (decltype(old_res_func))tmp[0];
+    void* old_bonus_dat = tmp[1];
     (l).append(old_bonus_dat);
-    anyptr ret = old_res_func(l);
+    void* ret = old_res_func(l);
     return ret;
   }
   static
@@ -2616,7 +2602,7 @@ struct gram_rule_t {
     }
   }
 };
-gram_rule_t* make_rule(const char* str, anyptr (*rule_result_function)(clist_anyptr), string_list* nonterm_symbs){
+gram_rule_t* make_rule(const char* str, void* (*rule_result_function)(clist_voidptr), string_list* nonterm_symbs){
   char* tmp;
   if (((str[0]) != (36)) || ((str[1]) == (36))) {
     printf("rule initial symbol must be a nonterminal\n");
