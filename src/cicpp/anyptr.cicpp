@@ -1,6 +1,8 @@
 
 #include "src/cicpp/clist.cicpp"
 #include_C "limits.h"
+#include_C "stdio.h"
+#include_C "stdlib.h"
 
 type anyptr {
     void* ptr;

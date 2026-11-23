@@ -3,7 +3,7 @@
 
 #include "utils.cpp"
 #include "ast.cpp"
-#include "lexer.cpp"
+#include "parser.c"
 
 ast parse_file(const char* path);
 string_list included_files;

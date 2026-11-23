@@ -2,6 +2,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stdio.h>
 
 struct _old_clist
 {

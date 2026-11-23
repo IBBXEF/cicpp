@@ -33,7 +33,7 @@
 //
 // ============================================================
 
-#include "lexer.cpp"
+#include "parser.c"
 
 #include <cstdio>
 #include <cstdlib>

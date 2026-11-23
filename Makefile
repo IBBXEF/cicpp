@@ -1,5 +1,5 @@
 
-SOURCE_CPP_FILES = src/cpp/ast.cpp src/cpp/lexer.cpp src/cpp/main.cpp src/cpp/parser.cpp src/cpp/utils.cpp
+SOURCE_CPP_FILES = src/cpp/ast.cpp src/cpp/main.cpp src/cpp/parser.cpp src/cpp/utils.cpp
 SOURCE_FILES = src/cicpp/parser.cicpp
 
 TEMP_FILES = _build/test/clist.c _build/test/set.c _build/test/anyptr.c _build/test/lexer.c _build/test/parser.c

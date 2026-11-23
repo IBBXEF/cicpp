@@ -1,5 +1,7 @@
 #pragma once
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 struct anyptr {
   void* ptr;
   void (*free_func)(void*);
@@ -774,6 +776,475 @@ struct clist {
 #undef dat_t
 #undef clist
 toklist lex_string(const char* str);
+void pop_token_stack(int* cou, toklist* l, char* stack){
+  if (!(*(cou))) {
+    return;
+  }
+  stack[*(cou)] = 0;
+  token tok;
+  if ((!(strncmp("void", stack, *(cou)))) && ((*(cou)) == (4))) {
+    tok = (token){.kind=token::TVoid};
+  } else
+  if ((!(strncmp("int", stack, *(cou)))) && ((*(cou)) == (3))) {
+    tok = (token){.kind=token::TInt};
+  } else
+  if ((!(strncmp("char", stack, *(cou)))) && ((*(cou)) == (4))) {
+    tok = (token){.kind=token::TChar};
+  } else
+  if ((!(strncmp("bool", stack, *(cou)))) && ((*(cou)) == (4))) {
+    tok = (token){.kind=token::TBool};
+  } else
+  if ((!(strncmp("if", stack, *(cou)))) && ((*(cou)) == (2))) {
+    tok = (token){.kind=token::If};
+  } else
+  if ((!(strncmp("elif", stack, *(cou)))) && ((*(cou)) == (4))) {
+    tok = (token){.kind=token::Elif};
+  } else
+  if ((!(strncmp("else", stack, *(cou)))) && ((*(cou)) == (4))) {
+    tok = (token){.kind=token::Else};
+  } else
+  if ((!(strncmp("return", stack, *(cou)))) && ((*(cou)) == (6))) {
+    tok = (token){.kind=token::Return};
+  } else
+  if ((!(strncmp("while", stack, *(cou)))) && ((*(cou)) == (5))) {
+    tok = (token){.kind=token::While};
+  } else
+  if ((!(strncmp("match", stack, *(cou)))) && ((*(cou)) == (5))) {
+    tok = (token){.kind=token::Match};
+  } else
+  if ((!(strncmp("with", stack, *(cou)))) && ((*(cou)) == (4))) {
+    tok = (token){.kind=token::With};
+  } else
+  if ((!(strncmp("type", stack, *(cou)))) && ((*(cou)) == (4))) {
+    tok = (token){.kind=token::Type};
+  } else
+  if ((!(strncmp("fun", stack, *(cou)))) && ((*(cou)) == (3))) {
+    tok = (token){.kind=token::Fun};
+  } else
+  if ((!(strncmp("static", stack, *(cou)))) && ((*(cou)) == (6))) {
+    tok = (token){.kind=token::Static};
+  } else
+  if ((!(strncmp("specialize", stack, *(cou)))) && ((*(cou)) == (10))) {
+    tok = (token){.kind=token::Specialize};
+  } else
+  if ((!(strncmp("typeof", stack, *(cou)))) && ((*(cou)) == (6))) {
+    tok = (token){.kind=token::Typeof};
+  } else
+  if ((!(strncmp("const", stack, *(cou)))) && ((*(cou)) == (5))) {
+    tok = (token){.kind=token::Const};
+  } else
+  if ((!(strncmp("as", stack, *(cou)))) && ((*(cou)) == (2))) {
+    tok = (token){.kind=token::As};
+  } else
+  if ((!(strncmp("include", stack, *(cou)))) && ((*(cou)) == (7))) {
+    tok = (token){.kind=token::Include};
+  } else
+  if ((!(strncmp("include_C", stack, *(cou)))) && ((*(cou)) == (9))) {
+    tok = (token){.kind=token::Include_C};
+  } else
+  if ((!(strncmp("include_c", stack, *(cou)))) && ((*(cou)) == (9))) {
+    tok = (token){.kind=token::Include_C};
+  } else
+  if (((*(stack)) >= (48)) && ((*(stack)) <= (57))) {
+    char* end;
+    int i = strtol(stack, &(end), 10);
+    if ((end) != ((stack) + (*(cou)))) {
+      printf("invalid integer: %s\n", stack);
+      exit(-(1));
+    }
+    tok = (token){.kind=token::VInt, .dat={.VInt_dat={.i=i}}};
+  } else {
+    char* str = (char*)malloc((*(cou)) + (1));
+    strncpy(str, stack, *(cou));
+    str[*(cou)] = 0;
+    tok = (token){.kind=token::Ident, .dat={.Ident_dat={.str=str}}};
+  }
+  (l)->append(tok);
+  *(cou) = 0;
+}
+struct lexing_state {
+  enum { LEXING_IDENT_OR_INT, LEXING_STRING, LEXING_STRING_SPECIAL, LINE_COMMENT, LEXING_CHAR, LEXING_CHAR_SPECIAL } kind;
+};
+void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state* state){
+  auto _unique_2 = *(state);
+  switch (_unique_2.kind) {
+  case lexing_state::LEXING_STRING : {
+    last_buffer[*(cou)] = c;
+    *(cou) = (*(cou)) + (1);
+    if ((c) == (92)) {
+      *(state) = (lexing_state){.kind=lexing_state::LEXING_STRING_SPECIAL};
+    } else
+    if ((c) == (34)) {
+      char* str = (char*)malloc(*(cou));
+      strncpy(str, last_buffer, (*(cou)) - (1));
+      str[(*(cou)) - (1)] = 0;
+      token tok = (token){.kind=token::VString, .dat={.VString_dat={.str=str}}};
+      (ret)->append(tok);
+      *(cou) = 0;
+      *(state) = (lexing_state){.kind=lexing_state::LEXING_IDENT_OR_INT};
+    }
+    return;
+   break;}
+  case lexing_state::LEXING_STRING_SPECIAL : {
+    last_buffer[*(cou)] = c;
+    *(cou) = (*(cou)) + (1);
+    *(state) = (lexing_state){.kind=lexing_state::LEXING_STRING};
+    return;
+   break;}
+  case lexing_state::LINE_COMMENT : {
+    if ((c) == (10)) {
+      *(state) = (lexing_state){.kind=lexing_state::LEXING_IDENT_OR_INT};
+    }
+    return;
+   break;}
+  case lexing_state::LEXING_CHAR : {
+    if ((c) == (92)) {
+      *(cou) = 0;
+      *(state) = (lexing_state){.kind=lexing_state::LEXING_CHAR_SPECIAL};
+    } else
+    if ((*(cou)) == (1)) {
+      if ((c) != (39)) {
+        printf("immediate character value must be exactly one character long: found %c instead of '\n", c);
+        exit(-(1));
+      }
+      int i = last_buffer[0];
+      token tok = (token){.kind=token::VInt, .dat={.VInt_dat={.i=i}}};
+      (ret)->append(tok);
+      *(cou) = 0;
+      *(state) = (lexing_state){.kind=lexing_state::LEXING_IDENT_OR_INT};
+    } else {
+      last_buffer[*(cou)] = c;
+      *(cou) = (*(cou)) + (1);
+    }
+    return;
+   break;}
+  case lexing_state::LEXING_CHAR_SPECIAL : {
+    if ((*(cou)) == (1)) {
+      if ((c) != (39)) {
+        printf("special immediate character value must be exactly one character long: found %c instead of '\n", c);
+        exit(-(1));
+      }
+      int i;
+      if ((last_buffer[0]) == (110)) {
+        i = 10;
+      } else
+      if ((last_buffer[0]) == (116)) {
+        i = 9;
+      } else
+      if ((last_buffer[0]) == (48)) {
+        i = 0;
+      } else
+      i = last_buffer[0];
+      token tok = (token){.kind=token::VInt, .dat={.VInt_dat={.i=i}}};
+      (ret)->append(tok);
+      *(cou) = 0;
+      *(state) = (lexing_state){.kind=lexing_state::LEXING_IDENT_OR_INT};
+    } else {
+      last_buffer[*(cou)] = c;
+      *(cou) = (*(cou)) + (1);
+    }
+    return;
+   break;}
+  default: {
+   break;}
+  }
+  token* n;
+  if ((((c) == (32)) || ((c) == (10))) || ((c) == (9))) {
+    pop_token_stack(cou, ret, last_buffer);
+  } else
+  if ((((((c) >= (48)) && ((c) <= (57))) || (((c) >= (97)) && ((c) <= (122)))) || (((c) >= (65)) && ((c) <= (90)))) || ((c) == (95))) {
+    last_buffer[*(cou)] = c;
+    *(cou) = (*(cou)) + (1);
+  } else
+  if ((c) == (59)) {
+    pop_token_stack(cou, ret, last_buffer);
+    (ret)->append((token){.kind=token::Semicol});
+  } else
+  if ((c) == (44)) {
+    pop_token_stack(cou, ret, last_buffer);
+    (ret)->append((token){.kind=token::Comma});
+  } else
+  if ((c) == (46)) {
+    pop_token_stack(cou, ret, last_buffer);
+    (ret)->append((token){.kind=token::Dot});
+  } else
+  if ((c) == (35)) {
+    pop_token_stack(cou, ret, last_buffer);
+    (ret)->append((token){.kind=token::Hashtag});
+  } else
+  if ((c) == (60)) {
+    pop_token_stack(cou, ret, last_buffer);
+    binop op = (binop){.kind=binop::Lt};
+    (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+  } else
+  if ((c) == (62)) {
+    pop_token_stack(cou, ret, last_buffer);
+    n = (ret)->ith_ref(((ret)->len()) - (1));
+    auto _unique_3 = *(n);
+    switch (_unique_3.kind) {
+    case token::Binop : {
+      auto op = _unique_3.dat.Binop_dat.op;
+      auto _unique_4 = op;
+      switch (_unique_4.kind) {
+      case binop::Sub : {
+        *(n) = (token){.kind=token::Arrow};
+         break;}
+      default: {
+        binop op = (binop){.kind=binop::Gt};
+        (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+         break;}
+      }
+      break;}
+    case token::Set : {
+      *(n) = (token){.kind=token::Implies};
+      break;}
+    default: {
+      binop op = (binop){.kind=binop::Gt};
+      (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+      break;}
+    }
+  } else
+  if ((c) == (40)) {
+    pop_token_stack(cou, ret, last_buffer);
+    (ret)->append((token){.kind=token::LPAREN});
+  } else
+  if ((c) == (41)) {
+    pop_token_stack(cou, ret, last_buffer);
+    (ret)->append((token){.kind=token::RPAREN});
+  } else
+  if ((c) == (91)) {
+    pop_token_stack(cou, ret, last_buffer);
+    (ret)->append((token){.kind=token::LSQUAR});
+  } else
+  if ((c) == (93)) {
+    pop_token_stack(cou, ret, last_buffer);
+    (ret)->append((token){.kind=token::RSQUAR});
+  } else
+  if ((c) == (123)) {
+    pop_token_stack(cou, ret, last_buffer);
+    (ret)->append((token){.kind=token::LBRACK});
+  } else
+  if ((c) == (125)) {
+    pop_token_stack(cou, ret, last_buffer);
+    (ret)->append((token){.kind=token::RBRACK});
+  } else
+  if ((c) == (61)) {
+    pop_token_stack(cou, ret, last_buffer);
+    n = (ret)->ith_ref(((ret)->len()) - (1));
+    auto _unique_5 = *(n);
+    switch (_unique_5.kind) {
+    case token::Set : {
+      binop op = (binop){.kind=binop::Eq};
+      *(n) = (token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}};
+      break;}
+    case token::Unop : {
+      auto op = _unique_5.dat.Unop_dat.op;
+      auto _unique_6 = op;
+      switch (_unique_6.kind) {
+      case unop::Lnot : {
+        binop op = (binop){.kind=binop::Neq};
+        *(n) = (token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}};
+         break;}
+      default: {
+        (ret)->append((token){.kind=token::Set});
+         break;}
+      }
+      break;}
+    case token::Binop : {
+      auto op = _unique_5.dat.Binop_dat.op;
+      auto _unique_7 = op;
+      switch (_unique_7.kind) {
+      case binop::Lt : {
+        binop op = (binop){.kind=binop::Leq};
+        *(n) = (token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}};
+         break;}
+      case binop::Gt : {
+        binop op = (binop){.kind=binop::Geq};
+        *(n) = (token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}};
+         break;}
+      default: {
+        (ret)->append((token){.kind=token::Set});
+         break;}
+      }
+      break;}
+    default: {
+      (ret)->append((token){.kind=token::Set});
+      break;}
+    }
+  } else
+  if ((c) == (58)) {
+    pop_token_stack(cou, ret, last_buffer);
+    n = (ret)->ith_ref(((ret)->len()) - (1));
+    auto _unique_8 = *(n);
+    switch (_unique_8.kind) {
+    case token::Colon : {
+      *(n) = (token){.kind=token::TwoColon};
+      break;}
+    default: {
+      (ret)->append((token){.kind=token::Colon});
+      break;}
+    }
+  } else
+  if ((c) == (38)) {
+    pop_token_stack(cou, ret, last_buffer);
+    n = (ret)->ith_ref(((ret)->len()) - (1));
+    auto _unique_9 = *(n);
+    switch (_unique_9.kind) {
+    case token::Binop : {
+      auto op = _unique_9.dat.Binop_dat.op;
+      auto _unique_10 = op;
+      switch (_unique_10.kind) {
+      case binop::Band : {
+        binop op = (binop){.kind=binop::Land};
+        *(n) = (token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}};
+         break;}
+      default: {
+        binop op = (binop){.kind=binop::Band};
+        (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+         break;}
+      }
+      break;}
+    default: {
+      binop op = (binop){.kind=binop::Band};
+      (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+      break;}
+    }
+  } else
+  if ((c) == (124)) {
+    pop_token_stack(cou, ret, last_buffer);
+    n = (ret)->ith_ref(((ret)->len()) - (1));
+    auto _unique_11 = *(n);
+    switch (_unique_11.kind) {
+    case token::Binop : {
+      auto op = _unique_11.dat.Binop_dat.op;
+      auto _unique_12 = op;
+      switch (_unique_12.kind) {
+      case binop::Bor : {
+        binop op = (binop){.kind=binop::Lor};
+        *(n) = (token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}};
+         break;}
+      default: {
+        binop op = (binop){.kind=binop::Bor};
+        (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+         break;}
+      }
+      break;}
+    default: {
+      binop op = (binop){.kind=binop::Bor};
+      (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+      break;}
+    }
+  } else
+  if ((c) == (33)) {
+    pop_token_stack(cou, ret, last_buffer);
+    unop op = (unop){.kind=unop::Lnot};
+    (ret)->append((token){.kind=token::Unop, .dat={.Unop_dat={.op=op}}});
+  } else
+  if ((c) == (43)) {
+    pop_token_stack(cou, ret, last_buffer);
+    binop op = (binop){.kind=binop::Add};
+    (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+  } else
+  if ((c) == (45)) {
+    pop_token_stack(cou, ret, last_buffer);
+    binop op = (binop){.kind=binop::Sub};
+    (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+  } else
+  if ((c) == (42)) {
+    pop_token_stack(cou, ret, last_buffer);
+    binop op = (binop){.kind=binop::Mul};
+    (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+  } else
+  if ((c) == (47)) {
+    pop_token_stack(cou, ret, last_buffer);
+    n = (ret)->ith_ref(((ret)->len()) - (1));
+    auto _unique_13 = *(n);
+    switch (_unique_13.kind) {
+    case token::Binop : {
+      auto op = _unique_13.dat.Binop_dat.op;
+      auto _unique_14 = op;
+      switch (_unique_14.kind) {
+      case binop::Div : {
+        (ret)->remove(((ret)->len()) - (1));
+        *(state) = (lexing_state){.kind=lexing_state::LINE_COMMENT};
+         break;}
+      default: {
+        binop op = (binop){.kind=binop::Div};
+        (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+         break;}
+      }
+      break;}
+    default: {
+      binop op = (binop){.kind=binop::Div};
+      (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
+      break;}
+    }
+  } else
+  if ((c) == (34)) {
+    pop_token_stack(cou, ret, last_buffer);
+    *(state) = (lexing_state){.kind=lexing_state::LEXING_STRING};
+  } else
+  if ((c) == (39)) {
+    pop_token_stack(cou, ret, last_buffer);
+    *(state) = (lexing_state){.kind=lexing_state::LEXING_CHAR};
+  } else {
+    printf("unexpected character: %c (code: %d).\n", c, (int)c);
+    exit(-(1));
+  }
+}
+toklist lex_string(const char* str){
+  toklist ret;
+  (ret).init();
+  token no = (token){.kind=token::EndOfInput};
+  (ret).append(no);
+  int cou = 0;
+  lexing_state state = (lexing_state){.kind=lexing_state::LEXING_IDENT_OR_INT};
+  char* last_buffer = (char*)malloc(100);
+  char c;
+  c = *(str);
+  while ((c) && ((c) != (EOF))) {
+    lexing_step(&(cou), &(ret), c, last_buffer, &(state));
+    str = (str) + (1);
+    c = *(str);
+  }
+  pop_token_stack(&(cou), &(ret), last_buffer);
+  (ret).pop();
+  free(last_buffer);
+  return ret;
+}
+toklist lex_file(const char* path){
+  FILE* fptr = fopen(path, "r");
+  if (!(fptr)) {
+    printf("%s file failed to open.\n", path);
+    exit(-(1));
+  }
+  toklist ret;
+  (ret).init();
+  token no = (token){.kind=token::EndOfInput};
+  (ret).append(no);
+  int cou = 0;
+  lexing_state state = (lexing_state){.kind=lexing_state::LEXING_IDENT_OR_INT};
+  char* last_buffer = (char*)malloc(100);
+  char c;
+  c = fgetc(fptr);
+  while ((c) && ((c) != (EOF))) {
+    lexing_step(&(cou), &(ret), c, last_buffer, &(state));
+    c = fgetc(fptr);
+  }
+  pop_token_stack(&(cou), &(ret), last_buffer);
+  (ret).pop();
+  free(last_buffer);
+  return ret;
+}
+void print_tokens(toklist toks){
+  int i = 0;
+  while ((i) < ((toks).len())) {
+    printf("    ");
+    ((toks).ith(i)).print();
+    printf("\n");
+    i = (i) + (1);
+  }
+}
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>

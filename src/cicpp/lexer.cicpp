@@ -182,3 +182,358 @@ type token {
 specialize clist<token> as toklist
 
 fun toklist lex_string(const char* str);
+
+fun void pop_token_stack(int* cou, toklist* l, char* stack) {
+    if !*cou { return; }
+    stack[*cou] = '\0';
+    
+    token tok;
+    if !strncmp("void", stack, *cou) && *cou == 4 {
+        tok = {token TVoid};
+    } elif !strncmp("int", stack, *cou) && *cou == 3 {
+        tok = {token TInt};
+    } elif !strncmp("char", stack, *cou) && *cou == 4 {
+        tok = {token TChar};
+    } elif !strncmp("bool", stack, *cou) && *cou == 4 {
+        tok = {token TBool};
+    } elif !strncmp("if", stack, *cou) && *cou == 2 {
+        tok = {token If};
+    } elif !strncmp("elif", stack, *cou) && *cou == 4 {
+        tok = {token Elif};
+    } elif !strncmp("else", stack, *cou) && *cou == 4 {
+        tok = {token Else};
+    } elif !strncmp("return", stack, *cou) && *cou == 6 {
+        tok = {token Return};
+    } elif !strncmp("while", stack, *cou) && *cou == 5 {
+        tok = {token While};
+    } elif !strncmp("match", stack, *cou) && *cou == 5 {
+        tok = {token Match};
+    } elif !strncmp("with", stack, *cou) && *cou == 4 {
+        tok = {token With};
+    } elif !strncmp("type", stack, *cou) && *cou == 4 {
+        tok = {token Type};
+    } elif !strncmp("fun", stack, *cou) && *cou == 3 {
+        tok = {token Fun};
+    } elif !strncmp("static", stack, *cou) && *cou == 6 {
+        tok = {token Static};
+    } elif !strncmp("specialize", stack, *cou) && *cou == 10 {
+        tok = {token Specialize};
+    } elif !strncmp("typeof", stack, *cou) && *cou == 6 {
+        tok = {token Typeof};
+    } elif !strncmp("const", stack, *cou) && *cou == 5 {
+        tok = {token Const};
+    } elif !strncmp("as", stack, *cou) && *cou == 2 {
+        tok = {token As};
+    } elif !strncmp("include", stack, *cou) && *cou == 7 {
+        tok = {token Include};
+    } elif !strncmp("include_C", stack, *cou) && *cou == 9 {
+        tok = {token Include_C};
+    } elif !strncmp("include_c", stack, *cou) && *cou == 9 {
+        tok = {token Include_C};
+    } elif *stack >= '0' && *stack <= '9' {
+        char* end;
+        int i = strtol(stack, &end, 10);
+        if end != stack + *cou {
+            printf("invalid integer: %s\n", stack);
+            exit(-1);
+        }
+        tok = {token VInt : i};
+    } else {
+        char* str = malloc(*cou+1) as char*;
+        strncpy(str, stack, *cou);
+        str[*cou] = '\0';
+        tok = {token Ident: str};
+    }
+
+    l->append(tok);
+    *cou = 0;
+}
+
+// details of the state machine used to do the lexing
+type lexing_state {
+    LEXING_IDENT_OR_INT;
+    LEXING_STRING;
+    LEXING_STRING_SPECIAL;
+    LINE_COMMENT;
+    LEXING_CHAR;
+    LEXING_CHAR_SPECIAL;
+}
+
+
+fun void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state* state) {
+    match *state : lexing_state with
+    | LEXING_STRING -> {
+        last_buffer[*cou] = c;
+        *cou = *cou + 1;
+        if c == '\\' {
+            *state = {lexing_state LEXING_STRING_SPECIAL};
+        } elif c == '"' {
+            char* str = malloc(*cou) as char*;
+            strncpy(str, last_buffer, *cou-1);
+            str[*cou-1] = '\0';
+            token tok = {token VString: str};
+            ret->append(tok);
+
+            *cou = 0;
+            *state = {lexing_state LEXING_IDENT_OR_INT};
+        }
+        return; }
+    | LEXING_STRING_SPECIAL -> {
+        last_buffer[*cou] = c;
+        *cou = *cou + 1;
+        *state = {lexing_state LEXING_STRING};
+        return; }
+    | LINE_COMMENT -> {
+        if c == '\n' {
+            *state = {lexing_state LEXING_IDENT_OR_INT};
+        }
+        return; } 
+    | LEXING_CHAR -> {
+        if c == '\\' {
+            *cou = 0;
+            *state = {lexing_state LEXING_CHAR_SPECIAL};
+        } elif *cou == 1 {
+            if c != '\'' {
+                printf("immediate character value must be exactly one character long: found %c instead of '\n", c);
+                exit(-1);
+            }
+            
+            int i = last_buffer[0];
+            token tok = {token VInt: i}; // we lex chars as ints
+            ret->append(tok);
+
+            *cou = 0;
+            *state = {lexing_state LEXING_IDENT_OR_INT};
+        } else {
+            last_buffer[*cou] = c;
+            *cou = *cou + 1;
+        }
+        return; }
+    | LEXING_CHAR_SPECIAL -> {
+        if *cou == 1 {
+            if c != '\'' {
+                printf("special immediate character value must be exactly one character long: found %c instead of '\n", c);
+                exit(-1);
+            }
+
+            int i;
+            if last_buffer[0] == 'n' {
+                i = '\n';
+            } elif last_buffer[0] == 't' {
+                i = '\t';
+            } elif last_buffer[0] == '0' {
+                i = '\0';
+            } else {
+                i = last_buffer[0];
+            }
+
+            token tok = {token VInt: i}; // we lex chars as ints
+            ret->append(tok);
+
+            *cou = 0;
+            *state = {lexing_state LEXING_IDENT_OR_INT};
+        } else {
+            last_buffer[*cou] = c;
+            *cou = *cou + 1;
+        }
+        return; }
+    | _ -> {}
+    
+    
+    token* n;
+    if c == ' ' || c == '\n' || c == '\t' {
+        pop_token_stack(cou, ret, last_buffer);
+    } elif (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' {
+        last_buffer[*cou] = c; // buffer overflow protection is for losers
+        *cou = *cou + 1;
+    } elif c == ';' {
+        pop_token_stack(cou, ret, last_buffer);
+        ret->append({token Semicol});
+    } elif c == ',' {
+        pop_token_stack(cou, ret, last_buffer);
+        ret->append({token Comma});
+    } elif c == '.' {
+        pop_token_stack(cou, ret, last_buffer);
+        ret->append({token Dot});
+    } elif c == '#' {
+        pop_token_stack(cou, ret, last_buffer);
+        ret->append({token Hashtag});
+    } elif c == '<' {
+        pop_token_stack(cou, ret, last_buffer);
+        binop op = {binop Lt};
+        ret->append({token Binop: op});
+    } elif c == '>' {
+        pop_token_stack(cou, ret, last_buffer);
+        n = ret->ith_ref(ret->len()-1);
+
+        match *n : token with
+        | Binop (op) -> {
+            match op: binop with
+            | Sub -> { *n = {token Arrow}; }
+            | _ -> { binop op = {binop Gt}; ret->append({token Binop: op}); } }
+        | Set -> { *n = {token Implies}; }
+        | _ -> { binop op = {binop Gt}; ret->append({token Binop: op}); }
+    } elif c == '(' {
+        pop_token_stack(cou, ret, last_buffer);
+        ret->append({token LPAREN});
+    } elif c == ')' {
+        pop_token_stack(cou, ret, last_buffer);
+        ret->append({token RPAREN});
+    } elif c == '[' {
+        pop_token_stack(cou, ret, last_buffer);
+        ret->append({token LSQUAR});
+    } elif c == ']' {
+        pop_token_stack(cou, ret, last_buffer);
+        ret->append({token RSQUAR});
+    } elif c == '{' {
+        pop_token_stack(cou, ret, last_buffer);
+        ret->append({token LBRACK});
+    } elif c == '}' {
+        pop_token_stack(cou, ret, last_buffer);
+        ret->append({token RBRACK});
+    } elif c == '=' {
+        pop_token_stack(cou, ret, last_buffer);
+        n = ret->ith_ref(ret->len()-1);
+        match *n : token with
+        | Set -> { binop op = {binop Eq}; *n = {token Binop: op}; }
+        | Unop (op) -> {
+            match op : unop with
+            | Lnot -> { binop op = {binop Neq}; *n = {token Binop: op}; }
+            | _ -> { ret->append({token Set}); } }
+        | Binop (op) -> {
+            match op : binop with
+            | Lt -> { binop op = {binop Leq}; *n = {token Binop: op}; }
+            | Gt -> { binop op = {binop Geq}; *n = {token Binop: op}; }
+            | _ -> { ret->append({token Set}); } }
+        | _ -> { ret->append({token Set}); }
+    } elif c == ':' {
+        pop_token_stack(cou, ret, last_buffer);
+        n = ret->ith_ref(ret->len()-1);
+        match *n : token with
+        | Colon -> { *n = {token TwoColon}; } // last token was an ':'
+        | _ -> { ret->append({token Colon}); }
+    } elif c == '&' {
+        pop_token_stack(cou, ret, last_buffer);
+        n = ret->ith_ref(ret->len()-1);
+        match *n : token with
+        | Binop (op) -> {
+            match op: binop with
+            | Band -> { binop op = {binop Land}; *n = {token Binop: op}; } // last token was an '&'
+            | _ -> { binop op = {binop Band}; ret->append({token Binop: op}); } }
+        | _ -> { binop op = {binop Band}; ret->append({token Binop: op}); }
+    } elif c == '|' {
+        pop_token_stack(cou, ret, last_buffer);
+        n = ret->ith_ref(ret->len()-1);
+        match *n : token with
+        | Binop (op) -> {
+            match op: binop with
+            | Bor -> { binop op = {binop Lor}; *n = {token Binop: op}; } // last token was an '|'
+            | _ -> { binop op = {binop Bor}; ret->append({token Binop: op}); } }
+        | _ -> { binop op = {binop Bor}; ret->append({token Binop: op}); }
+    } elif c == '!' {
+        pop_token_stack(cou, ret, last_buffer);
+        unop op = {unop Lnot};
+        ret->append({token Unop: op});
+    } elif c == '+' {
+        pop_token_stack(cou, ret, last_buffer);
+        binop op = {binop Add};
+        ret->append({token Binop: op});
+    } elif c == '-' {
+        pop_token_stack(cou, ret, last_buffer);
+        binop op = {binop Sub};
+        ret->append({token Binop: op});
+    } elif c == '*' {
+        pop_token_stack(cou, ret, last_buffer);
+        binop op = {binop Mul};
+        ret->append({token Binop: op});
+    } elif c == '/' {
+        pop_token_stack(cou, ret, last_buffer);
+        n = ret->ith_ref(ret->len()-1);
+        match *n : token with
+        | Binop (op) -> {
+            match op: binop with
+            | Div -> { // last token was an '/'
+                ret->remove(ret->len()-1);
+                *state = {lexing_state LINE_COMMENT};
+            }
+            | _ -> { binop op = {binop Div}; ret->append({token Binop: op}); } }
+        | _ -> { binop op = {binop Div}; ret->append({token Binop: op}); }
+    } elif c == '"' {
+        pop_token_stack(cou, ret, last_buffer);
+        *state = {lexing_state LEXING_STRING};
+    } elif c == '\'' {
+        pop_token_stack(cou, ret, last_buffer);
+        *state = {lexing_state LEXING_CHAR};
+    } else {
+        printf("unexpected character: %c (code: %d).\n", c, c as int);
+        exit(-1);
+    }
+}
+
+
+fun toklist lex_string(const char* str) {
+    toklist ret;
+    ret.init();
+    token no = {token EndOfInput}; // we place a placeholder token that we will remove later
+    ret.append(no);
+    
+    int cou = 0;
+    lexing_state state = {lexing_state LEXING_IDENT_OR_INT};
+
+    char* last_buffer = malloc(100) as char*;
+
+    char c;
+    c = *str;
+    while c && c != EOF {
+        lexing_step(&cou, &ret, c, last_buffer, &state);
+        str = str + 1;
+        c = *str;
+    }
+    pop_token_stack(&cou, &ret, last_buffer);
+
+    ret.pop(); // we remove the first token, our placeholder
+    free(last_buffer);
+    return ret;
+}
+
+fun toklist lex_file(const char* path) {
+    FILE* fptr = fopen(path, "r");
+    if !fptr {
+        printf("%s file failed to open.\n", path);
+        exit(-1);
+    }
+
+    toklist ret;
+    ret.init();
+    token no = {token EndOfInput}; // we place a placeholder token that we will remove later
+    ret.append(no);
+    
+    int cou = 0;
+    lexing_state state = {lexing_state LEXING_IDENT_OR_INT};
+
+    char* last_buffer = malloc(100) as char*;
+
+    char c;
+    c = fgetc(fptr);
+    while c && c != EOF {
+        lexing_step(&cou, &ret, c, last_buffer, &state);
+        c = fgetc(fptr);
+    }
+    pop_token_stack(&cou, &ret, last_buffer);
+
+    ret.pop(); // we remove the first token, our placeholder
+    free(last_buffer);
+    return ret;
+}
+
+
+fun void print_tokens(toklist toks) {
+    int i = 0;
+    while i < toks.len() {
+        printf("    ");
+        toks.ith(i).print();
+        printf("\n");
+        i = i + 1;
+    }
+}
+
