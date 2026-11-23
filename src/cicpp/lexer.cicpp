@@ -65,6 +65,10 @@ type unop {
 }
 
 type token {
+    int line;
+    int column;
+    const char* file;
+
     TVoid;
     TInt;
     TChar;
@@ -183,7 +187,7 @@ specialize clist<token> as toklist
 
 fun toklist lex_string(const char* str);
 
-fun void pop_token_stack(int* cou, toklist* l, char* stack) {
+fun void pop_token_stack(int* cou, toklist* l, char* stack, int line, int column, const char* file) {
     if !*cou { return; }
     stack[*cou] = '\0';
     
@@ -245,6 +249,9 @@ fun void pop_token_stack(int* cou, toklist* l, char* stack) {
         tok = {token Ident: str};
     }
 
+    tok.line = line;
+    tok.column = column;
+    tok.file = file;
     l->append(tok);
     *cou = 0;
 }
@@ -260,7 +267,7 @@ type lexing_state {
 }
 
 
-fun void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state* state) {
+fun void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state* state, int line, int column, const char* file) {
     match *state : lexing_state with
     | LEXING_STRING -> {
         last_buffer[*cou] = c;
@@ -338,32 +345,32 @@ fun void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_s
         }
         return; }
     | _ -> {}
-    
-    
+
+
     token* n;
     if c == ' ' || c == '\n' || c == '\t' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
     } elif (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' {
         last_buffer[*cou] = c; // buffer overflow protection is for losers
         *cou = *cou + 1;
     } elif c == ';' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         ret->append({token Semicol});
     } elif c == ',' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         ret->append({token Comma});
     } elif c == '.' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         ret->append({token Dot});
     } elif c == '#' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         ret->append({token Hashtag});
     } elif c == '<' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         binop op = {binop Lt};
         ret->append({token Binop: op});
     } elif c == '>' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         n = ret->ith_ref(ret->len()-1);
 
         match *n : token with
@@ -374,25 +381,25 @@ fun void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_s
         | Set -> { *n = {token Implies}; }
         | _ -> { binop op = {binop Gt}; ret->append({token Binop: op}); }
     } elif c == '(' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         ret->append({token LPAREN});
     } elif c == ')' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         ret->append({token RPAREN});
     } elif c == '[' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         ret->append({token LSQUAR});
     } elif c == ']' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         ret->append({token RSQUAR});
     } elif c == '{' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         ret->append({token LBRACK});
     } elif c == '}' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         ret->append({token RBRACK});
     } elif c == '=' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         n = ret->ith_ref(ret->len()-1);
         match *n : token with
         | Set -> { binop op = {binop Eq}; *n = {token Binop: op}; }
@@ -407,13 +414,13 @@ fun void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_s
             | _ -> { ret->append({token Set}); } }
         | _ -> { ret->append({token Set}); }
     } elif c == ':' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         n = ret->ith_ref(ret->len()-1);
         match *n : token with
         | Colon -> { *n = {token TwoColon}; } // last token was an ':'
         | _ -> { ret->append({token Colon}); }
     } elif c == '&' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         n = ret->ith_ref(ret->len()-1);
         match *n : token with
         | Binop (op) -> {
@@ -422,7 +429,7 @@ fun void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_s
             | _ -> { binop op = {binop Band}; ret->append({token Binop: op}); } }
         | _ -> { binop op = {binop Band}; ret->append({token Binop: op}); }
     } elif c == '|' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         n = ret->ith_ref(ret->len()-1);
         match *n : token with
         | Binop (op) -> {
@@ -431,23 +438,23 @@ fun void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_s
             | _ -> { binop op = {binop Bor}; ret->append({token Binop: op}); } }
         | _ -> { binop op = {binop Bor}; ret->append({token Binop: op}); }
     } elif c == '!' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         unop op = {unop Lnot};
         ret->append({token Unop: op});
     } elif c == '+' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         binop op = {binop Add};
         ret->append({token Binop: op});
     } elif c == '-' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         binop op = {binop Sub};
         ret->append({token Binop: op});
     } elif c == '*' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         binop op = {binop Mul};
         ret->append({token Binop: op});
     } elif c == '/' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         n = ret->ith_ref(ret->len()-1);
         match *n : token with
         | Binop (op) -> {
@@ -459,14 +466,20 @@ fun void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_s
             | _ -> { binop op = {binop Div}; ret->append({token Binop: op}); } }
         | _ -> { binop op = {binop Div}; ret->append({token Binop: op}); }
     } elif c == '"' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         *state = {lexing_state LEXING_STRING};
     } elif c == '\'' {
-        pop_token_stack(cou, ret, last_buffer);
+        pop_token_stack(cou, ret, last_buffer, line, column, file);
         *state = {lexing_state LEXING_CHAR};
     } else {
         printf("unexpected character: %c (code: %d).\n", c, c as int);
         exit(-1);
+    }
+    n = ret->ith_ref(ret->len()-1); // this is very hacky but works for now
+    if !n->file {
+        n->file = file;
+        n->line = line;
+        n->column = column;
     }
 }
 
@@ -482,14 +495,21 @@ fun toklist lex_string(const char* str) {
 
     char* last_buffer = malloc(100) as char*;
 
+    int line = 0;
+    int column = 0;
+
     char c;
     c = *str;
     while c && c != EOF {
-        lexing_step(&cou, &ret, c, last_buffer, &state);
+        if c == '\n' {
+            line = line + 1;
+            column = 0;
+        }
+        lexing_step(&cou, &ret, c, last_buffer, &state, line, column, "<runtime-generated string>");
         str = str + 1;
         c = *str;
     }
-    pop_token_stack(&cou, &ret, last_buffer);
+    pop_token_stack(&cou, &ret, last_buffer, line, column, "<runtime-generated string>");
 
     ret.pop(); // we remove the first token, our placeholder
     free(last_buffer);
@@ -513,27 +533,23 @@ fun toklist lex_file(const char* path) {
 
     char* last_buffer = malloc(100) as char*;
 
+    int line = 0;
+    int column = 0;
+
     char c;
     c = fgetc(fptr);
     while c && c != EOF {
-        lexing_step(&cou, &ret, c, last_buffer, &state);
+        if c == '\n' {
+            line = line + 1;
+            column = 0;
+        }
+        lexing_step(&cou, &ret, c, last_buffer, &state, line, column, path);
         c = fgetc(fptr);
     }
-    pop_token_stack(&cou, &ret, last_buffer);
+    pop_token_stack(&cou, &ret, last_buffer, line, column, path);
 
     ret.pop(); // we remove the first token, our placeholder
     free(last_buffer);
     return ret;
-}
-
-
-fun void print_tokens(toklist toks) {
-    int i = 0;
-    while i < toks.len() {
-        printf("    ");
-        toks.ith(i).print();
-        printf("\n");
-        i = i + 1;
-    }
 }
 

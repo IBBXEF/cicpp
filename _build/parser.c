@@ -19,12 +19,11 @@ struct string_list;
 int string_list_find(string_list l, const char* str);
 struct toklist;
 toklist lex_string(const char* str);
-void pop_token_stack(int* cou, toklist* l, char* stack);
+void pop_token_stack(int* cou, toklist* l, char* stack, int line, int column, const char* file);
 struct lexing_state;
-void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state* state);
+void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state* state, int line, int column, const char* file);
 toklist lex_string(const char* str);
 toklist lex_file(const char* path);
-void print_tokens(toklist toks);
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -291,6 +290,9 @@ struct token {
       const char* str;
     } Ident_dat;
    } dat;
+  int line;
+  int column;
+  const char* file;
   void init_EOI(){
     kind = EndOfInput;
   }
@@ -800,7 +802,7 @@ struct clist {
 #undef dat_t
 #undef clist
 toklist lex_string(const char* str);
-void pop_token_stack(int* cou, toklist* l, char* stack){
+void pop_token_stack(int* cou, toklist* l, char* stack, int line, int column, const char* file){
   if (!(*(cou))) {
     return;
   }
@@ -883,13 +885,16 @@ void pop_token_stack(int* cou, toklist* l, char* stack){
     str[*(cou)] = 0;
     tok = (token){.kind=token::Ident, .dat={.Ident_dat={.str=str}}};
   }
+  (tok).line = line;
+  (tok).column = column;
+  (tok).file = file;
   (l)->append(tok);
   *(cou) = 0;
 }
 struct lexing_state {
   enum { LEXING_IDENT_OR_INT, LEXING_STRING, LEXING_STRING_SPECIAL, LINE_COMMENT, LEXING_CHAR, LEXING_CHAR_SPECIAL } kind;
 };
-void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state* state){
+void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state* state, int line, int column, const char* file){
   auto _unique_2 = *(state);
   switch (_unique_2.kind) {
   case lexing_state::LEXING_STRING : {
@@ -974,35 +979,35 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
   }
   token* n;
   if ((((c) == (32)) || ((c) == (10))) || ((c) == (9))) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
   } else
   if ((((((c) >= (48)) && ((c) <= (57))) || (((c) >= (97)) && ((c) <= (122)))) || (((c) >= (65)) && ((c) <= (90)))) || ((c) == (95))) {
     last_buffer[*(cou)] = c;
     *(cou) = (*(cou)) + (1);
   } else
   if ((c) == (59)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     (ret)->append((token){.kind=token::Semicol});
   } else
   if ((c) == (44)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     (ret)->append((token){.kind=token::Comma});
   } else
   if ((c) == (46)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     (ret)->append((token){.kind=token::Dot});
   } else
   if ((c) == (35)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     (ret)->append((token){.kind=token::Hashtag});
   } else
   if ((c) == (60)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     binop op = (binop){.kind=binop::Lt};
     (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
   } else
   if ((c) == (62)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     n = (ret)->ith_ref(((ret)->len()) - (1));
     auto _unique_3 = *(n);
     switch (_unique_3.kind) {
@@ -1029,31 +1034,31 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
     }
   } else
   if ((c) == (40)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     (ret)->append((token){.kind=token::LPAREN});
   } else
   if ((c) == (41)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     (ret)->append((token){.kind=token::RPAREN});
   } else
   if ((c) == (91)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     (ret)->append((token){.kind=token::LSQUAR});
   } else
   if ((c) == (93)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     (ret)->append((token){.kind=token::RSQUAR});
   } else
   if ((c) == (123)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     (ret)->append((token){.kind=token::LBRACK});
   } else
   if ((c) == (125)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     (ret)->append((token){.kind=token::RBRACK});
   } else
   if ((c) == (61)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     n = (ret)->ith_ref(((ret)->len()) - (1));
     auto _unique_5 = *(n);
     switch (_unique_5.kind) {
@@ -1097,7 +1102,7 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
     }
   } else
   if ((c) == (58)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     n = (ret)->ith_ref(((ret)->len()) - (1));
     auto _unique_8 = *(n);
     switch (_unique_8.kind) {
@@ -1110,7 +1115,7 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
     }
   } else
   if ((c) == (38)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     n = (ret)->ith_ref(((ret)->len()) - (1));
     auto _unique_9 = *(n);
     switch (_unique_9.kind) {
@@ -1135,7 +1140,7 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
     }
   } else
   if ((c) == (124)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     n = (ret)->ith_ref(((ret)->len()) - (1));
     auto _unique_11 = *(n);
     switch (_unique_11.kind) {
@@ -1160,27 +1165,27 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
     }
   } else
   if ((c) == (33)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     unop op = (unop){.kind=unop::Lnot};
     (ret)->append((token){.kind=token::Unop, .dat={.Unop_dat={.op=op}}});
   } else
   if ((c) == (43)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     binop op = (binop){.kind=binop::Add};
     (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
   } else
   if ((c) == (45)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     binop op = (binop){.kind=binop::Sub};
     (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
   } else
   if ((c) == (42)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     binop op = (binop){.kind=binop::Mul};
     (ret)->append((token){.kind=token::Binop, .dat={.Binop_dat={.op=op}}});
   } else
   if ((c) == (47)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     n = (ret)->ith_ref(((ret)->len()) - (1));
     auto _unique_13 = *(n);
     switch (_unique_13.kind) {
@@ -1205,15 +1210,21 @@ void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state
     }
   } else
   if ((c) == (34)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     *(state) = (lexing_state){.kind=lexing_state::LEXING_STRING};
   } else
   if ((c) == (39)) {
-    pop_token_stack(cou, ret, last_buffer);
+    pop_token_stack(cou, ret, last_buffer, line, column, file);
     *(state) = (lexing_state){.kind=lexing_state::LEXING_CHAR};
   } else {
     printf("unexpected character: %c (code: %d).\n", c, (int)c);
     exit(-(1));
+  }
+  n = (ret)->ith_ref(((ret)->len()) - (1));
+  if (!((n)->file)) {
+    (n)->file = file;
+    (n)->line = line;
+    (n)->column = column;
   }
 }
 toklist lex_string(const char* str){
@@ -1224,14 +1235,20 @@ toklist lex_string(const char* str){
   int cou = 0;
   lexing_state state = (lexing_state){.kind=lexing_state::LEXING_IDENT_OR_INT};
   char* last_buffer = (char*)malloc(100);
+  int line = 0;
+  int column = 0;
   char c;
   c = *(str);
   while ((c) && ((c) != (EOF))) {
-    lexing_step(&(cou), &(ret), c, last_buffer, &(state));
+    if ((c) == (10)) {
+      line = (line) + (1);
+      column = 0;
+    }
+    lexing_step(&(cou), &(ret), c, last_buffer, &(state), line, column, "<runtime-generated string>");
     str = (str) + (1);
     c = *(str);
   }
-  pop_token_stack(&(cou), &(ret), last_buffer);
+  pop_token_stack(&(cou), &(ret), last_buffer, line, column, "<runtime-generated string>");
   (ret).pop();
   free(last_buffer);
   return ret;
@@ -1249,25 +1266,22 @@ toklist lex_file(const char* path){
   int cou = 0;
   lexing_state state = (lexing_state){.kind=lexing_state::LEXING_IDENT_OR_INT};
   char* last_buffer = (char*)malloc(100);
+  int line = 0;
+  int column = 0;
   char c;
   c = fgetc(fptr);
   while ((c) && ((c) != (EOF))) {
-    lexing_step(&(cou), &(ret), c, last_buffer, &(state));
+    if ((c) == (10)) {
+      line = (line) + (1);
+      column = 0;
+    }
+    lexing_step(&(cou), &(ret), c, last_buffer, &(state), line, column, path);
     c = fgetc(fptr);
   }
-  pop_token_stack(&(cou), &(ret), last_buffer);
+  pop_token_stack(&(cou), &(ret), last_buffer, line, column, path);
   (ret).pop();
   free(last_buffer);
   return ret;
-}
-void print_tokens(toklist toks){
-  int i = 0;
-  while ((i) < ((toks).len())) {
-    printf("    ");
-    ((toks).ith(i)).print();
-    printf("\n");
-    i = (i) + (1);
-  }
 }
 int string_list_thingy(string_list* l, char* str){
   int i = string_list_find(*(l), str);
@@ -2545,7 +2559,7 @@ struct gram_rule_t {
           (inptop).print();
           printf(" but expected ");
           ((stacktop).sym).print(nonterm_symbs);
-          printf("\n");
+          printf(" in file %s, line %d, column %d\n", (inptop).file, (inptop).line, (inptop).column);
           exit(EXIT_FAILURE);
         }
         (stacktop).update_tok_ast(inptop);
@@ -2556,7 +2570,7 @@ struct gram_rule_t {
         if ((rule) == (nullptr)) {
           printf("failed to parse: no rule found for nonterminal $%s with token ", (nonterm_symbs).ith(nt));
           (inptop).print();
-          printf("\n");
+          printf(" in file %s, line %d, column %d\n", (inptop).file, (inptop).line, (inptop).column);
           exit(EXIT_FAILURE);
         }
         parsed_ast* ast_loc = (stacktop).ast_loc;

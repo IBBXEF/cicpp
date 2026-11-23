@@ -556,7 +556,7 @@ type gram_rule_t {
                     inptop.print();
                     printf(" but expected ");
                     stacktop.sym.print(nonterm_symbs);
-                    printf("\n");
+                    printf(" in file %s, line %d, column %d\n", inptop.file, inptop.line, inptop.column);
                     exit(EXIT_FAILURE);
                 }
                 stacktop.update_tok_ast(inptop);
@@ -568,7 +568,7 @@ type gram_rule_t {
                 if rule == nullptr {
                     printf("failed to parse: no rule found for nonterminal $%s with token ", nonterm_symbs.ith(nt));
                     inptop.print();
-                    printf("\n");
+                    printf(" in file %s, line %d, column %d\n", inptop.file, inptop.line, inptop.column);
                     exit(EXIT_FAILURE);
                 }
                 
