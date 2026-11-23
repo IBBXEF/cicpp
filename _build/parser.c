@@ -2,6 +2,36 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+struct anyptr;
+struct clist_anyptr;
+void clist_anyptr_free(clist_anyptr l);
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+struct binop;
+struct unop;
+struct token;
+#include <stdlib.h>
+#include <stdio.h>
+struct clist_voidptr;
+struct string_list;
+#include <string.h>
+int string_list_find(string_list l, const char* str);
+struct toklist;
+toklist lex_string(const char* str);
+void pop_token_stack(int* cou, toklist* l, char* stack);
+struct lexing_state;
+void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state* state);
+toklist lex_string(const char* str);
+toklist lex_file(const char* path);
+void print_tokens(toklist toks);
+#include <limits.h>
+#include <stdio.h>
+#include <string.h>
+int string_list_thingy(string_list* l, char* str);
+char* copy_string_until_char(const char** str, char c);
+struct gram_rule_t;
+gram_rule_t* make_rule(const char* str, void* (*rule_result_function)(clist_voidptr), string_list* nonterm_symbs);
 struct anyptr {
   void* ptr;
   void (*free_func)(void*);
@@ -172,9 +202,6 @@ void clist_anyptr_free(clist_anyptr l){
     ((l).pop()).del();
   }
 }
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 struct binop {
   enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt } kind;
   void fprint(FILE* fptr){
@@ -420,8 +447,6 @@ struct token {
     }
   }
 };
-#include <stdlib.h>
-#include <stdio.h>
 #define dat_t void*
 #define clist clist_voidptr
 struct clist {
@@ -650,7 +675,6 @@ struct clist {
 };
 #undef dat_t
 #undef clist
-#include <string.h>
 int string_list_find(string_list l, const char* str){
   int i = 0;
   while ((i) < ((l).len())) {
@@ -1245,9 +1269,6 @@ void print_tokens(toklist toks){
     i = (i) + (1);
   }
 }
-#include <limits.h>
-#include <stdio.h>
-#include <string.h>
 int string_list_thingy(string_list* l, char* str){
   int i = string_list_find(*(l), str);
   if ((i) < (0)) {

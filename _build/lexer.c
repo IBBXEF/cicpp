@@ -2,6 +2,23 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+struct binop;
+struct unop;
+struct token;
+#include <stdlib.h>
+#include <stdio.h>
+struct clist_voidptr;
+struct string_list;
+#include <string.h>
+int string_list_find(string_list l, const char* str);
+struct toklist;
+toklist lex_string(const char* str);
+void pop_token_stack(int* cou, toklist* l, char* stack);
+struct lexing_state;
+void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state* state);
+toklist lex_string(const char* str);
+toklist lex_file(const char* path);
+void print_tokens(toklist toks);
 struct binop {
   enum { Add, Mul, Sub, Div, Band, Bor, Land, Lor, Eq, Leq, Lt, Neq, Geq, Gt } kind;
   void fprint(FILE* fptr){
@@ -247,8 +264,6 @@ struct token {
     }
   }
 };
-#include <stdlib.h>
-#include <stdio.h>
 #define dat_t void*
 #define clist clist_voidptr
 struct clist {
@@ -477,7 +492,6 @@ struct clist {
 };
 #undef dat_t
 #undef clist
-#include <string.h>
 int string_list_find(string_list l, const char* str){
   int i = 0;
   while ((i) < ((l).len())) {

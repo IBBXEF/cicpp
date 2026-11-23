@@ -204,6 +204,7 @@ struct decl
     } dat;
 
     void print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end);
+    void print_prototype(FILE* fptr, ast* prog);
 };
 
 
@@ -380,13 +381,6 @@ void decl::print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end =
         fprintf(fptr, "#undef %s\n", templated_decl->dat.templated_dat.param_names.ith(0));
         print_n_spaces(ident * ident_lvl, fptr);
         fprintf(fptr, "#undef %s\n", templated_decl->dat.templated_dat.name);
-    } else if (kind == Include_C) {
-        print_n_spaces(ident * ident_lvl, fptr);
-        if (dat.include_dat.file[0] == '.' && dat.include_dat.file[1] == '/') {
-            fprintf(fptr, "#include \"%s\"\n", dat.include_dat.file+2);
-        } else {
-            fprintf(fptr, "#include <%s>\n", dat.include_dat.file);
-        }
     } else if (kind == Static) {
         print_n_spaces(ident * ident_lvl, fptr);
         fprintf(fptr, "static\n");
@@ -497,13 +491,47 @@ void decl::print_to_file(FILE* fptr, int ident, ast* prog, bool print_decl_end =
     }
 }
 
+void decl::print_prototype(FILE* fptr, ast* prog) {
+    if (kind == Specialize) {
+        fprintf(fptr, "struct %s;\n", dat.specialize_dat.newname);
+    } else if (kind == Func) {
+        dat.func_dat.ret_t->print_to_file(fptr, 0);
+        fprintf(fptr, " %s(", dat.func_dat.name);
+        for (int i = 0; i < dat.func_dat.args_decls.len(); i++) {
+            decl* d = (decl*)dat.func_dat.args_decls.ith(i);
+            d->print_to_file(fptr, 0, prog, false);
+            if (i != dat.func_dat.args_decls.len() - 1) {
+                fprintf(fptr, ", ");
+            }
+        }
+        fprintf(fptr, ")");
+        fprintf(fptr, ";\n");
+    } else if (kind == Static) {
+        fprintf(fptr, "static\n");
+        dat.static_dat.d->print_prototype(fptr, prog);
+    } else if (kind == Type) {
+        if (dat.type_dat.name) {
+            fprintf(fptr, "struct %s;\n", dat.type_dat.name);
+        }
+    } else if (kind == Include_C) {
+        if (dat.include_dat.file[0] == '.' && dat.include_dat.file[1] == '/') {
+            fprintf(fptr, "#include \"%s\"\n", dat.include_dat.file+2);
+        } else {
+            fprintf(fptr, "#include <%s>\n", dat.include_dat.file);
+        }
+    }
+}
+
 
 
 void ast::print_to_file(FILE* fptr) {
     fprintf(fptr, "#pragma once\n");
 
-    for (int i = 0; i < decls.len(); i++)
-    {
+    for (int i = 0; i < decls.len(); i++) {
+        decl* d = (decl*)decls.ith(i);
+        d->print_prototype(fptr, this);
+    }
+    for (int i = 0; i < decls.len(); i++) {
         decl* d = (decl*)decls.ith(i);
         d->print_to_file(fptr, 0, this);
     }

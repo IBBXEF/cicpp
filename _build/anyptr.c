@@ -1,6 +1,16 @@
 #pragma once
 #include <stdlib.h>
 #include <stdio.h>
+struct clist_voidptr;
+struct string_list;
+#include <string.h>
+int string_list_find(string_list l, const char* str);
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+struct anyptr;
+struct clist_anyptr;
+void clist_anyptr_free(clist_anyptr l);
 #define dat_t void*
 #define clist clist_voidptr
 struct clist {
@@ -229,7 +239,6 @@ struct clist {
 };
 #undef dat_t
 #undef clist
-#include <string.h>
 int string_list_find(string_list l, const char* str){
   int i = 0;
   while ((i) < ((l).len())) {
@@ -240,9 +249,6 @@ int string_list_find(string_list l, const char* str){
   }
   return -(1);
 }
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
 struct anyptr {
   void* ptr;
   void (*free_func)(void*);

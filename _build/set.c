@@ -1,6 +1,10 @@
 #pragma once
 #include <stdlib.h>
 #include <stdio.h>
+struct clist_voidptr;
+struct string_list;
+#include <string.h>
+int string_list_find(string_list l, const char* str);
 #define dat_t void*
 #define clist clist_voidptr
 struct clist {
@@ -229,7 +233,6 @@ struct clist {
 };
 #undef dat_t
 #undef clist
-#include <string.h>
 int string_list_find(string_list l, const char* str){
   int i = 0;
   while ((i) < ((l).len())) {
