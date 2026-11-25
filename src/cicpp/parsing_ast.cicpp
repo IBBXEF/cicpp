@@ -1,0 +1,75 @@
+
+#include "src/cicpp/clist.cicpp"
+#include "src/cicpp/lexer.cicpp"
+
+#include_C "stdlib.h"
+#include_C "stdio.h"
+
+specialize clist<typ*> as typlist
+specialize clist<expr*> as exprlist
+specialize clist<instr*> as instrlist
+specialize clist<decl*> as decllist
+specialize clist<match_branch*> as match_branches_list
+specialize clist<type_constr*> as type_constr_list
+
+
+type typ {
+    Tvoid;
+    Tchar;
+    Tbool;
+    Tint;
+    Tptr { typ* t; };
+    Tfunptr { typ* ret_t; typlist args_t; };
+    Tident { const char* name; };
+    Tconst { typ* t; };
+    Typeof { expr* e; };
+}
+
+type expr {
+    Vint { int i; };
+    Vstr { const char* str; };
+    Ident { const char* str; };
+    Binop { expr* e1; binop op; expr* e2; };
+    Unop { unop op; expr* e; };
+    Field { expr* e; const char* field; };
+    Arrow { expr* e; const char* field; };
+    Array { expr* arr; expr* ind; };
+    Fcall { expr* func; exprlist args; };
+    Typecast { expr* e; typ t; };
+    IndConstr { typ t; const char* constr; string_list args; };
+}
+
+type type_constr {
+    const char* name;
+    decllist fields;
+}
+
+type decl {
+    Var {typ t; const char* name; expr* vlue; };
+    Func { const char* name; typ ret_t; decllist args_decls; instrlist instrs; };
+    Type { const char* name; type_constr_list constrs; decllist other_decls; };
+    Include_C { const char* file; };
+    Static { decl* d; };
+    Templated { decl* d; string_list param_names; const char* name; };
+    Specialize { const char* templated_t; typlist params; const char* newname; };
+}
+
+type match_branch {
+    const char* matched_symb;
+    instrlist instrs;
+    string_list fields;
+}
+
+type instr {
+    Decl { decl d; };
+    Return { expr* e; };
+    Set { expr l; expr r; };
+    If { expr b; instrlist truebrc; instrlist falsebrc; };
+    While { expr b; instrlist loop; };
+    Match { typ t; expr e; match_branches_list branches; };
+    Fcall { expr call; };
+}
+
+type ast {
+    decllist decls;
+}

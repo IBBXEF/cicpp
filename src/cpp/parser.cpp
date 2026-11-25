@@ -2,7 +2,7 @@
 #pragma once
 
 #include "utils.cpp"
-#include "ast.cpp"
+// #include "ast.cpp"
 #include "parser.c"
 
 ast parse_file(const char* path);
@@ -29,83 +29,84 @@ void* gram_rule_elt_n2(clist_voidptr l) {
 void* gram_rule_binop(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
     ret->kind = expr::Binop;
-    ret->dat.binop_dat.op = ((token*)l.ith(1))->dat.Binop_dat.op;
-    ret->dat.binop_dat.v1 = (expr*)l.ith(0);
-    ret->dat.binop_dat.v2 = (expr*)l.ith(2);
+    ret->dat.Binop_dat.op = ((token*)l.ith(1))->dat.Binop_dat.op;
+    ret->dat.Binop_dat.e1 = (expr*)l.ith(0);
+    ret->dat.Binop_dat.e2 = (expr*)l.ith(2);
     return ret;
 }
 void* gram_rule_unop(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
     ret->kind = expr::Unop;
-    ret->dat.unop_dat.op = ((token*)l.ith(0))->dat.Unop_dat.op;
-    ret->dat.unop_dat.v = (expr*)l.ith(1);
+    ret->dat.Unop_dat.op = ((token*)l.ith(0))->dat.Unop_dat.op;
+    ret->dat.Unop_dat.e = (expr*)l.ith(1);
     return ret;
 }
 void* gram_rule_neg(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
     ret->kind = expr::Unop;
-    ret->dat.unop_dat.op.kind = unop::Neg;
-    ret->dat.unop_dat.v = (expr*)l.ith(1);
+    ret->dat.Unop_dat.op.kind = unop::Neg;
+    ret->dat.Unop_dat.e = (expr*)l.ith(1);
     return ret;
 }
 void* gram_rule_dot(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
     ret->kind = expr::Field;
-    ret->dat.field_dat.stru = (expr*)l.ith(0);
-    ret->dat.field_dat.field = ((token*)l.ith(2))->dat.Ident_dat.str;
+    ret->dat.Field_dat.e = (expr*)l.ith(0);
+    ret->dat.Field_dat.field = ((token*)l.ith(2))->dat.Ident_dat.str;
     return ret;
 }
 void* gram_rule_arrow(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
     ret->kind = expr::Arrow;
-    ret->dat.arrow_dat.stru = (expr*)l.ith(0);
-    ret->dat.arrow_dat.field = ((token*)l.ith(2))->dat.Ident_dat.str;
+    ret->dat.Arrow_dat.e = (expr*)l.ith(0);
+    ret->dat.Arrow_dat.field = ((token*)l.ith(2))->dat.Ident_dat.str;
     return ret;
 }
 void* gram_rule_deref(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
     ret->kind = expr::Unop;
-    ret->dat.unop_dat.op.kind = unop::Deref;
-    ret->dat.unop_dat.v = (expr*)l.ith(1);
+    ret->dat.Unop_dat.op.kind = unop::Deref;
+    ret->dat.Unop_dat.e = (expr*)l.ith(1);
     return ret;
 }
 void* gram_rule_addr(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
     ret->kind = expr::Unop;
-    ret->dat.unop_dat.op.kind = unop::Addr;
-    ret->dat.unop_dat.v = (expr*)l.ith(1);
+    ret->dat.Unop_dat.op.kind = unop::Addr;
+    ret->dat.Unop_dat.e = (expr*)l.ith(1);
     return ret;
 }
 void* gram_rule_int(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
-    ret->kind = expr::Int;
-    ret->dat.int_dat = ((token*)l.ith(0))->dat.VInt_dat.i;
+    ret->kind = expr::Vint;
+    ret->dat.Vint_dat.i = ((token*)l.ith(0))->dat.VInt_dat.i;
     return ret;
 }
 void* gram_rule_string(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
-    ret->kind = expr::String;
-    ret->dat.string_dat = ((token*)l.ith(0))->dat.VString_dat.str;
+    ret->kind = expr::Vstr;
+    ret->dat.Vstr_dat.str = ((token*)l.ith(0))->dat.VString_dat.str;
     return ret;
 }
 void* gram_rule_var(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
-    ret->kind = expr::Var;
-    ret->dat.var_dat = ((token*)l.ith(0))->dat.Ident_dat.str;
+    ret->kind = expr::Ident;
+    ret->dat.Ident_dat.str = ((token*)l.ith(0))->dat.Ident_dat.str;
     return ret;
 }
 void* gram_rule_array(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
-    ret->kind = expr::Index;
-    ret->dat.ind_dat.arr = (expr*)l.ith(0);
-    ret->dat.ind_dat.ind = (expr*)l.ith(2);
+    ret->kind = expr::Array;
+    ret->dat.Array_dat.arr = (expr*)l.ith(0);
+    ret->dat.Array_dat.ind = (expr*)l.ith(2);
     return ret;
 }
 void* gram_rule_func(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
     ret->kind = expr::Fcall;
-    ret->dat.fcall_dat.func = (expr*)l.ith(0);
-    ret->dat.fcall_dat.args = (clist_voidptr*)l.ith(2);
+    ret->dat.Fcall_dat.func = (expr*)l.ith(0);
+    ret->dat.Fcall_dat.args = *(exprlist*)l.ith(2);
+    free(l.ith(2));
 
     return ret;
 }
@@ -144,8 +145,9 @@ void* gram_rule_list_empty(clist_voidptr l) {
 void* gram_rule_typecast(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
     ret->kind = expr::Typecast;
-    ret->dat.typecast_dat.v = (expr*)l.ith(0);
-    ret->dat.typecast_dat.t = (typ*)l.ith(2);
+    ret->dat.Typecast_dat.e = (expr*)l.ith(0);
+    ret->dat.Typecast_dat.t = *(typ*)l.ith(2);
+    free(l.ith(2));
     return ret;
 }
 void* gram_rule_lambda(clist_voidptr l) {
@@ -157,18 +159,20 @@ void* gram_rule_lambda(clist_voidptr l) {
 }
 void* gram_rule_constr0(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
-    ret->kind = expr::Constr;
-    ret->dat.constr_dat.t = (typ*)l.ith(1);
-    ret->dat.constr_dat.constr = ((token*)l.ith(2))->dat.Ident_dat.str;
-    ret->dat.constr_dat.args.init();
+    ret->kind = expr::IndConstr;
+    ret->dat.IndConstr_dat.t = *(typ*)l.ith(1);
+    free(l.ith(1));
+    ret->dat.IndConstr_dat.constr = ((token*)l.ith(2))->dat.Ident_dat.str;
+    ret->dat.IndConstr_dat.args.init();
     return ret;
 }
 void* gram_rule_constr(clist_voidptr l) {
     expr* ret = (expr*)malloc(sizeof(expr));
-    ret->kind = expr::Constr;
-    ret->dat.constr_dat.t = (typ*)l.ith(1);
-    ret->dat.constr_dat.constr = ((token*)l.ith(2))->dat.Ident_dat.str;
-    ret->dat.constr_dat.args = *(string_list*)l.ith(4);
+    ret->kind = expr::IndConstr;
+    ret->dat.IndConstr_dat.t = *(typ*)l.ith(1);
+    free(l.ith(1));
+    ret->dat.IndConstr_dat.constr = ((token*)l.ith(2))->dat.Ident_dat.str;
+    ret->dat.IndConstr_dat.args = *(string_list*)l.ith(4);
     free(l.ith(4));
     return ret;
 }
@@ -176,16 +180,16 @@ void* gram_rule_typ_base(clist_voidptr l) {
     typ* ret = (typ*)malloc(sizeof(typ));
     token n = *(token*)l.ith(0);
     if (n.kind == token::TVoid) {
-        ret->kind = typ::TVoid;
+        ret->kind = typ::Tvoid;
     } else if (n.kind == token::TInt) {
-        ret->kind = typ::TInt;
+        ret->kind = typ::Tint;
     } else if (n.kind == token::TChar) {
-        ret->kind = typ::TChar;
+        ret->kind = typ::Tchar;
     } else if (n.kind == token::TBool) {
-        ret->kind = typ::TBool;
+        ret->kind = typ::Tbool;
     } else if (n.kind == token::Ident) {
-        ret->kind = typ::TIdent;
-        ret->dat.TIdent_dat = n.dat.Ident_dat.str;
+        ret->kind = typ::Tident;
+        ret->dat.Tident_dat.name = n.dat.Ident_dat.str;
     } else {
         printf("impossible token kind\n");
         exit(-1);
@@ -194,92 +198,99 @@ void* gram_rule_typ_base(clist_voidptr l) {
 }
 void* gram_rule_typ_ptr(clist_voidptr l) {
     typ* ret = (typ*)malloc(sizeof(typ));
-    ret->kind = typ::TPtr;
-    ret->dat.ptr_dat = (typ*)l.ith(0);
+    ret->kind = typ::Tptr;
+    ret->dat.Tptr_dat.t = (typ*)l.ith(0);
     return ret;
 }
 void* gram_rule_typ_fptr(clist_voidptr l) {
     typ* ret = (typ*)malloc(sizeof(typ));
     ret->kind = typ::Tfunptr;
-    ret->dat.tfunptr_dat.ret_t = (typ*)l.ith(2);
-    ret->dat.tfunptr_dat.args_t.init();
-    ret->dat.tfunptr_dat.args_t.push((typ*)l.ith(0));
+    ret->dat.Tfunptr_dat.ret_t = (typ*)l.ith(2);
+    ret->dat.Tfunptr_dat.args_t.init();
+    ret->dat.Tfunptr_dat.args_t.push((typ*)l.ith(0));
     return ret;
 }
 void* gram_rule_typ_cst(clist_voidptr l) {
     typ* ret = (typ*)malloc(sizeof(typ));
-    ret->kind = typ::TConst;
-    ret->dat.const_dat = (typ*)l.ith(1);
+    ret->kind = typ::Tconst;
+    ret->dat.Tconst_dat.t = (typ*)l.ith(1);
     return ret;
 }
 void* gram_rule_typ_cstpar(clist_voidptr l) {
     typ* ret = (typ*)malloc(sizeof(typ));
-    ret->kind = typ::TConst;
-    ret->dat.const_dat = (typ*)l.ith(2);
+    ret->kind = typ::Tconst;
+    ret->dat.Tconst_dat.t = (typ*)l.ith(2);
     return ret;
 }
 void* gram_rule_typeof(clist_voidptr l) {
     typ* ret = (typ*)malloc(sizeof(typ));
     ret->kind = typ::Typeof;
-    ret->dat.typeof_dat = (expr*)l.ith(2);
+    ret->dat.Typeof_dat.e = (expr*)l.ith(2);
     return ret;
 }
 void* gram_rule_instr_decl(clist_voidptr l) {
     instr* ret = (instr*)malloc(sizeof(instr));
     ret->kind = instr::Decl;
-    ret->dat.decl_dat.d = (decl*)l.ith(0);
+    ret->dat.Decl_dat.d = *(decl*)l.ith(0);
+    free(l.ith(0));
     return ret;
 }
 void* gram_rule_instr_assign(clist_voidptr l) {
     instr* ret = (instr*)malloc(sizeof(instr));
     ret->kind = instr::Set;
-    ret->dat.set_dat.l = (expr*)l.ith(0);
-    ret->dat.set_dat.r = (expr*)l.ith(2);
+    ret->dat.Set_dat.l = *(expr*)l.ith(0);
+    ret->dat.Set_dat.r = *(expr*)l.ith(2);
+    free(l.ith(0));
+    free(l.ith(2));
     return ret;
 }
 void* gram_rule_instr_ret_smth(clist_voidptr l) {
     instr* ret = (instr*)malloc(sizeof(instr));
     ret->kind = instr::Return;
-    ret->dat.ret_dat.v = (expr*)l.ith(1);
+    ret->dat.Return_dat.e = (expr*)l.ith(1);
     return ret;
 }
 void* gram_rule_instr_ret_no(clist_voidptr l) {
     instr* ret = (instr*)malloc(sizeof(instr));
     ret->kind = instr::Return;
-    ret->dat.ret_dat.v = nullptr;
+    ret->dat.Return_dat.e = nullptr;
     return ret;
 }
 void* gram_rule_instr_fcall(clist_voidptr l) {
     instr* ret = (instr*)malloc(sizeof(instr));
     ret->kind = instr::Fcall;
-    ret->dat.fcall_dat.call = (expr*)l.ith(0);
+    ret->dat.Fcall_dat.call = *(expr*)l.ith(0);
+    free(l.ith(0));
     return ret;
 }
 void* gram_rule_instr_while(clist_voidptr l) {
     instr* ret = (instr*)malloc(sizeof(instr));
     ret->kind = instr::While;
-    ret->dat.while_dat.b = (expr*)l.ith(1);
-    ret->dat.while_dat.instrs = *(clist_voidptr*)l.ith(3);
+    ret->dat.While_dat.b = *(expr*)l.ith(1);
+    ret->dat.While_dat.loop = *(instrlist*)l.ith(3);
+    free(l.ith(1));
     free(l.ith(3));
     return ret;
 }
 void* gram_rule_instr_if(clist_voidptr l) {
     instr* ret = (instr*)malloc(sizeof(instr));
     ret->kind = instr::If;
-    ret->dat.if_dat.b = (expr*)l.ith(1);
-    ret->dat.if_dat.truebrc = *(clist_voidptr*)l.ith(3);
+    ret->dat.If_dat.b = *(expr*)l.ith(1);
+    ret->dat.If_dat.truebrc = *(instrlist*)l.ith(3);
+    ret->dat.If_dat.falsebrc = *(instrlist*)l.ith(5);
+    free(l.ith(1));
     free(l.ith(3));
-    ret->dat.if_dat.falsebrc = *(clist_voidptr*)l.ith(5);
     free(l.ith(5));
     return ret;
 }
 void* gram_rule_instr_elif(clist_voidptr l) {
     instr* instr_ret = (instr*)malloc(sizeof(instr));
     instr_ret->kind = instr::If;
-    instr_ret->dat.if_dat.b = (expr*)l.ith(1);
-    instr_ret->dat.if_dat.truebrc = *(clist_voidptr*)l.ith(3);
+    instr_ret->dat.If_dat.b = *(expr*)l.ith(1);
+    instr_ret->dat.If_dat.truebrc = *(instrlist*)l.ith(3);
+    instr_ret->dat.If_dat.falsebrc = *(instrlist*)l.ith(5);
+    free(l.ith(1));
     free(l.ith(3));
-    instr_ret->dat.if_dat.falsebrc = *(clist_voidptr*)l.ith(5);
     free(l.ith(5));
 
     clist_voidptr* ret = (clist_voidptr*)malloc(sizeof(clist_voidptr));
@@ -290,28 +301,30 @@ void* gram_rule_instr_elif(clist_voidptr l) {
 void* gram_rule_instr_match(clist_voidptr l) {
     instr* ret = (instr*)malloc(sizeof(instr));
     ret->kind = instr::Match;
-    ret->dat.match_dat.e = (expr*)l.ith(1);
-    ret->dat.match_dat.t = (typ*)l.ith(3);
-    ret->dat.match_dat.branches = *(clist_voidptr*)l.ith(5);
+    ret->dat.Match_dat.e = *(expr*)l.ith(1);
+    ret->dat.Match_dat.t = *(typ*)l.ith(3);
+    ret->dat.Match_dat.branches = *(match_branches_list*)l.ith(5);
+    free(l.ith(1));
+    free(l.ith(3));
     free(l.ith(5));
     return ret;
 }
 void* gram_rule_instr_match_tl(clist_voidptr l) {
-    instr::match_branch* brch = (instr::match_branch*)malloc(sizeof(instr::match_branch));
+    match_branch* brch = (match_branch*)malloc(sizeof(match_branch));
     brch->fields.init();
     brch->matched_symb = ((token*)l.ith(1))->dat.Ident_dat.str;
-    brch->instrs = *(clist_voidptr*)l.ith(4);
+    brch->instrs = *(instrlist*)l.ith(4);
     free(l.ith(4));
 
     ((clist_voidptr*)l.ith(6))->push(brch);
     return l.ith(6);
 }
 void* gram_rule_instr_match_tl2(clist_voidptr l) {
-    instr::match_branch* brch = (instr::match_branch*)malloc(sizeof(instr::match_branch));
+    match_branch* brch = (match_branch*)malloc(sizeof(match_branch));
     brch->matched_symb = ((token*)l.ith(1))->dat.Ident_dat.str;
     brch->fields = *(string_list*)l.ith(3);
     free(l.ith(3));
-    brch->instrs = *(clist_voidptr*)l.ith(7);
+    brch->instrs = *(instrlist*)l.ith(7);
     free(l.ith(7));
 
     ((clist_voidptr*)l.ith(9))->push(brch);
@@ -320,86 +333,93 @@ void* gram_rule_instr_match_tl2(clist_voidptr l) {
 void* gram_rule_vardecl(clist_voidptr l) {
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Var;
-    ret->dat.var_dat.name = ((token*)l.ith(1))->dat.Ident_dat.str;
-    ret->dat.var_dat.t = (typ*)l.ith(0);
-    ret->dat.var_dat.v = nullptr;
+    ret->dat.Var_dat.name = ((token*)l.ith(1))->dat.Ident_dat.str;
+    ret->dat.Var_dat.t = *(typ*)l.ith(0);
+    ret->dat.Var_dat.vlue = nullptr;
+    free(l.ith(0));
     return ret;
 }
 void* gram_rule_vardecl_vlue(clist_voidptr l) {
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Var;
-    ret->dat.var_dat.name = ((token*)l.ith(1))->dat.Ident_dat.str;
-    ret->dat.var_dat.t = (typ*)l.ith(0);
-    ret->dat.var_dat.v = (expr*)l.ith(3);
+    ret->dat.Var_dat.name = ((token*)l.ith(1))->dat.Ident_dat.str;
+    ret->dat.Var_dat.t = *(typ*)l.ith(0);
+    ret->dat.Var_dat.vlue = (expr*)l.ith(3);
+    free(l.ith(0));
     return ret;
 }
 void* gram_rule_funcdecl(clist_voidptr l) {
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Func;
-    ret->dat.func_dat.name = ((token*)l.ith(2))->dat.Ident_dat.str;
-    ret->dat.func_dat.ret_t = (typ*)l.ith(1);
-    ret->dat.func_dat.args_decls = *(clist_voidptr*)l.ith(4);
-    free((clist_voidptr*)l.ith(4));
-    ret->dat.func_dat.instrs = (clist_voidptr*)l.ith(7);
+    ret->dat.Func_dat.name = ((token*)l.ith(2))->dat.Ident_dat.str;
+    ret->dat.Func_dat.ret_t = *(typ*)l.ith(1);
+    ret->dat.Func_dat.args_decls = *(decllist*)l.ith(4);
+    ret->dat.Func_dat.instrs = *(instrlist*)l.ith(7);
+    free(l.ith(1));
+    free(l.ith(4));
+    free(l.ith(7));
     return ret;
 }
-void* gram_rule_funcprot(clist_voidptr l) {
+void* gram_rule_funcprot(clist_voidptr l) { // TODO: remove function prototyping
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Func;
-    ret->dat.func_dat.name = ((token*)l.ith(2))->dat.Ident_dat.str;
-    ret->dat.func_dat.ret_t = (typ*)l.ith(1);
-    ret->dat.func_dat.args_decls = *(clist_voidptr*)l.ith(4);
-    free((clist_voidptr*)l.ith(4));
-    ret->dat.func_dat.instrs = nullptr;
+    ret->dat.Func_dat.name = ((token*)l.ith(2))->dat.Ident_dat.str;
+    ret->dat.Func_dat.ret_t = *(typ*)l.ith(1);
+    ret->dat.Func_dat.args_decls = *(decllist*)l.ith(4);
+    ret->dat.Func_dat.instrs.init();
+    free(l.ith(1));
+    free(l.ith(4));
     return ret;
 }
 void* gram_rule_type(clist_voidptr l) {
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Type;
-    ret->dat.type_dat.name = ((token*)l.ith(1))->dat.Ident_dat.str;
-    clist_voidptr* tmp = (clist_voidptr*)l.ith(3);
-    ret->dat.type_dat.constrs = tmp[0];
-    ret->dat.type_dat.other_decls = tmp[1];
-    if (!ret->dat.type_dat.constrs.len()) {
-        decl::type_constr* unit = (decl::type_constr*)malloc(sizeof(decl::type_constr));
+    ret->dat.Type_dat.name = ((token*)l.ith(1))->dat.Ident_dat.str;
+    type_constr_list* tmp = (type_constr_list*)l.ith(3);
+    ret->dat.Type_dat.constrs = *tmp;
+    ret->dat.Type_dat.other_decls = *(decllist*)(tmp+1);
+    free(tmp);
+    if (!ret->dat.Type_dat.constrs.len()) {
+        type_constr* unit = (type_constr*)malloc(sizeof(type_constr));
         unit->fields.init();
         unit->name = "_";
-        ret->dat.type_dat.constrs.push(unit);
+        ret->dat.Type_dat.constrs.push(unit);
     }
     return ret;
 }
 void* gram_rule_type_templ(clist_voidptr l) {
     decl* tdecl = (decl*)malloc(sizeof(decl));
     tdecl->kind = decl::Type;
-    tdecl->dat.type_dat.name = ((token*)l.ith(4))->dat.Ident_dat.str;
-    clist_voidptr* tmp = (clist_voidptr*)l.ith(6);
-    tdecl->dat.type_dat.constrs = tmp[0];
-    tdecl->dat.type_dat.other_decls = tmp[1];
-    if (!tdecl->dat.type_dat.constrs.len()) {
-        decl::type_constr* unit = (decl::type_constr*)malloc(sizeof(decl::type_constr));
+    tdecl->dat.Type_dat.name = ((token*)l.ith(4))->dat.Ident_dat.str;
+    type_constr_list* tmp = (type_constr_list*)l.ith(6);
+    tdecl->dat.Type_dat.constrs = *tmp;
+    tdecl->dat.Type_dat.other_decls = *(decllist*)(tmp+1);
+    if (!tdecl->dat.Type_dat.constrs.len()) {
+        type_constr* unit = (type_constr*)malloc(sizeof(type_constr));
         unit->fields.init();
         unit->name = "_";
-        tdecl->dat.type_dat.constrs.push(unit);
+        tdecl->dat.Type_dat.constrs.push(unit);
     }
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Templated;
-    ret->dat.templated_dat.d = tdecl;
-    ret->dat.templated_dat.name = tdecl->dat.type_dat.name;
-    ret->dat.templated_dat.param_names = *(string_list*)l.ith(2);
+    ret->dat.Templated_dat.d = tdecl;
+    ret->dat.Templated_dat.name = tdecl->dat.Type_dat.name;
+    ret->dat.Templated_dat.param_names = *(string_list*)l.ith(2);
     free(l.ith(2));
+    free(tmp);
     return ret;
 }
 void* gram_rule_specialize(clist_voidptr l) {
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Specialize;
-    ret->dat.specialize_dat.params = *(clist_voidptr*)l.ith(3);
-    ret->dat.specialize_dat.templated_t = ((token*)l.ith(1))->dat.VString_dat.str;
-    ret->dat.specialize_dat.newname = ((token*)l.ith(6))->dat.VString_dat.str;
+    ret->dat.Specialize_dat.params = *(typlist*)l.ith(3);
+    ret->dat.Specialize_dat.templated_t = ((token*)l.ith(1))->dat.VString_dat.str;
+    ret->dat.Specialize_dat.newname = ((token*)l.ith(6))->dat.VString_dat.str;
     free((clist_voidptr*)l.ith(3));
     return ret;
 }
 void* gram_rule_locdecl_empty(clist_voidptr l) {
-    clist_voidptr* ret = (clist_voidptr*)malloc(2*sizeof(clist_voidptr));
+    clist_voidptr* ret = (clist_voidptr*)malloc(sizeof(type_constr_list) + sizeof(decllist));
     ret[0].init();
     ret[1].init();
     return ret;
@@ -412,13 +432,13 @@ void* gram_rule_locdecl_decl(clist_voidptr l) {
 void* gram_rule_decl_static(clist_voidptr l) {
     decl* d = (decl*)malloc(sizeof(decl));
     d->kind = decl::Static;
-    d->dat.static_dat.d = (decl*)l.ith(1);
+    d->dat.Static_dat.d = (decl*)l.ith(1);
     clist_voidptr* tmp = (clist_voidptr*)l.ith(2);
     tmp[1].push(d);
     return l.ith(2);
 }
 void* gram_rule_locdecl_enum(clist_voidptr l) {
-    decl::type_constr* cstr = (decl::type_constr*)malloc(sizeof(decl::type_constr));
+    type_constr* cstr = (type_constr*)malloc(sizeof(type_constr));
     cstr->fields.init();
     cstr->name = ((token*)l.ith(0))->dat.Ident_dat.str;
     clist_voidptr* tmp = (clist_voidptr*)l.ith(2);
@@ -426,8 +446,8 @@ void* gram_rule_locdecl_enum(clist_voidptr l) {
     return l.ith(2);
 }
 void* gram_rule_locdecl_cstr(clist_voidptr l) {
-    decl::type_constr* cstr = (decl::type_constr*)malloc(sizeof(decl::type_constr));
-    cstr->fields = *(clist_voidptr*)l.ith(2);
+    type_constr* cstr = (type_constr*)malloc(sizeof(type_constr));
+    cstr->fields = *(decllist*)l.ith(2);
     free(l.ith(2));
     cstr->name = ((token*)l.ith(0))->dat.Ident_dat.str;
     clist_voidptr* tmp = (clist_voidptr*)l.ith(5);
@@ -437,11 +457,11 @@ void* gram_rule_locdecl_cstr(clist_voidptr l) {
 void* gram_rule_include_c(clist_voidptr l) {
     decl* ret = (decl*)malloc(sizeof(decl));
     ret->kind = decl::Include_C;
-    ret->dat.include_dat.file = ((token*)l.ith(2))->dat.VString_dat.str;
+    ret->dat.Include_C_dat.file = ((token*)l.ith(2))->dat.VString_dat.str;
     return ret;
 }
 void* gram_rule_include(clist_voidptr l) {
-    clist_voidptr* prog = (clist_voidptr*)l.ith(3);
+    decllist* prog = (decllist*)l.ith(3);
     const char* path = ((token*)l.ith(2))->dat.VString_dat.str;
     if (string_list_find(included_files, path) < 0) {
         included_files.push(path);
@@ -645,7 +665,7 @@ ast parse_prog(toklist* toks) {
     }
     printf("parsed program!\n");
     ast ret;
-    ret.decls = *(clist_voidptr*)ret_decls;
+    ret.decls = *(decllist*)ret_decls;
     free(ret_decls);
     return ret;
 }

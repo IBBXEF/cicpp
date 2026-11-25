@@ -64,9 +64,10 @@ build_test: $(SOURCE_CPP_FILES)
 	g++ $(GCC_ARGS) -I_build/test2 -Isrc/cpp src/cpp/main.cpp -o _build/_test
 
 replacelib: $(TEMP_FILES)
+	cp _build/test/parser.c _build/parser.c
+	cp _build/test/parser.c _build/parsing_ast.c
 	cp _build/test/lexer.c _build/lexer.c
 	cp _build/test/clist.c _build/clist.c
-	cp _build/test/parser.c _build/parser.c
 	cp _build/test/anyptr.c _build/anyptr.c
 	cp _build/test/set.c _build/set.c
 

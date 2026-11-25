@@ -22,7 +22,8 @@ int main(int argc, char const *argv[])
         if (!fptr) {
             printf("cannot open destination file\n");
         }
-        a.print_to_file(fptr);
+        c_ast ca = parsing_ast_to_c_ast(a);
+        ca.print_to_file(fptr);
     }
 
     return 0;

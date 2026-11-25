@@ -1,0 +1,205 @@
+
+#include "src/cicpp/clist.cicpp"
+#include "src/cicpp/lexer.cicpp"
+
+#include "src/cicpp/parsing_ast.cicpp"
+
+#include_C "stdlib.h"
+#include_C "stdio.h"
+
+int ident_level = 0;
+fun void print_ident() {
+    int i = ident_level;
+    while 0 < i {
+        printf("    ");
+        i = i - 1;
+    }
+}
+fun void add_ident(int i) {
+    ident_level = ident_level + i;
+}
+
+specialize clist<c_typ*> as c_typlist
+specialize clist<switch_branch*> as switch_branch_list
+specialize clist<c_decl*> as c_decllist
+specialize clist<c_instr*> as c_instrlist
+specialize clist<c_expr*> as c_exprlist
+
+type c_typ {
+
+    Tvoid;
+    Tchar;
+    Tbool;
+    Tint;
+    Tptr { c_typ* t; };
+    Tfunptr { c_typ* ret_t; c_typlist args_t; };
+
+    fun char* decl_to_string(const char* varname) {
+        char* ret = nullptr;
+        match *this : c_typ with
+        | Tvoid -> { ret = malloc(strlen(varname)+6) as char*; sprintf(ret, "void %s", varname); return ret; }
+        | Tchar -> { ret = malloc(strlen(varname)+6) as char*; sprintf(ret, "char %s", varname); return ret; }
+        | Tbool -> { ret = malloc(strlen(varname)+6) as char*; sprintf(ret, "bool %s", varname); return ret; }
+        | Tint  -> { ret = malloc(strlen(varname)+5) as char*; sprintf(ret, "int %s", varname);  return ret; }
+        | Tptr (t) -> {
+            char* tmp = malloc(strlen(varname)+2) as char*;
+            sprintf(tmp, "*%s", varname);
+            char* ret = t->decl_to_string(tmp);
+            free(tmp); }
+        | Tfunptr (ret_t, args_t) -> {
+            int totsize = 0;
+            char** tmp = malloc(args_t.len()) as char**;
+            int i = 0;
+            while i < args_t.len() {
+                tmp[i] = args_t.ith(i)->decl_to_string("");
+                totsize = totsize + strlen(tmp[i]) + 2;
+                i = i + 1;
+            }
+            char* argsdecl = malloc(totsize + 1 + 3 + strlen(varname)) as char*;
+            sprintf(argsdecl, "(*%s)(", varname);
+            i = 0;
+            int offset = strlen(varname) + 4;
+            while i < args_t.len() {
+                strcpy(argsdecl + offset, tmp[i]);
+                offset = offset + strlen(tmp[i]);
+                free(tmp[i]);
+                i = i + 1;
+            }
+            free(tmp);
+            argsdecl[offset] = ')';
+            argsdecl[offset+1] = 0;
+            ret = ret_t->decl_to_string(argsdecl);
+            free(argsdecl);
+            return ret;
+        }
+    }
+}
+
+type c_expr {
+    Vint { int i; };
+    Vstr { const char* str; };
+    Ident { const char* str; };
+    Binop { c_expr* e1; binop op; c_expr* e2; };
+    Unop { binop op; c_expr* e; };
+    Field { c_expr* e; const char* field; };
+    Fcall { c_expr* func; c_exprlist args; };
+    Typecast { c_expr* e; c_typ t; };
+}
+
+type c_decl {
+    Var {c_typ t; const char* name; c_expr* vlue; };
+    Func { const char* name; c_typ ret_t; c_decllist args_decls; c_instrlist* instrs; };
+    Struct { const char* name; c_decllist inner_decls; };
+    Enum { const char* name; string_list values; };
+    Union { const char* name; c_decllist inner_decls; };
+    Include_C { const char* file; };
+    Static { c_decl* d; };
+}
+
+type switch_branch {
+    const char* matched_val;
+    c_instrlist instrs;
+}
+
+type c_instr {
+    Decl { c_decl d; };
+    Return { c_expr* e; };
+    Set { c_expr l; c_expr r; };
+    If { c_expr b; c_instrlist truebrc; c_instrlist falsebrc; };
+    While { c_expr b; c_instrlist loop; };
+    Switch { typ t; c_expr e; switch_branch_list branches; };
+    Fcall { c_expr call; };
+}
+
+type c_ast {
+    c_decllist decls;
+
+    fun void print_to_file(FILE* fptr) {}
+}
+
+fun c_typ parsing_typ_to_c_typ(typ t) {
+    match t : typ with
+}
+fun void parsing_instr_to_c_instr(instr ist, c_instrlist* outs) {
+    match ist : instr with
+}
+fun c_expr parsing_expr_to_c_expr(expr e, c_instrlist* outs) {
+    match e : expr with
+}
+
+fun void parsing_decl_to_c_decl(decl t, c_decllist* prototypes, c_decllist* definitions) {
+    match t : decl with
+    | Var (t, name, vlue) -> {
+        typ vt = t;
+        expr* vv = vlue;
+        if 1 { c_typ t = parsing_typ_to_c_typ(vt);
+            c_expr* vlue = nullptr;
+            if vv { *vlue = parsing_expr_to_c_expr(*vv, nullptr); }
+            c_decl* tmp = malloc(sizeof(c_decl)) as c_decl*;
+            *tmp = {c_decl Var: t, name, vlue};
+            prototypes->append(tmp); } }
+    | Func (name, ret_t, args_decls, instrs) -> {
+        c_typ fret_t = parsing_typ_to_c_typ(ret_t);
+        c_instrlist* ist = malloc(sizeof(c_instrlist)) as c_instrlist*;
+        ist->init();
+        int i = 0;
+        while i < instrs.len() {
+            parsing_instr_to_c_instr(*instrs.ith(i), ist);
+            i = i + 1;
+        }
+        c_decllist fargs_decls;
+        i = 0;
+        while i < args_decls.len() {
+            parsing_decl_to_c_decl(*args_decls.ith(i), nullptr, &fargs_decls);
+            i = i + 1;
+        }
+        if 1 { // for a fresh namespace
+            c_typ ret_t = fret_t;
+            c_decllist args_decls = fargs_decls;
+            c_instrlist* instrs = nullptr;
+            c_decl* tmp = nullptr;
+            if prototypes {
+                tmp = malloc(sizeof(c_decl)) as c_decl*;
+                *tmp = {c_decl Func: name, ret_t, args_decls, instrs};
+                prototypes->append(tmp);
+            }
+            instrs = ist;
+            tmp = malloc(sizeof(c_decl)) as c_decl*;
+            *tmp = {c_decl Func: name, ret_t, args_decls, instrs};
+            definitions->append(tmp); } }
+    | Include_C (file) -> {
+        c_decl* tmp = malloc(sizeof(c_decl)) as c_decl*;
+        *tmp = {c_decl Include_C: file};
+        prototypes->append(tmp); }
+    | Static (d) -> {
+        c_decllist tmpprot; tmpprot.init();
+        c_decllist tmpdefs; tmpdefs.init();
+        parsing_decl_to_c_decl(*d, &tmpprot, &tmpdefs);
+        while tmpprot.len() {
+            c_decl* d = tmpprot.pop();
+            c_decl* tmp = malloc(sizeof(c_decl)) as c_decl*;
+            *tmp = {c_decl Static: d};
+            prototypes->append(tmp); }
+        while tmpdefs.len() {
+            c_decl* d = tmpdefs.pop();
+            c_decl* tmp = malloc(sizeof(c_decl)) as c_decl*;
+            *tmp = {c_decl Static: d};
+            definitions->append(tmp); }
+}
+
+fun c_ast parsing_ast_to_c_ast(ast t) {
+    c_decllist prototypes;
+    c_decllist definitions;
+    prototypes.init();
+    definitions.init();
+
+    int i = 0;
+    while i < t.decls.len() {
+        parsing_decl_to_c_decl(*t.decls.ith(i), &prototypes, &definitions);
+        i = i + 1;
+    }
+
+    c_ast ret;
+    prototypes.fuse(definitions);
+    ret.decls = prototypes;
+}

@@ -24,6 +24,39 @@ struct lexing_state;
 void lexing_step(int* cou, toklist* ret, char c, char* last_buffer, lexing_state* state, int line, int column, const char* file);
 toklist lex_string(const char* str);
 toklist lex_file(const char* path);
+#include <stdlib.h>
+#include <stdio.h>
+struct typlist;
+struct exprlist;
+struct instrlist;
+struct decllist;
+struct match_branches_list;
+struct type_constr_list;
+struct typ;
+struct expr;
+struct type_constr;
+struct decl;
+struct match_branch;
+struct instr;
+struct ast;
+#include <stdlib.h>
+#include <stdio.h>
+void print_ident();
+void add_ident(int i);
+struct c_typlist;
+struct switch_branchlist;
+struct c_decllist;
+struct c_instrlist;
+struct c_exprlist;
+struct c_typ;
+struct c_expr;
+struct c_decl;
+struct switch_branch;
+struct c_instr;
+struct c_ast;
+void parsing_instr_to_c_instr(instr ist, c_instrlist* outs);
+void parsing_decl_to_c_decl(decl t, c_decllist* prototypes, c_decllist* definitions);
+c_ast parsing_ast_to_c_ast(ast t);
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -1282,6 +1315,1664 @@ toklist lex_file(const char* path){
   (ret).pop();
   free(last_buffer);
   return ret;
+}
+#define dat_t typ*
+#define clist typlist
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n = (_clist*)malloc(sizeof(_clist));
+    (n)->dat = dat;
+    (n)->next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int ind){
+    _clist* t = l;
+    int i = ind;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
+    }
+    dat_t* ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return *(ith_ref(i));
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith(((len()) - (i)) - (1)));
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp = tail();
+      (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
+      (l)->next = (tmp).l;
+      return ret;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+#define dat_t expr*
+#define clist exprlist
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n = (_clist*)malloc(sizeof(_clist));
+    (n)->dat = dat;
+    (n)->next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int ind){
+    _clist* t = l;
+    int i = ind;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
+    }
+    dat_t* ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return *(ith_ref(i));
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith(((len()) - (i)) - (1)));
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp = tail();
+      (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
+      (l)->next = (tmp).l;
+      return ret;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+#define dat_t instr*
+#define clist instrlist
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n = (_clist*)malloc(sizeof(_clist));
+    (n)->dat = dat;
+    (n)->next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int ind){
+    _clist* t = l;
+    int i = ind;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
+    }
+    dat_t* ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return *(ith_ref(i));
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith(((len()) - (i)) - (1)));
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp = tail();
+      (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
+      (l)->next = (tmp).l;
+      return ret;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+#define dat_t decl*
+#define clist decllist
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n = (_clist*)malloc(sizeof(_clist));
+    (n)->dat = dat;
+    (n)->next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int ind){
+    _clist* t = l;
+    int i = ind;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
+    }
+    dat_t* ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return *(ith_ref(i));
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith(((len()) - (i)) - (1)));
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp = tail();
+      (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
+      (l)->next = (tmp).l;
+      return ret;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+#define dat_t match_branch*
+#define clist match_branches_list
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n = (_clist*)malloc(sizeof(_clist));
+    (n)->dat = dat;
+    (n)->next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int ind){
+    _clist* t = l;
+    int i = ind;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
+    }
+    dat_t* ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return *(ith_ref(i));
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith(((len()) - (i)) - (1)));
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp = tail();
+      (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
+      (l)->next = (tmp).l;
+      return ret;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+#define dat_t type_constr*
+#define clist type_constr_list
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n = (_clist*)malloc(sizeof(_clist));
+    (n)->dat = dat;
+    (n)->next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int ind){
+    _clist* t = l;
+    int i = ind;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
+    }
+    dat_t* ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return *(ith_ref(i));
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith(((len()) - (i)) - (1)));
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp = tail();
+      (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
+      (l)->next = (tmp).l;
+      return ret;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+struct typ {
+  enum { Tvoid, Tchar, Tbool, Tint, Tptr, Tfunptr, Tident, Tconst, Typeof } kind;
+  union {
+    struct {
+      typ* t;
+    } Tptr_dat;
+    struct {
+      typ* ret_t;
+      typlist args_t;
+    } Tfunptr_dat;
+    struct {
+      const char* name;
+    } Tident_dat;
+    struct {
+      typ* t;
+    } Tconst_dat;
+    struct {
+      expr* e;
+    } Typeof_dat;
+   } dat;
+};
+struct expr {
+  enum { Vint, Vstr, Ident, Binop, Unop, Field, Arrow, Array, Fcall, Typecast, IndConstr } kind;
+  union {
+    struct {
+      int i;
+    } Vint_dat;
+    struct {
+      const char* str;
+    } Vstr_dat;
+    struct {
+      const char* str;
+    } Ident_dat;
+    struct {
+      expr* e1;
+      binop op;
+      expr* e2;
+    } Binop_dat;
+    struct {
+      unop op;
+      expr* e;
+    } Unop_dat;
+    struct {
+      expr* e;
+      const char* field;
+    } Field_dat;
+    struct {
+      expr* e;
+      const char* field;
+    } Arrow_dat;
+    struct {
+      expr* arr;
+      expr* ind;
+    } Array_dat;
+    struct {
+      expr* func;
+      exprlist args;
+    } Fcall_dat;
+    struct {
+      expr* e;
+      typ t;
+    } Typecast_dat;
+    struct {
+      typ t;
+      const char* constr;
+      string_list args;
+    } IndConstr_dat;
+   } dat;
+};
+struct type_constr {
+  const char* name;
+  decllist fields;
+};
+struct decl {
+  enum { Var, Func, Type, Include_C, Static, Templated, Specialize } kind;
+  union {
+    struct {
+      typ t;
+      const char* name;
+      expr* vlue;
+    } Var_dat;
+    struct {
+      const char* name;
+      typ ret_t;
+      decllist args_decls;
+      instrlist instrs;
+    } Func_dat;
+    struct {
+      const char* name;
+      type_constr_list constrs;
+      decllist other_decls;
+    } Type_dat;
+    struct {
+      const char* file;
+    } Include_C_dat;
+    struct {
+      decl* d;
+    } Static_dat;
+    struct {
+      decl* d;
+      string_list param_names;
+      const char* name;
+    } Templated_dat;
+    struct {
+      const char* templated_t;
+      typlist params;
+      const char* newname;
+    } Specialize_dat;
+   } dat;
+};
+struct match_branch {
+  const char* matched_symb;
+  instrlist instrs;
+  string_list fields;
+};
+struct instr {
+  enum { Decl, Return, Set, If, While, Match, Fcall } kind;
+  union {
+    struct {
+      decl d;
+    } Decl_dat;
+    struct {
+      expr* e;
+    } Return_dat;
+    struct {
+      expr l;
+      expr r;
+    } Set_dat;
+    struct {
+      expr b;
+      instrlist truebrc;
+      instrlist falsebrc;
+    } If_dat;
+    struct {
+      expr b;
+      instrlist loop;
+    } While_dat;
+    struct {
+      typ t;
+      expr e;
+      match_branches_list branches;
+    } Match_dat;
+    struct {
+      expr call;
+    } Fcall_dat;
+   } dat;
+};
+struct ast {
+  decllist decls;
+};
+int ident_level = 0;
+void print_ident(){
+  int i = ident_level;
+  while ((0) < (i)) {
+    printf("    ");
+    i = (i) - (1);
+  }
+}
+void add_ident(int i){
+  ident_level = (ident_level) + (i);
+}
+#define dat_t c_typ*
+#define clist c_typlist
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n = (_clist*)malloc(sizeof(_clist));
+    (n)->dat = dat;
+    (n)->next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int ind){
+    _clist* t = l;
+    int i = ind;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
+    }
+    dat_t* ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return *(ith_ref(i));
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith(((len()) - (i)) - (1)));
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp = tail();
+      (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
+      (l)->next = (tmp).l;
+      return ret;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+#define dat_t switch_branch*
+#define clist switch_branchlist
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n = (_clist*)malloc(sizeof(_clist));
+    (n)->dat = dat;
+    (n)->next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int ind){
+    _clist* t = l;
+    int i = ind;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
+    }
+    dat_t* ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return *(ith_ref(i));
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith(((len()) - (i)) - (1)));
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp = tail();
+      (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
+      (l)->next = (tmp).l;
+      return ret;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+#define dat_t c_decl*
+#define clist c_decllist
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n = (_clist*)malloc(sizeof(_clist));
+    (n)->dat = dat;
+    (n)->next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int ind){
+    _clist* t = l;
+    int i = ind;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
+    }
+    dat_t* ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return *(ith_ref(i));
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith(((len()) - (i)) - (1)));
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp = tail();
+      (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
+      (l)->next = (tmp).l;
+      return ret;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+#define dat_t c_instr*
+#define clist c_instrlist
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n = (_clist*)malloc(sizeof(_clist));
+    (n)->dat = dat;
+    (n)->next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int ind){
+    _clist* t = l;
+    int i = ind;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
+    }
+    dat_t* ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return *(ith_ref(i));
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith(((len()) - (i)) - (1)));
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp = tail();
+      (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
+      (l)->next = (tmp).l;
+      return ret;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+#define dat_t c_expr*
+#define clist c_exprlist
+struct clist {
+  struct _clist {
+    dat_t dat;
+    _clist* next;
+  };
+  _clist* l;
+  void push(dat_t dat){
+    _clist* n = (_clist*)malloc(sizeof(_clist));
+    (n)->dat = dat;
+    (n)->next = l;
+    l = n;
+  }
+  dat_t pop(){
+    dat_t ret = (l)->dat;
+    _clist* tmp = (l)->next;
+    free(l);
+    l = tmp;
+    return ret;
+  }
+  void del(){
+    while (l) {
+      pop();
+    }
+  }
+  int len(){
+    int ret = 0;
+    _clist* t;
+    t = l;
+    while (t) {
+      ret = (ret) + (1);
+      t = (t)->next;
+    }
+    return ret;
+  }
+  dat_t* ith_ref(int ind){
+    _clist* t = l;
+    int i = ind;
+    while ((i) > (0)) {
+      if (!(t)) {
+        printf("out of range in list: index %d while len is %d\n", ind, len());
+        exit(-(1));
+      }
+      t = (t)->next;
+      i = (i) - (1);
+    }
+    if (!(t)) {
+      printf("out of range in list: index %d while len is %d\n", ind, len());
+      exit(-(1));
+    }
+    dat_t* ret = &((t)->dat);
+    return ret;
+  }
+  dat_t ith(int i){
+    return *(ith_ref(i));
+  }
+  void reverse(){
+    clist rev;
+    (rev).init();
+    while (l) {
+      (rev).push(pop());
+    }
+    l = (rev).l;
+  }
+  clist deepcopy(){
+    clist ret;
+    (ret).init();
+    int i = 0;
+    while ((i) < (len())) {
+      (ret).push(ith(((len()) - (i)) - (1)));
+      i = (i) + (1);
+    }
+    return ret;
+  }
+  clist tail(){
+    clist ret;
+    (ret).l = (l)->next;
+    return ret;
+  }
+  void append(dat_t dat){
+    if ((l) == (nullptr)) {
+      push(dat);
+    } else {
+      clist tmp = tail();
+      (tmp).append(dat);
+      (l)->next = (tmp).l;
+    }
+  }
+  void fuse(clist other){
+    if ((l) == (nullptr)) {
+      l = (other).l;
+    } else {
+      clist tmp = tail();
+      (tmp).fuse(other);
+      (l)->next = (tmp).l;
+    }
+  }
+  dat_t remove(int i){
+    if ((i) == (0)) {
+      return pop();
+    } else {
+      clist tmp = tail();
+      dat_t ret = (tmp).remove((i) - (1));
+      (l)->next = (tmp).l;
+      return ret;
+    }
+  }
+  void init(){
+    l = nullptr;
+  }
+};
+#undef dat_t
+#undef clist
+struct c_typ {
+  enum { Tvoid, Tchar, Tbool, Tint, Tptr, Tfunptr, Ttypeof } kind;
+  union {
+    struct {
+      c_typ* t;
+    } Tptr_dat;
+    struct {
+      c_typ* ret_t;
+      typclist args_t;
+    } Tfunptr_dat;
+    struct {
+      expr* e;
+    } Ttypeof_dat;
+   } dat;
+  char* decl_to_string(const char* varname){
+    char* ret = nullptr;
+    auto _unique_15 = *(this);
+    switch (_unique_15.kind) {
+    case c_typ::Tvoid : {
+      ret = (char*)malloc((strlen(varname)) + (6));
+      sprintf(ret, "void %s", varname);
+      return ret;
+      break;}
+    case c_typ::Tchar : {
+      ret = (char*)malloc((strlen(varname)) + (6));
+      sprintf(ret, "char %s", varname);
+      return ret;
+      break;}
+    case c_typ::Tbool : {
+      ret = (char*)malloc((strlen(varname)) + (6));
+      sprintf(ret, "bool %s", varname);
+      return ret;
+      break;}
+    case c_typ::Tint : {
+      ret = (char*)malloc((strlen(varname)) + (5));
+      sprintf(ret, "int %s", varname);
+      return ret;
+      break;}
+    case c_typ::Tptr : {
+      auto t = _unique_15.dat.Tptr_dat.t;
+      char* tmp = (char*)malloc((strlen(varname)) + (2));
+      sprintf(tmp, "*%s", varname);
+      char* ret = (t)->decl_to_string(fptr, tmp);
+      free(tmp);
+      break;}
+    case c_typ::Ttypeof : {
+      auto e = _unique_15.dat.Ttypeof_dat.e;
+      char* tmp = expr_to_string(e);
+      ret = (char*)malloc(((strlen(varname)) + (10)) + (strlen(tmp)));
+      sprintf(ret, "typeof(%s) %s", tmp, varname);
+      free(tmp);
+      return ret;
+      break;}
+    case c_typ::Tfunptr : {
+      auto ret_t = _unique_15.dat.Tfunptr_dat.ret_t;
+      auto args_t = _unique_15.dat.Tfunptr_dat.args_t;
+      int totsize = 0;
+      char** tmp = (char**)malloc((args_t).len());
+      int i = 0;
+      while ((i) < ((args_t).len())) {
+        tmp[i] = ((args_t).ith(i))->decl_to_string("");
+        totsize = ((totsize) + (strlen(tmp[i]))) + (2);
+        i = (i) + (1);
+      }
+      char* argsdecl = (char*)malloc((((totsize) + (1)) + (3)) + (strlen(varname)));
+      sprintf(argsdecl, "(*%s)(", varname);
+      i = 0;
+      int offset = (strlen(varname)) + (4);
+      while ((i) < ((args_t).len())) {
+        strcpy((argsdecl) + (offset), tmp[i]);
+        offset = (offset) + (strlen(tmp[i]));
+        free(tmp[i]);
+        i = (i) + (1);
+      }
+      free(tmp);
+      argsdecl[offset] = 41;
+      argsdecl[(offset) + (1)] = 0;
+      ret = (ret_t)->decl_to_string(argsdecl);
+      free(argsdecl);
+      return ret;
+      break;}
+    default:
+      printf("error: no valid match branch at line %d of file %s", __LINE__, __FILE__);
+      exit(EXIT_FAILURE);
+    }
+  }
+};
+struct c_expr {
+  enum { Vint, Vstr, Ident, Binop, Unop, Field, Fcall, Typecast } kind;
+  union {
+    struct {
+      int i;
+    } Vint_dat;
+    struct {
+      const char* str;
+    } Vstr_dat;
+    struct {
+      const char* str;
+    } Ident_dat;
+    struct {
+      c_expr* e1;
+      binop op;
+      c_expr* e2;
+    } Binop_dat;
+    struct {
+      binop op;
+      c_expr* e;
+    } Unop_dat;
+    struct {
+      c_expr* e;
+      const char* field;
+    } Field_dat;
+    struct {
+      c_expr* func;
+      c_exprlist args;
+    } Fcall_dat;
+    struct {
+      c_expr* e;
+      c_typ t;
+    } Typecast_dat;
+   } dat;
+};
+struct c_decl {
+  enum { Var, Func, Struct, Enum, Union, Include_C, Static } kind;
+  union {
+    struct {
+      c_typ t;
+      const char* name;
+      expr* vlue;
+    } Var_dat;
+    struct {
+      const char* name;
+      c_typ ret_t;
+      c_decllist args_decls;
+      instrlist* instrs;
+    } Func_dat;
+    struct {
+      const char* name;
+      c_decllist inner_decls;
+    } Struct_dat;
+    struct {
+      const char* name;
+      string_list values;
+    } Enum_dat;
+    struct {
+      const char* name;
+      c_decllist inner_decls;
+    } Union_dat;
+    struct {
+      const char* file;
+    } Include_C_dat;
+    struct {
+      c_decl* d;
+    } Static_dat;
+   } dat;
+};
+struct switch_branch {
+  const char* matched_val;
+  c_instrlist instrs;
+};
+struct c_instr {
+  enum { Decl, Return, Set, If, While, Switch, Fcall } kind;
+  union {
+    struct {
+      c_decl d;
+    } Decl_dat;
+    struct {
+      c_expr* e;
+    } Return_dat;
+    struct {
+      c_expr l;
+      c_expr r;
+    } Set_dat;
+    struct {
+      c_expr b;
+      c_instrlist truebrc;
+      c_instrlist falsebrc;
+    } If_dat;
+    struct {
+      c_expr b;
+      c_instrlist loop;
+    } While_dat;
+    struct {
+      typ t;
+      c_expr e;
+      switch_branches_list branches;
+    } Switch_dat;
+    struct {
+      c_expr call;
+    } Fcall_dat;
+   } dat;
+};
+struct c_ast {
+  c_decllist decls;
+};
+void parsing_instr_to_c_instr(instr ist, c_instrlist* outs){
+}
+void parsing_decl_to_c_decl(decl t, c_decllist* prototypes, c_decllist* definitions){
+  auto _unique_16 = t;
+  switch (_unique_16.kind) {
+  case decl::Var : {
+   auto t = _unique_16.dat.Var_dat.t;
+   auto name = _unique_16.dat.Var_dat.name;
+   auto vlue = _unique_16.dat.Var_dat.vlue;
+    (prototypes)->append((c_decl){.kind=c_decl::Var, .dat={.Var_dat={.t=t, .name=name, .vlue=vlue}}});
+   break;}
+  case decl::Func : {
+   auto name = _unique_16.dat.Func_dat.name;
+   auto ret_t = _unique_16.dat.Func_dat.ret_t;
+   auto args_decls = _unique_16.dat.Func_dat.args_decls;
+   auto instrs = _unique_16.dat.Func_dat.instrs;
+    (prototypes)->append((c_decl){.kind=c_decl::Func, .dat={.Func_dat={.name=name, .ret_t=ret_t, .args_decls=args_decls, .nullptr=nullptr}}});
+    c_instrlist* ist = (c_instrlist*)malloc(sizeof(c_instrlist));
+    (ist)->init();
+    int i = 0;
+    while ((i) < ((instr).len())) {
+      parsing_instr_to_c_instr((instr).ith(i), ist);
+      i = (i) + (1);
+    }
+    if (1) {
+      c_instrlist* instrs = ist;
+      (prototypes)->append((c_decl){.kind=c_decl::Func, .dat={.Func_dat={.name=name, .ret_t=ret_t, .args_decls=args_decls, .instrs=instrs}}});
+    }
+   break;}
+  default:
+   printf("error: no valid match branch at line %d of file %s", __LINE__, __FILE__);
+   exit(EXIT_FAILURE);
+  }
+}
+c_ast parsing_ast_to_c_ast(ast t){
+  c_decllist prototypes;
+  c_decllist definitions;
+  (prototypes).init();
+  (definitions).init();
+  int i = 0;
+  while ((i) < (((t).decls).len())) {
+    parsing_decl_to_c_decl(*(((t).decls).ith(d)), &(prototypes), &(definitions));
+    i = (i) + (1);
+  }
+  c_ast ret;
+  (prototypes).fuse(definitions);
+  (ret).decls = prototypes;
 }
 int string_list_thingy(string_list* l, char* str){
   int i = string_list_find(*(l), str);

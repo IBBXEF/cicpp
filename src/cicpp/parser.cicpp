@@ -3,6 +3,8 @@
 #include "src/cicpp/anyptr.cicpp"
 #include "src/cicpp/set.cicpp"
 #include "src/cicpp/lexer.cicpp"
+#include "src/cicpp/parsing_ast.cicpp"
+#include "src/cicpp/c_ast.cicpp"
 #include_C "limits.h"
 #include_C "stdio.h"
 #include_C "string.h"
